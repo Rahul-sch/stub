@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sensor Data Pipeline Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+        h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 30px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 28px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 24px 70px rgba(96, 165, 250, 0.2);
+        }
+        .card h2 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #60a5fa;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        .stat:last-child { border-bottom: none; }
+        .stat-label {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .stat-value {
+            color: #60a5fa;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .big-stat {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+        .big-stat-value {
+            font-size: 56px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        .big-stat-label {
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        button {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+        .btn-toggle {
+            background: rgba(71, 85, 105, 0.5);
+            color: white;
+            padding: 10px 20px;
+            font-size: 13px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .btn-toggle.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-color: #3b82f6;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+        input[type="number"] {
+            padding: 14px 16px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            color: #e2e8f0;
+            font-size: 15px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .input-wrapper {
+            position: relative;
+        }
+        .input-label {
+            position: absolute;
+            top: -8px;
+            left: 12px;
+            background: rgba(30, 41, 59, 0.9);
+            padding: 0 8px;
+            color: #60a5fa;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        label {
+            display: block;
+            margin-bottom: 12px;
+            color: #60a5fa;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .status-running {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+        .status-stopped {
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+        }
+        .history-container {
+            max-height: 600px;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            padding: 16px;
+        }
+        .history-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .history-container::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 4px;
+        }
+        .history-container::-webkit-scrollbar-thumb {
+            background: rgba(96, 165, 250, 0.5);
+            border-radius: 4px;
+        }
+        .history-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(96, 165, 250, 0.7);
+        }
+        .history-item {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-left: 4px solid #60a5fa;
+            transition: all 0.3s;
+        }
+        .history-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 20px rgba(96, 165, 250, 0.2);
+        }
+        .history-timestamp {
+            color: #94a3b8;
+            font-size: 11px;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 14px;
+        }
+        .history-metric {
+            text-align: center;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 10px;
+            border: 1px solid rgba(96, 165, 250, 0.1);
+        }
+        .history-metric.hidden {
+            display: none;
+        }
+        .metric-value {
+            font-size: 20px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .metric-label {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .toggles {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .preset-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            border: 1px solid rgba(96, 165, 250, 0.2);
+        }
+        .preset-title {
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Sensor Data Pipeline</h1>
+        <div class="subtitle">Real-Time IoT Monitoring Dashboard</div>
+
+        <div class="grid">
+            <!-- Stats Card -->
+            <div class="card">
+                <h2>📊 Statistics</h2>
+                <div class="big-stat">
+                    <div class="big-stat-value" id="totalCount">0</div>
+                    <div class="big-stat-label">Total Messages</div>
+                </div>
+                <div id="averages"></div>
+            </div>
+
+            <!-- Control Card -->
+            <div class="card">
+                <h2>⚙️ Controls</h2>
+                <div class="stat">
+                    <span class="stat-label">
+                        <span class="status-indicator" id="producerStatus"></span>
+                        Producer
+                    </span>
+                </div>
+                <div class="controls">
+                    <button class="btn-success" onclick="startComponent('producer')">▶ Start</button>
+                    <button class="btn-danger" onclick="stopComponent('producer')">⏹ Stop</button>
+                </div>
+
+                <div class="stat" style="margin-top: 20px;">
+                    <span class="stat-label">
+                        <span class="status-indicator" id="consumerStatus"></span>
+                        Consumer
+                    </span>
+                </div>
+                <div class="controls">
+                    <button class="btn-success" onclick="startComponent('consumer')">▶ Start</button>
+                    <button class="btn-danger" onclick="stopComponent('consumer')">⏹ Stop</button>
+                </div>
+
+                <div class="controls" style="margin-top: 20px;">
+                    <button class="btn-warning" onclick="clearData()">🗑️ Clear All Data</button>
+                </div>
+            </div>
+
+            <!-- Configuration Card -->
+            <div class="card">
+                <h2>🔧 Configuration</h2>
+
+                <label>Duration</label>
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <span class="input-label">Hours</span>
+                        <input type="number" id="durationHours" min="0" value="0">
+                    </div>
+                    <div class="input-wrapper">
+                        <span class="input-label">Minutes</span>
+                        <input type="number" id="durationMinutes" min="0" max="59" value="0">
+                    </div>
+                </div>
+
+                <label>Interval</label>
+                <div class="input-wrapper">
+                    <span class="input-label">Seconds</span>
+                    <input type="number" id="intervalSeconds" value="30">
+                </div>
+
+                <div class="controls">
+                    <button class="btn-primary" onclick="updateConfig()">💾 Update Config</button>
+                </div>
+
+                <div class="preset-container">
+                    <div class="preset-title">⚡ Quick Presets</div>
+                    <div class="preset-buttons">
+                        <button class="btn-primary" onclick="setQuickTest()">Quick Test</button>
+                        <button class="btn-primary" onclick="setOneMin()">1 Minute</button>
+                        <button class="btn-primary" onclick="setOneHour()">1 Hour</button>
+                        <button class="btn-primary" onclick="setProduction()">24 Hours</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Readings History Card -->
+        <div class="card">
+            <h2>📡 Readings History</h2>
+            <div class="toggles">
+                <button class="btn-toggle active" data-metric="temperature" onclick="toggleMetric('temperature')">🌡️ Temperature</button>
+                <button class="btn-toggle active" data-metric="pressure" onclick="toggleMetric('pressure')">💨 Pressure</button>
+                <button class="btn-toggle active" data-metric="vibration" onclick="toggleMetric('vibration')">📳 Vibration</button>
+                <button class="btn-toggle active" data-metric="humidity" onclick="toggleMetric('humidity')">💧 Humidity</button>
+                <button class="btn-toggle active" data-metric="rpm" onclick="toggleMetric('rpm')">⚙️ RPM</button>
+            </div>
+            <div class="history-container" id="readingsHistory"></div>
+        </div>
+    </div>
+
+    <script>
+        const visibleMetrics = {
+            temperature: true,
+            pressure: true,
+            vibration: true,
+            humidity: true,
+            rpm: true
+        };
+
+        function toggleMetric(metric) {
+            visibleMetrics[metric] = !visibleMetrics[metric];
+            const btn = document.querySelector(`[data-metric="${metric}"]`);
+            btn.classList.toggle('active');
+            updateStats();
+        }
+
+        function updateStats() {
+            fetch('/api/stats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('totalCount').textContent = data.total_count || 0;
+
+                    if (data.averages) {
+                        document.getElementById('averages').innerHTML = `
+                            <div class="stat"><span class="stat-label">Avg Temperature</span><span class="stat-value">${data.averages.temperature}°F</span></div>
+                            <div class="stat"><span class="stat-label">Avg Pressure</span><span class="stat-value">${data.averages.pressure} PSI</span></div>
+                            <div class="stat"><span class="stat-label">Avg Vibration</span><span class="stat-value">${data.averages.vibration} mm/s</span></div>
+                            <div class="stat"><span class="stat-label">Avg Humidity</span><span class="stat-value">${data.averages.humidity}%</span></div>
+                            <div class="stat"><span class="stat-label">Avg RPM</span><span class="stat-value">${data.averages.rpm}</span></div>
+                        `;
+                    }
+
+                    if (data.recent_readings && data.recent_readings.length > 0) {
+                        const historyHTML = data.recent_readings.map(reading => `
+                            <div class="history-item">
+                                <div class="history-timestamp">${reading.created_at}</div>
+                                <div class="history-grid">
+                                    <div class="history-metric ${visibleMetrics.temperature ? '' : 'hidden'}">
+                                        <div class="metric-value">${reading.temperature}°F</div>
+                                        <div class="metric-label">Temperature</div>
+                                    </div>
+                                    <div class="history-metric ${visibleMetrics.pressure ? '' : 'hidden'}">
+                                        <div class="metric-value">${reading.pressure}</div>
+                                        <div class="metric-label">Pressure (PSI)</div>
+                                    </div>
+                                    <div class="history-metric ${visibleMetrics.vibration ? '' : 'hidden'}">
+                                        <div class="metric-value">${reading.vibration}</div>
+                                        <div class="metric-label">Vibration (mm/s)</div>
+                                    </div>
+                                    <div class="history-metric ${visibleMetrics.humidity ? '' : 'hidden'}">
+                                        <div class="metric-value">${reading.humidity}%</div>
+                                        <div class="metric-label">Humidity</div>
+                                    </div>
+                                    <div class="history-metric ${visibleMetrics.rpm ? '' : 'hidden'}">
+                                        <div class="metric-value">${reading.rpm}</div>
+                                        <div class="metric-label">RPM</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                        document.getElementById('readingsHistory').innerHTML = historyHTML;
+                    } else {
+                        document.getElementById('readingsHistory').innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet</div>';
+                    }
+                });
+        }
+
+        function updateStatus() {
+            fetch('/api/status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('producerStatus').className =
+                        'status-indicator ' + (data.producer_running ? 'status-running' : 'status-stopped');
+                    document.getElementById('consumerStatus').className =
+                        'status-indicator ' + (data.consumer_running ? 'status-running' : 'status-stopped');
+                });
+        }
+
+        function loadConfig() {
+            fetch('/api/config')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('durationHours').value = data.duration_hours;
+                    document.getElementById('durationMinutes').value = data.duration_minutes;
+                    document.getElementById('intervalSeconds').value = data.interval_seconds;
+                });
+        }
+
+        function updateConfig() {
+            const data = {
+                duration_hours: parseInt(document.getElementById('durationHours').value),
+                duration_minutes: parseInt(document.getElementById('durationMinutes').value),
+                interval_seconds: parseInt(document.getElementById('intervalSeconds').value)
+            };
+
+            fetch('/api/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(r => r.json())
+            .then(result => {
+                alert(result.success ? '✅ Config updated!' : '❌ Failed to update config');
+            });
+        }
+
+        function startComponent(component) {
+            fetch(`/api/start/${component}`)
+                .then(r => r.json())
+                .then(result => {
+                    alert(result.success ? `✅ ${component} started!` : `❌ Failed: ${result.error}`);
+                    updateStatus();
+                });
+        }
+
+        function stopComponent(component) {
+            fetch(`/api/stop/${component}`)
+                .then(r => r.json())
+                .then(result => {
+                    alert(result.success ? `✅ ${component} stopped!` : `❌ Failed: ${result.error}`);
+                    updateStatus();
+                });
+        }
+
+        function clearData() {
+            if (confirm('🗑️ Clear all sensor data from database?')) {
+                fetch('/api/clear_data')
+                    .then(r => r.json())
+                    .then(result => {
+                        alert(result.success ? '✅ Data cleared!' : '❌ Failed to clear data');
+                        updateStats();
+                    });
+            }
+        }
+
+        function setQuickTest() {
+            document.getElementById('durationHours').value = 0;
+            document.getElementById('durationMinutes').value = 2;
+            document.getElementById('intervalSeconds').value = 10;
+        }
+
+        function setOneMin() {
+            document.getElementById('durationHours').value = 0;
+            document.getElementById('durationMinutes').value = 1;
+            document.getElementById('intervalSeconds').value = 5;
+        }
+
+        function setOneHour() {
+            document.getElementById('durationHours').value = 1;
+            document.getElementById('durationMinutes').value = 0;
+            document.getElementById('intervalSeconds').value = 30;
+        }
+
+        function setProduction() {
+            document.getElementById('durationHours').value = 24;
+            document.getElementById('durationMinutes').value = 0;
+            document.getElementById('intervalSeconds').value = 30;
+        }
+
+        // Auto-refresh every 2 seconds
+        setInterval(() => {
+            updateStats();
+            updateStatus();
+        }, 2000);
+
+        // Initial load
+        updateStats();
+        updateStatus();
+        loadConfig();
+    </script>
+</body>
+</html>

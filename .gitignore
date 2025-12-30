@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite3
+
+# Docker
+docker-compose.override.yml
+
+# OS - Windows
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# OS - Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# pytest
+.pytest_cache/
+.tox/
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover

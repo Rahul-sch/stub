@@ -902,7 +902,7 @@ stateDiagram-v2
     LoadModel --> Ready: Load successful
     LoadModel --> Untrained: Load failed
 
-    Untrained --> FetchData: detect() called
+    Untrained --> FetchData: detect called
     FetchData --> CheckSamples
 
     CheckSamples --> Training: samples >= MIN_TRAINING_SAMPLES
@@ -911,17 +911,17 @@ stateDiagram-v2
     Training --> SaveModel: Training complete
     SaveModel --> Ready
 
-    NoDetection --> [*]: Return (false, 0, [])
+    NoDetection --> [*]: Return false
 
-    Ready --> FeatureExtract: detect() called
-    FeatureExtract --> Scale
-    Scale --> Predict
+    Ready --> FeatureExtract: detect called
+    FeatureExtract --> Scaling
+    Scaling --> Predict
     Predict --> ScoreCalc
-    ScoreCalc --> IdentifySensors: is_anomaly=true
-    ScoreCalc --> ReturnResult: is_anomaly=false
+    ScoreCalc --> IdentifySensors: is_anomaly true
+    ScoreCalc --> ReturnResult: is_anomaly false
     IdentifySensors --> ReturnResult
 
-    ReturnResult --> [*]: Return (is_anomaly, score, sensors)
+    ReturnResult --> [*]: Return result tuple
 ```
 
 ---
@@ -940,7 +940,7 @@ flowchart TD
     Commit1 --> End1([Skip Message])
 
     ValidCheck -->|Yes| RuleCheck[Check Sensor Ranges]
-    RuleCheck --> InRange{All Values<br/>In Range?}
+    RuleCheck --> InRange{All Values In Range?}
 
     InRange -->|No| RecordAlert[Record Alert to DB]
     RecordAlert --> Commit2[Commit Offset]
@@ -949,19 +949,19 @@ flowchart TD
     InRange -->|Yes| InsertDB[INSERT sensor_readings]
     InsertDB --> GetID[Get reading_id]
     GetID --> CommitDB[Commit Transaction]
-    CommitDB --> MLEnabled{ML Detection<br/>Enabled?}
+    CommitDB --> MLEnabled{ML Detection Enabled?}
 
     MLEnabled -->|No| Commit3[Commit Offset]
     Commit3 --> End3([Reading Stored])
 
     MLEnabled -->|Yes| GetDetector[Get AnomalyDetector]
-    GetDetector --> Trained{Model<br/>Trained?}
+    GetDetector --> Trained{Model Trained?}
 
     Trained -->|No| TrainModel[Train on Historical Data]
     TrainModel --> SaveModel[Save Model to Disk]
     SaveModel --> Detect
 
-    Trained -->|Yes| Detect[detect(reading)]
+    Trained -->|Yes| Detect[Run Detection]
     Detect --> IsAnomaly{Is Anomaly?}
 
     IsAnomaly -->|No| RecordNormal[Record Detection]
@@ -972,7 +972,7 @@ flowchart TD
     RecordAnomaly --> CreateAlert[Create ML Alert]
     CreateAlert --> LogAnomaly[Log Warning]
     LogAnomaly --> Commit5[Commit Offset]
-    Commit5 --> End5([Anomaly Detected!])
+    Commit5 --> End5([Anomaly Detected])
 ```
 
 ### 10.2 Report Generation Flow
@@ -1016,110 +1016,43 @@ flowchart TD
 ## 11. Package/Module Structure
 
 ```mermaid
-classDiagram
-    namespace CoreModules {
-        class config {
-            <<module>>
-            Timing settings
-            Kafka settings
-            Database settings
-            Sensor definitions
-            ML settings
-            AI settings
-        }
+flowchart TB
+    subgraph Core["Core Modules"]
+        config[config.py<br/>Settings & Constants]
+        producer[producer.py<br/>SensorDataProducer]
+        consumer[consumer.py<br/>SensorDataConsumer]
+        dashboard[dashboard.py<br/>Flask Web Server]
+    end
 
-        class producer {
-            <<module>>
-            SensorDataProducer
-            main()
-        }
+    subgraph ML["ML & AI Modules"]
+        ml_detector[ml_detector.py<br/>Isolation Forest]
+        analysis_engine[analysis_engine.py<br/>Context Analyzer]
+        report_generator[report_generator.py<br/>AI Report Generator]
+        lstm_detector[lstm_detector.py<br/>LSTM Autoencoder]
+    end
 
-        class consumer {
-            <<module>>
-            SensorDataConsumer
-            main()
-        }
+    subgraph Frontend["Frontend"]
+        dashboard_html[dashboard.html<br/>UI Template]
+    end
 
-        class dashboard {
-            <<module>>
-            Flask routes
-            Process management
-            API endpoints
-        }
-    }
+    subgraph Infrastructure["Infrastructure"]
+        setup_db[setup_db.sql<br/>DB Schema]
+        docker_compose[docker-compose.yml<br/>Container Config]
+        requirements[requirements.txt<br/>Dependencies]
+    end
 
-    namespace MLModules {
-        class ml_detector {
-            <<module>>
-            AnomalyDetector
-            record_anomaly_detection()
-            get_detector()
-        }
-
-        class analysis_engine {
-            <<module>>
-            ContextAnalyzer
-            get_anomaly_details()
-        }
-
-        class report_generator {
-            <<module>>
-            ReportGenerator
-            FullSessionReportGenerator
-            generate_full_session_report()
-            get_report()
-            get_report_by_anomaly()
-        }
-
-        class lstm_detector {
-            <<module>>
-            LSTMAutoencoder
-            (Optional TensorFlow)
-        }
-    }
-
-    namespace Templates {
-        class dashboard_html {
-            <<template>>
-            HTML structure
-            CSS styles
-            JavaScript functions
-            Real-time updates
-        }
-    }
-
-    namespace DataFiles {
-        class setup_db_sql {
-            <<SQL>>
-            Table definitions
-            Indexes
-            Views
-            Permissions
-        }
-
-        class docker_compose_yml {
-            <<YAML>>
-            Kafka service
-            Zookeeper service
-            PostgreSQL service
-        }
-
-        class requirements_txt {
-            <<text>>
-            Python dependencies
-        }
-    }
-
-    producer --> config : imports
-    consumer --> config : imports
-    consumer --> ml_detector : imports
-    dashboard --> config : imports
-    dashboard --> report_generator : imports
-    dashboard --> analysis_engine : imports
-    ml_detector --> config : imports
-    analysis_engine --> config : imports
-    report_generator --> config : imports
-    report_generator --> analysis_engine : imports
+    producer --> config
+    consumer --> config
+    consumer --> ml_detector
+    dashboard --> config
+    dashboard --> report_generator
+    dashboard --> analysis_engine
+    dashboard --> dashboard_html
+    ml_detector --> config
+    analysis_engine --> config
+    report_generator --> config
+    report_generator --> analysis_engine
+    lstm_detector --> config
 ```
 
 ---

@@ -821,35 +821,65 @@ Format your response in clear markdown with headers, bullet points, and tables w
     def _generate_fallback_full_report(self, stats, anomalies, correlations):
         """Generate fallback report when AI is unavailable."""
         top_sensors = stats.get('top_anomaly_sensors', [])
-        sensor_list = ', '.join([s['sensor'] for s in top_sensors[:5]]) if top_sensors else 'N/A'
+        sensor_list = '\n'.join([f"- **{s['sensor']}**: {s['count']} occurrences" for s in top_sensors[:10]]) if top_sensors else 'No specific sensors identified'
         
-        return f"""# Full Session Analysis Report (Fallback)
+        # Format severity distribution nicely
+        sev = stats.get('severity_distribution', {})
+        severity_text = f"""- **Critical:** {sev.get('critical', 0)}
+- **High:** {sev.get('high', 0)}
+- **Medium:** {sev.get('medium', 0)}
+- **Low:** {sev.get('low', 0)}"""
+        
+        # Format co-occurrences nicely (this will be displayed by the dashboard UI, not in the analysis text)
+        cooccurrences = correlations.get('sensor_co_occurrences', [])[:10]
+        cooccurrence_text = ""
+        if cooccurrences:
+            for c in cooccurrences:
+                sensors = c.get('sensors', [])
+                if len(sensors) >= 2:
+                    cooccurrence_text += f"- **{sensors[0]}** ↔ **{sensors[1]}**: {c['count']} times together\n"
+        else:
+            cooccurrence_text = "No co-occurrence patterns detected"
+        
+        return f"""# Full Session Analysis Report
 
-**Note:** This is an automated fallback report. Configure your Groq API key in config.py for AI-powered analysis.
+**Note:** This is an automated analysis. Configure your Groq API key in config.py for AI-powered insights.
 
-## Session Statistics
+## Session Overview
 - **Total Readings:** {stats.get('total_readings', 0):,}
 - **Total Anomalies:** {stats.get('total_anomalies', 0)}
 - **Anomaly Rate:** {stats.get('anomaly_rate', 0)}%
 - **Session Duration:** {stats.get('start_time', 'N/A')} to {stats.get('end_time', 'N/A')}
 
+## Severity Breakdown
+{severity_text}
+
 ## Top Anomaly-Contributing Sensors
 {sensor_list}
 
-## Severity Distribution
-{json.dumps(stats.get('severity_distribution', {}), indent=2)}
+## Sensor Correlation Patterns
+{cooccurrence_text}
 
-## Sensor Co-occurrences
-{json.dumps(correlations.get('sensor_co_occurrences', [])[:10], indent=2)}
+## Automated Recommendations
 
-## Recommendations
-1. Review the top anomaly-contributing sensors for calibration issues
-2. Investigate sensor co-occurrences for systemic problems
-3. Consider adjusting monitoring thresholds based on anomaly patterns
-4. Schedule preventive maintenance for frequently affected systems
+### Immediate Actions
+1. **Review Critical Sensors** - Focus on sensors appearing most frequently in anomalies
+2. **Check Correlated Sensors** - Sensors triggering together may indicate systemic issues
+3. **Verify Threshold Settings** - Current thresholds may need adjustment based on observed patterns
+
+### Preventive Measures
+1. Schedule maintenance for equipment related to high-frequency anomaly sensors
+2. Investigate mechanical linkages between co-occurring sensor pairs
+3. Review calibration schedules for affected monitoring equipment
+4. Consider implementing early warning thresholds at 80% of current limits
+
+### Monitoring Improvements
+1. Increase sampling frequency during high-risk operational periods
+2. Add redundant sensors for critical measurements
+3. Implement trend analysis to detect gradual degradation
 
 ---
-*Configure GROQ_API_KEY in config.py for detailed AI analysis.*"""
+*For detailed AI-powered root cause analysis, configure GROQ_API_KEY in config.py*"""
 
 
 def generate_full_session_report():

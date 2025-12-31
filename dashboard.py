@@ -171,7 +171,7 @@ def get_stats():
         cursor.execute("SELECT COUNT(*) FROM sensor_readings;")
         total_count = cursor.fetchone()[0]
 
-        # Recent readings (last 10 with key parameters)
+        # Recent readings (last 10 with key parameters for top stats)
         cursor.execute("""
             SELECT timestamp, rpm, temperature, vibration, pressure, humidity, created_at
             FROM sensor_readings
@@ -179,6 +179,26 @@ def get_stats():
             LIMIT 10;
         """)
         recent_readings = cursor.fetchall()
+
+        # Recent readings with ALL 50 parameters for history display
+        cursor.execute("""
+            SELECT
+                timestamp, created_at,
+                temperature, pressure, humidity, ambient_temp, dew_point,
+                air_quality_index, co2_level, particle_count, noise_level, light_intensity,
+                vibration, rpm, torque, shaft_alignment, bearing_temp,
+                motor_current, belt_tension, gear_wear, coupling_temp, lubrication_pressure,
+                coolant_temp, exhaust_temp, oil_temp, radiator_temp, thermal_efficiency,
+                heat_dissipation, inlet_temp, outlet_temp, core_temp, surface_temp,
+                voltage, current, power_factor, frequency, resistance,
+                capacitance, inductance, phase_angle, harmonic_distortion, ground_fault,
+                flow_rate, fluid_pressure, viscosity, density, reynolds_number,
+                pipe_pressure_drop, pump_efficiency, cavitation_index, turbulence, valve_position
+            FROM sensor_readings
+            ORDER BY created_at DESC
+            LIMIT 10;
+        """)
+        full_readings = cursor.fetchall()
 
         # Calculate averages for all 50 parameters organized by category
         stats_by_category = {}
@@ -211,6 +231,35 @@ def get_stats():
         cursor.close()
         conn.close()
 
+        # Build full readings with all 50 parameters
+        full_readings_list = []
+        if full_readings:
+            for reading in full_readings:
+                full_readings_list.append({
+                    'timestamp': str(reading[0]),
+                    'created_at': str(reading[1]),
+                    'temperature': reading[2], 'pressure': reading[3], 'humidity': reading[4],
+                    'ambient_temp': reading[5], 'dew_point': reading[6],
+                    'air_quality_index': reading[7], 'co2_level': reading[8],
+                    'particle_count': reading[9], 'noise_level': reading[10], 'light_intensity': reading[11],
+                    'vibration': reading[12], 'rpm': reading[13], 'torque': reading[14],
+                    'shaft_alignment': reading[15], 'bearing_temp': reading[16],
+                    'motor_current': reading[17], 'belt_tension': reading[18], 'gear_wear': reading[19],
+                    'coupling_temp': reading[20], 'lubrication_pressure': reading[21],
+                    'coolant_temp': reading[22], 'exhaust_temp': reading[23], 'oil_temp': reading[24],
+                    'radiator_temp': reading[25], 'thermal_efficiency': reading[26],
+                    'heat_dissipation': reading[27], 'inlet_temp': reading[28], 'outlet_temp': reading[29],
+                    'core_temp': reading[30], 'surface_temp': reading[31],
+                    'voltage': reading[32], 'current': reading[33], 'power_factor': reading[34],
+                    'frequency': reading[35], 'resistance': reading[36],
+                    'capacitance': reading[37], 'inductance': reading[38], 'phase_angle': reading[39],
+                    'harmonic_distortion': reading[40], 'ground_fault': reading[41],
+                    'flow_rate': reading[42], 'fluid_pressure': reading[43], 'viscosity': reading[44],
+                    'density': reading[45], 'reynolds_number': reading[46],
+                    'pipe_pressure_drop': reading[47], 'pump_efficiency': reading[48],
+                    'cavitation_index': reading[49], 'turbulence': reading[50], 'valve_position': reading[51]
+                })
+
         return {
             'total_count': total_count,
             'recent_readings': [
@@ -224,6 +273,7 @@ def get_stats():
                     'created_at': str(reading[6])
                 } for reading in recent_readings
             ] if recent_readings else [],
+            'recent_readings_full': full_readings_list,
             'stats_by_category': stats_by_category
         }
     except Exception as e:

@@ -601,27 +601,22 @@
 
         <!-- Readings History Card -->
         <div class="card">
-            <h2>📡 Readings History</h2>
-            <div class="toggles">
-                <button class="btn-toggle active" data-metric="temperature" onclick="toggleMetric('temperature')">🌡️ Temperature</button>
-                <button class="btn-toggle active" data-metric="pressure" onclick="toggleMetric('pressure')">💨 Pressure</button>
-                <button class="btn-toggle active" data-metric="vibration" onclick="toggleMetric('vibration')">📳 Vibration</button>
-                <button class="btn-toggle active" data-metric="humidity" onclick="toggleMetric('humidity')">💧 Humidity</button>
-                <button class="btn-toggle active" data-metric="rpm" onclick="toggleMetric('rpm')">⚙️ RPM</button>
-            </div>
+            <h2>📡 Live Sensor Readings</h2>
+            <label>Select Category to Monitor</label>
+            <select id="historyCategory" onchange="changeHistoryCategory()" style="width: 100%; padding: 14px; border-radius: 12px; background: rgba(15, 23, 42, 0.6); color: #e2e8f0; border: 1px solid rgba(148, 163, 184, 0.2); font-size: 15px; font-weight: 600; margin-bottom: 20px; cursor: pointer;">
+                <option value="environmental">🌍 Environmental Sensors</option>
+                <option value="mechanical">⚙️ Mechanical Sensors</option>
+                <option value="thermal">🔥 Thermal Sensors</option>
+                <option value="electrical">⚡ Electrical Sensors</option>
+                <option value="fluid">💧 Fluid Dynamics Sensors</option>
+            </select>
             <div class="history-container" id="readingsHistory"></div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const visibleMetrics = {
-            temperature: true,
-            pressure: true,
-            vibration: true,
-            humidity: true,
-            rpm: true
-        };
+        let selectedHistoryCategory = 'environmental';
         const chartColors = {
             temperature: '#f87171',
             pressure: '#fbbf24',
@@ -633,10 +628,17 @@
         let configLimits = null;
         let configDefaults = null;
 
-        function toggleMetric(metric) {
-            visibleMetrics[metric] = !visibleMetrics[metric];
-            const btn = document.querySelector(`[data-metric="${metric}"]`);
-            btn.classList.toggle('active');
+        // Map of sensors by category from config
+        const sensorsByCategory = {
+            'environmental': ['temperature', 'pressure', 'humidity', 'ambient_temp', 'dew_point', 'air_quality_index', 'co2_level', 'particle_count', 'noise_level', 'light_intensity'],
+            'mechanical': ['vibration', 'rpm', 'torque', 'shaft_alignment', 'bearing_temp', 'motor_current', 'belt_tension', 'gear_wear', 'coupling_temp', 'lubrication_pressure'],
+            'thermal': ['coolant_temp', 'exhaust_temp', 'oil_temp', 'radiator_temp', 'thermal_efficiency', 'heat_dissipation', 'inlet_temp', 'outlet_temp', 'core_temp', 'surface_temp'],
+            'electrical': ['voltage', 'current', 'power_factor', 'frequency', 'resistance', 'capacitance', 'inductance', 'phase_angle', 'harmonic_distortion', 'ground_fault'],
+            'fluid': ['flow_rate', 'fluid_pressure', 'viscosity', 'density', 'reynolds_number', 'pipe_pressure_drop', 'pump_efficiency', 'cavitation_index', 'turbulence', 'valve_position']
+        };
+
+        function changeHistoryCategory() {
+            selectedHistoryCategory = document.getElementById('historyCategory').value;
             updateStats();
         }
 
@@ -735,35 +737,31 @@
                         }
                     }
 
-                    const readings = data.recent_readings || [];
-                    if (readings.length > 0) {
-                        const historyHTML = readings.map(reading => `
-                            <div class="history-item">
-                                <div class="history-timestamp">${formatDateTime(reading.created_at)}</div>
-                                <div class="history-grid">
-                                    <div class="history-metric ${visibleMetrics.temperature ? '' : 'hidden'}">
-                                        <div class="metric-value">${formatNumber(reading.temperature)}°F</div>
-                                        <div class="metric-label">Temperature</div>
+                    // Render history for selected category
+                    if (data.recent_readings_full && data.recent_readings_full.length > 0) {
+                        const sensors = sensorsByCategory[selectedHistoryCategory] || [];
+                        const sensorUnits = data.stats_by_category?.[selectedHistoryCategory]?.sensors || {};
+
+                        const historyHTML = data.recent_readings_full.map(reading => {
+                            const metricsHtml = sensors.map(sensor => {
+                                const displayName = sensor.replace(/_/g, ' ').toUpperCase();
+                                const value = reading[sensor];
+                                const unit = sensorUnits[sensor]?.unit || '';
+                                return `
+                                    <div class="history-metric">
+                                        <div class="metric-value">${formatNumber(value)}${unit ? '<span class="sensor-unit">' + unit + '</span>' : ''}</div>
+                                        <div class="metric-label">${displayName}</div>
                                     </div>
-                                    <div class="history-metric ${visibleMetrics.pressure ? '' : 'hidden'}">
-                                        <div class="metric-value">${formatNumber(reading.pressure)}</div>
-                                        <div class="metric-label">Pressure (PSI)</div>
-                                    </div>
-                                    <div class="history-metric ${visibleMetrics.vibration ? '' : 'hidden'}">
-                                        <div class="metric-value">${formatNumber(reading.vibration)}</div>
-                                        <div class="metric-label">Vibration (mm/s)</div>
-                                    </div>
-                                    <div class="history-metric ${visibleMetrics.humidity ? '' : 'hidden'}">
-                                        <div class="metric-value">${formatNumber(reading.humidity)}%</div>
-                                        <div class="metric-label">Humidity</div>
-                                    </div>
-                                    <div class="history-metric ${visibleMetrics.rpm ? '' : 'hidden'}">
-                                        <div class="metric-value">${formatNumber(reading.rpm, 0)}</div>
-                                        <div class="metric-label">RPM</div>
-                                    </div>
+                                `;
+                            }).join('');
+
+                            return `
+                                <div class="history-item">
+                                    <div class="history-timestamp">${formatDateTime(reading.created_at)}</div>
+                                    <div class="history-grid">${metricsHtml}</div>
                                 </div>
-                            </div>
-                        `).join('');
+                            `;
+                        }).join('');
                         document.getElementById('readingsHistory').innerHTML = historyHTML;
                     } else {
                         document.getElementById('readingsHistory').innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet</div>';

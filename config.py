@@ -9,7 +9,7 @@ Contains all settings for Kafka, PostgreSQL, timing, and sensor parameters.
 
 # Default configuration values so the dashboard can reset safely
 DEFAULT_DURATION_HOURS = 3.0
-DEFAULT_INTERVAL_SECONDS = 1
+DEFAULT_INTERVAL_SECONDS = 10
 
 # Limits for dashboard config validation
 CONFIG_LIMITS = {

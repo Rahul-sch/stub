@@ -553,8 +553,14 @@
         animation: slideDown 0.2s ease-out;
       }
       @keyframes slideDown {
-        from { opacity: 0; transform: translateY(-8px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
       .threshold-row {
         display: flex;
@@ -1745,10 +1751,10 @@
 
       // Store custom thresholds in sessionStorage
       let customThresholds = {};
-      
+
       // Track expanded threshold controls (survives re-renders)
       let expandedThresholds = new Set();
-      
+
       // Store default thresholds from backend (SENSOR_THRESHOLDS)
       let defaultThresholds = {};
 
@@ -1763,7 +1769,7 @@
           console.error("Failed to load thresholds:", e);
         }
       }
-      
+
       // Load default thresholds from backend API
       function loadDefaultThresholds() {
         fetch("/api/thresholds")
@@ -1800,14 +1806,18 @@
         }
         return { min: 0, max: 100 }; // Fallback
       }
-      
+
       // Get default threshold values for a sensor
       function getDefaultThreshold(sensorName) {
         const defaults = defaultThresholds[sensorName];
         if (defaults) {
-          return { low: defaults.low, high: defaults.high, unit: defaults.unit };
+          return {
+            low: defaults.low,
+            high: defaults.high,
+            unit: defaults.unit,
+          };
         }
-        return { low: 0, high: 100, unit: '' };
+        return { low: 0, high: 100, unit: "" };
       }
 
       // Toggle threshold controls visibility
@@ -1825,7 +1835,7 @@
           }
         }
       }
-      
+
       // Restore expanded state after re-render
       function restoreExpandedThresholds() {
         expandedThresholds.forEach((sensorName) => {
@@ -2118,7 +2128,8 @@
                         const checkedAttr = isHidden ? "" : "checked";
                         const threshold = getThreshold(name);
                         const defaults = getDefaultThreshold(name);
-                        const hasCustomThreshold = customThresholds[name] !== undefined;
+                        const hasCustomThreshold =
+                          customThresholds[name] !== undefined;
                         const thresholdActiveClass = hasCustomThreshold
                           ? "threshold-active"
                           : "";
@@ -2139,21 +2150,33 @@
                                                     <div class="threshold-field">
                                                         <span class="threshold-label">Low Limit</span>
                                                         <input type="number" class="threshold-input" id="min-${name}" 
-                                                               value="${threshold.min}" step="any" 
-                                                               placeholder="${defaults.low}">
+                                                               value="${
+                                                                 threshold.min
+                                                               }" step="any" 
+                                                               placeholder="${
+                                                                 defaults.low
+                                                               }">
                                                     </div>
                                                     <div class="threshold-field">
                                                         <span class="threshold-label">High Limit</span>
                                                         <input type="number" class="threshold-input" id="max-${name}" 
-                                                               value="${threshold.max}" step="any"
-                                                               placeholder="${defaults.high}">
+                                                               value="${
+                                                                 threshold.max
+                                                               }" step="any"
+                                                               placeholder="${
+                                                                 defaults.high
+                                                               }">
                                                     </div>
                                                 </div>
                                                 <div class="threshold-buttons">
                                                     <button class="threshold-save-btn" onclick="saveThreshold('${name}', event)">💾 Save</button>
                                                     <button class="threshold-reset-btn" onclick="resetThreshold('${name}', event)">↩️ Reset</button>
                                                 </div>
-                                                <div class="threshold-default">📊 Safe range: ${defaults.low} – ${defaults.high} ${defaults.unit}</div>
+                                                <div class="threshold-default">📊 Safe range: ${
+                                                  defaults.low
+                                                } – ${defaults.high} ${
+                          defaults.unit
+                        }</div>
                                             </div>
                                         </div>
                                     `;
@@ -2167,7 +2190,7 @@
                                 `;
                   })
                   .join("");
-                  
+
                 // Restore any expanded threshold controls after re-render
                 restoreExpandedThresholds();
               }

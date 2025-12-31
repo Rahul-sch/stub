@@ -449,11 +449,12 @@ def stop_component(component):
 
     try:
         proc = processes.get(component)
+        killed_pids = []
+
+        # First try to kill tracked process
         if proc:
             pid = proc.pid
-            # Use taskkill to force terminate the process tree on Windows
             if os.name == 'nt':
-                # /F = force, /T = terminate child processes, /PID = process ID
                 subprocess.run(['taskkill', '/F', '/T', '/PID', str(pid)],
                              capture_output=True, timeout=5)
             else:
@@ -464,12 +465,78 @@ def stop_component(component):
             except subprocess.TimeoutExpired:
                 pass
 
+            killed_pids.append(pid)
             processes[component] = None
-            return jsonify({'success': True, 'pid': pid})
+
+        # Also search for any running processes with the component script name
+        # This catches processes started outside the dashboard
+        if os.name == 'nt':
+            try:
+                # Use WMIC to find Python processes running the component script
+                script_name = f'{component}.py'
+                result = subprocess.run(
+                    ['wmic', 'process', 'where', f"CommandLine like '%{script_name}%'", 'get', 'CommandLine,ProcessId'],
+                    capture_output=True, text=True, timeout=2
+                )
+
+                # Parse output and filter for actual Python processes (not wmic itself)
+                lines = result.stdout.strip().split('\n')
+                for line in lines[1:]:  # Skip header
+                    try:
+                        # Extract PID from the end of the line
+                        parts = line.strip().split()
+                        if parts and parts[-1].isdigit():
+                            # Check if this is an actual python process (not wmic)
+                            if script_name in line and 'wmic' not in line.lower() and 'python' in line.lower():
+                                pid = parts[-1]
+                                subprocess.run(['taskkill', '/F', '/T', '/PID', pid],
+                                             capture_output=True, timeout=2)
+                                killed_pids.append(int(pid))
+                    except:
+                        pass
+            except:
+                pass
+
+        if killed_pids:
+            return jsonify({'success': True, 'pids': killed_pids})
         else:
-            return jsonify({'success': False, 'error': 'Not running'})
+            return jsonify({'success': False, 'error': 'No running process found'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+def is_component_running(component):
+    """Check if a component (producer or consumer) is running, even if not tracked by dashboard"""
+    # First check tracked process
+    proc = processes.get(component)
+    if proc and proc.poll() is None:
+        return True
+
+    # If tracked process is dead, clean it up
+    if proc:
+        processes[component] = None
+
+    # Search for any running process with the component script name on Windows
+    if os.name == 'nt':
+        try:
+            script_name = f'{component}.py'
+            # Use WMIC to get both ProcessId and CommandLine
+            result = subprocess.run(
+                ['wmic', 'process', 'where', f"CommandLine like '%{script_name}%'", 'get', 'CommandLine,ProcessId'],
+                capture_output=True, text=True, timeout=2
+            )
+
+            # Filter out lines that are from wmic itself and check for actual script execution
+            lines = result.stdout.strip().split('\n')
+            for line in lines[1:]:  # Skip header
+                line = line.strip()
+                # Check if this is an actual python process running the script (not wmic)
+                if script_name in line and 'wmic' not in line.lower() and 'python' in line.lower():
+                    return True
+        except Exception:
+            # If WMIC fails, return False (assume not running)
+            pass
+
+    return False
 
 @app.route('/api/status')
 def api_status():
@@ -477,16 +544,13 @@ def api_status():
     with kafka_health_lock:
         kafka_snapshot = kafka_health.copy()
 
-    # Check if processes are actually running
-    for component in ['producer', 'consumer']:
-        proc = processes.get(component)
-        if proc and proc.poll() is not None:
-            # Process has terminated, clean it up
-            processes[component] = None
+    # Check if processes are actually running (including those not tracked by dashboard)
+    producer_running = is_component_running('producer')
+    consumer_running = is_component_running('consumer')
 
     return jsonify({
-        'producer_running': processes['producer'] is not None and processes['producer'].poll() is None,
-        'consumer_running': processes['consumer'] is not None and processes['consumer'].poll() is None,
+        'producer_running': producer_running,
+        'consumer_running': consumer_running,
         'kafka': kafka_snapshot
     })
 

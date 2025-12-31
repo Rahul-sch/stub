@@ -476,6 +476,26 @@
             font-size: 12px;
             margin-left: 4px;
         }
+        .sensor-toggle {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+        .sensor-toggle:hover {
+            opacity: 1;
+        }
+        .sensor-item.hidden-sensor {
+            opacity: 0.3;
+            filter: grayscale(100%);
+        }
+        .sensor-item {
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -491,7 +511,8 @@
                     <div class="big-stat-value" id="totalCount">0</div>
                     <div class="big-stat-label">Total Messages</div>
                 </div>
-                <div id="keyStats"></div>
+                <div class="tabs" id="statsCategoryTabs"></div>
+                <div id="statsCategoryContent"></div>
             </div>
 
             <!-- Control Card -->
@@ -637,6 +658,50 @@
             'fluid': ['flow_rate', 'fluid_pressure', 'viscosity', 'density', 'reynolds_number', 'pipe_pressure_drop', 'pump_efficiency', 'cavitation_index', 'turbulence', 'valve_position']
         };
 
+        // Hidden sensors state tracking
+        let hiddenSensors = new Set();
+
+        // Chart visibility tracking
+        let visibleMetrics = {
+            temperature: true,
+            pressure: true,
+            vibration: true,
+            humidity: true,
+            rpm: true
+        };
+
+        // Load hidden sensors from localStorage on page load
+        function loadHiddenSensors() {
+            try {
+                const stored = localStorage.getItem('hiddenSensors');
+                if (stored) {
+                    hiddenSensors = new Set(JSON.parse(stored));
+                }
+            } catch (e) {
+                console.error('Failed to load hidden sensors:', e);
+            }
+        }
+
+        // Save hidden sensors to localStorage
+        function saveHiddenSensors() {
+            try {
+                localStorage.setItem('hiddenSensors', JSON.stringify([...hiddenSensors]));
+            } catch (e) {
+                console.error('Failed to save hidden sensors:', e);
+            }
+        }
+
+        // Toggle sensor visibility
+        function toggleSensor(sensorName) {
+            if (hiddenSensors.has(sensorName)) {
+                hiddenSensors.delete(sensorName);
+            } else {
+                hiddenSensors.add(sensorName);
+            }
+            saveHiddenSensors();
+            updateStats();
+        }
+
         function changeHistoryCategory() {
             selectedHistoryCategory = document.getElementById('historyCategory').value;
             updateStats();
@@ -656,6 +721,7 @@
         }
 
         let activeCategory = 'environmental';
+        let activeStatsCategory = 'environmental';
         const categoryIcons = {
             'environmental': '🌍',
             'mechanical': '⚙️',
@@ -666,12 +732,24 @@
 
         function switchCategory(category) {
             activeCategory = category;
-            // Update tab UI
-            document.querySelectorAll('.tab').forEach(tab => {
+            // Update tab UI for All Sensor Parameters
+            document.querySelectorAll('#categoryTabs .tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.category === category);
             });
-            // Update content UI
-            document.querySelectorAll('.tab-content').forEach(content => {
+            // Update content UI for All Sensor Parameters
+            document.querySelectorAll('#categoryContent .tab-content').forEach(content => {
+                content.classList.toggle('active', content.dataset.category === category);
+            });
+        }
+
+        function switchStatsCategory(category) {
+            activeStatsCategory = category;
+            // Update tab UI for Statistics
+            document.querySelectorAll('#statsCategoryTabs .tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.category === category);
+            });
+            // Update content UI for Statistics
+            document.querySelectorAll('#statsCategoryContent .tab-content').forEach(content => {
                 content.classList.toggle('active', content.dataset.category === category);
             });
         }
@@ -682,20 +760,54 @@
                 .then(data => {
                     document.getElementById('totalCount').textContent = data.total_count || 0;
 
-                    // Update key stats (top 5)
-                    const keyStatsEl = document.getElementById('keyStats');
-                    if (keyStatsEl && data.recent_readings && data.recent_readings.length > 0) {
-                        const latest = data.recent_readings[0];
-                        keyStatsEl.innerHTML = `
-                            <div class="stat"><span class="stat-label">RPM</span><span class="stat-value">${formatNumber(latest.rpm, 0)}</span></div>
-                            <div class="stat"><span class="stat-label">Temperature</span><span class="stat-value">${formatNumber(latest.temperature)}°F</span></div>
-                            <div class="stat"><span class="stat-label">Vibration</span><span class="stat-value">${formatNumber(latest.vibration)} mm/s</span></div>
-                            <div class="stat"><span class="stat-label">Pressure</span><span class="stat-value">${formatNumber(latest.pressure)} PSI</span></div>
-                            <div class="stat"><span class="stat-label">Humidity</span><span class="stat-value">${formatNumber(latest.humidity)}%</span></div>
-                        `;
+                    // Update Statistics section with category tabs
+                    if (data.stats_by_category) {
+                        const statsTabsEl = document.getElementById('statsCategoryTabs');
+                        const statsContentEl = document.getElementById('statsCategoryContent');
+
+                        if (statsTabsEl && !statsTabsEl.hasChildNodes()) {
+                            // Build tabs for Statistics (only once)
+                            const categories = Object.keys(data.stats_by_category);
+                            statsTabsEl.innerHTML = categories.map(cat => {
+                                const catData = data.stats_by_category[cat];
+                                const icon = categoryIcons[cat] || '📊';
+                                const isActive = cat === activeStatsCategory ? 'active' : '';
+                                return `<div class="tab ${isActive}" data-category="${cat}" onclick="switchStatsCategory('${cat}')">${icon} ${catData.name}</div>`;
+                            }).join('');
+                        }
+
+                        if (statsContentEl) {
+                            // Build content for Statistics categories
+                            const categories = Object.keys(data.stats_by_category);
+                            statsContentEl.innerHTML = categories.map(cat => {
+                                const catData = data.stats_by_category[cat];
+                                const isActive = cat === activeStatsCategory ? 'active' : '';
+
+                                // Filter out hidden sensors
+                                const visibleSensors = Object.entries(catData.sensors)
+                                    .filter(([name, info]) => !hiddenSensors.has(name));
+
+                                const statsHtml = visibleSensors.map(([name, info]) => {
+                                    const displayName = name.replace(/_/g, ' ').toUpperCase();
+                                    const value = info.value !== null && info.value !== undefined ? formatNumber(info.value) : '--';
+                                    return `
+                                        <div class="stat">
+                                            <span class="stat-label">${displayName}</span>
+                                            <span class="stat-value">${value}${info.unit ? ' ' + info.unit : ''}</span>
+                                        </div>
+                                    `;
+                                }).join('');
+
+                                return `
+                                    <div class="tab-content ${isActive}" data-category="${cat}">
+                                        ${statsHtml || '<div class="stat"><span class="stat-label">No visible sensors</span></div>'}
+                                    </div>
+                                `;
+                            }).join('');
+                        }
                     }
 
-                    // Update categorized sensor data
+                    // Update categorized sensor data for All Sensor Parameters section
                     if (data.stats_by_category) {
                         const tabsEl = document.getElementById('categoryTabs');
                         const contentEl = document.getElementById('categoryContent');
@@ -720,8 +832,12 @@
                                 const sensorsHtml = Object.entries(catData.sensors).map(([name, info]) => {
                                     const displayName = name.replace(/_/g, ' ').toUpperCase();
                                     const value = info.value !== null && info.value !== undefined ? formatNumber(info.value) : '--';
+                                    const isHidden = hiddenSensors.has(name);
+                                    const hiddenClass = isHidden ? 'hidden-sensor' : '';
+                                    const checkedAttr = isHidden ? '' : 'checked';
                                     return `
-                                        <div class="sensor-item">
+                                        <div class="sensor-item ${hiddenClass}" data-sensor="${name}">
+                                            <input type="checkbox" class="sensor-toggle" ${checkedAttr} onchange="toggleSensor('${name}')" title="Toggle visibility">
                                             <div class="sensor-name">${displayName}</div>
                                             <div class="sensor-value">${value}<span class="sensor-unit">${info.unit}</span></div>
                                         </div>
@@ -743,17 +859,19 @@
                         const sensorUnits = data.stats_by_category?.[selectedHistoryCategory]?.sensors || {};
 
                         const historyHTML = data.recent_readings_full.map(reading => {
-                            const metricsHtml = sensors.map(sensor => {
-                                const displayName = sensor.replace(/_/g, ' ').toUpperCase();
-                                const value = reading[sensor];
-                                const unit = sensorUnits[sensor]?.unit || '';
-                                return `
-                                    <div class="history-metric">
-                                        <div class="metric-value">${formatNumber(value)}${unit ? '<span class="sensor-unit">' + unit + '</span>' : ''}</div>
-                                        <div class="metric-label">${displayName}</div>
-                                    </div>
-                                `;
-                            }).join('');
+                            const metricsHtml = sensors
+                                .filter(sensor => !hiddenSensors.has(sensor)) // Filter out hidden sensors
+                                .map(sensor => {
+                                    const displayName = sensor.replace(/_/g, ' ').toUpperCase();
+                                    const value = reading[sensor];
+                                    const unit = sensorUnits[sensor]?.unit || '';
+                                    return `
+                                        <div class="history-metric">
+                                            <div class="metric-value">${formatNumber(value)}${unit ? '<span class="sensor-unit">' + unit + '</span>' : ''}</div>
+                                            <div class="metric-label">${displayName}</div>
+                                        </div>
+                                    `;
+                                }).join('');
 
                             return `
                                 <div class="history-item">
@@ -1023,6 +1141,7 @@
         }, 2000);
 
         // Initial load
+        loadHiddenSensors();
         updateStats();
         updateStatus();
         loadConfig();

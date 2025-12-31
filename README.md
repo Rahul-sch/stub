@@ -158,7 +158,8 @@ docker-compose down -v
 
 📖 **Documentation:**
 
-- [`docs/ARCHITECTURE_AND_DEVELOPMENT_PLAN.md`](docs/ARCHITECTURE_AND_DEVELOPMENT_PLAN.md) - High-level architecture & product roadmap
+- [`docs/FINAL_PROJECT_REPORT.md`](docs/FINAL_PROJECT_REPORT.md) - **Final Report** (concept, market, risks, revenue)
+- [`docs/ARCHITECTURE_AND_DEVELOPMENT_PLAN.md`](docs/ARCHITECTURE_AND_DEVELOPMENT_PLAN.md) - Architecture & development roadmap
 - [`docs/uml_diagrams.md`](docs/uml_diagrams.md) - Comprehensive UML diagrams
 
 ---

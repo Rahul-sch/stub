@@ -241,6 +241,14 @@
             background: #ef4444;
             box-shadow: 0 0 10px #ef4444;
         }
+        .status-pending {
+            background: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+        .status-unknown {
+            background: #64748b;
+            box-shadow: 0 0 10px #64748b;
+        }
         .history-container {
             max-height: 600px;
             overflow-y: auto;
@@ -483,6 +491,158 @@
         .sensor-item {
             position: relative;
         }
+        .card-intro {
+            font-size: 14px;
+            color: #cbd5f5;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        .hero-info {
+            margin-bottom: 24px;
+            border-radius: 18px;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            background: rgba(15, 23, 42, 0.4);
+            overflow: hidden;
+        }
+        .hero-info summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 18px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: rgba(30, 41, 59, 0.7);
+        }
+        .hero-info summary::-webkit-details-marker {
+            display: none;
+        }
+        .hero-info .chevron {
+            transition: transform 0.3s;
+            font-size: 18px;
+        }
+        .hero-info[open] .chevron {
+            transform: rotate(180deg);
+        }
+        .hero-wrapper {
+            padding: 20px;
+        }
+        .hero {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .hero h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #f8fafc;
+        }
+        .hero p {
+            color: #cbd5f5;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .step-list {
+            list-style: none;
+            display: grid;
+            gap: 10px;
+        }
+        .step-list li {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(96, 165, 250, 0.1);
+            align-items: center;
+        }
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+        }
+        .pipeline-flow {
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+        .flow-node {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px;
+            border-radius: 14px;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(96, 165, 250, 0.1);
+        }
+        .flow-title {
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 6px;
+        }
+        .flow-text {
+            font-size: 13px;
+            color: #cbd5f5;
+            line-height: 1.4;
+        }
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-weight: 700;
+            font-size: 18px;
+            min-width: 24px;
+        }
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(96, 165, 250, 0.1);
+            font-size: 13px;
+            color: #cbd5f5;
+        }
+        .info-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            font-size: 13px;
+            background: rgba(96, 165, 250, 0.08);
+            color: #cbd5f5;
+            margin-top: 12px;
+        }
+        .hero-note {
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
@@ -490,10 +650,94 @@
         <h1>🚀 Sensor Data Pipeline</h1>
         <div class="subtitle">Real-Time IoT Monitoring Dashboard</div>
 
+        <details class="hero-info" id="onboardingDetails">
+            <summary>
+                <span>?? New to this dashboard? Click to learn how it works.</span>
+                <span class="chevron">▼</span>
+            </summary>
+            <div class="hero-wrapper">
+                <div class="hero">
+                    <div>
+                        <h3>Quick start steps</h3>
+                        <p>This panel lets you start, stop, and watch an entire demo factory pipeline. Follow the three quick steps below and the rest of the cards will begin to fill themselves in.</p>
+                        <ul class="step-list">
+                            <li>
+                                <span class="step-number">1</span>
+                                <div>
+                                    <strong>Start the Consumer (Waiter)</strong>
+                                    <div class="hero-note">It listens for new readings and writes them into PostgreSQL. Start this before anything else.</div>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="step-number">2</span>
+                                <div>
+                                    <strong>Start the Producer (Data maker)</strong>
+                                    <div class="hero-note">This generates pretend sensor readings and hands them to Kafka so the consumer has something to save.</div>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="step-number">3</span>
+                                <div>
+                                    <strong>Watch the Status, Alerts, and Live Readings</strong>
+                                    <div class="hero-note">Green dots mean the pieces are healthy. Any alert shows up in plain English so you know what needs attention.</div>
+                                </div>
+                            </li>
+                        </ul>
+                        <div class="info-pill">✳ Need a shortcut? Use the presets in the Configuration card and keep this page open to see everything update in real time.</div>
+                    </div>
+                    <div>
+                        <h3>What is happening end-to-end?</h3>
+                        <div class="pipeline-flow" aria-label="Pipeline overview">
+                            <div class="flow-node">
+                                <div class="flow-title">Producer</div>
+                                <div class="flow-text">Creates fake machine readings based on the ranges in <code>config.py</code>.</div>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-node">
+                                <div class="flow-title">Kafka</div>
+                                <div class="flow-text">Acts like a conveyor belt. Messages queue here until the consumer grabs them.</div>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-node">
+                                <div class="flow-title">Consumer</div>
+                                <div class="flow-text">Validates each reading, flags anomalies, and writes everything to the database.</div>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-node">
+                                <div class="flow-title">Database</div>
+                                <div class="flow-text">Stores the official record shown in the stats, alerts, and history sections.</div>
+                            </div>
+                        </div>
+                        <h3 style="margin-top: 20px;">What the colors mean</h3>
+                        <div class="legend">
+                            <div class="legend-item">
+                                <span class="status-indicator status-running"></span>
+                                Running and healthy
+                            </div>
+                            <div class="legend-item">
+                                <span class="status-indicator status-stopped"></span>
+                                Stopped or not reachable
+                            </div>
+                            <div class="legend-item">
+                                <span class="status-indicator status-pending"></span>
+                                Starting up / waiting on a reply
+                            </div>
+                            <div class="legend-item">
+                                <span class="status-indicator status-unknown"></span>
+                                Not checked yet (refreshing soon)
+                            </div>
+                        </div>
+                        <div class="hero-note" style="margin-top: 16px;">Tip: If you forget what a section is for, read the short description right under each card heading.</div>
+                    </div>
+                </div>
+            </div>
+        </details>
+
         <div class="grid">
             <!-- Stats Card -->
             <div class="card">
                 <h2>📊 Statistics</h2>
+                <p class="card-intro">Shows how many readings have been saved and highlights the latest sensor values. If you just started the pipeline, this number will ramp up as messages flow through.</p>
                 <div class="big-stat">
                     <div class="big-stat-value" id="totalCount">0</div>
                     <div class="big-stat-label">Total Messages</div>
@@ -505,6 +749,7 @@
             <!-- Control Card -->
             <div class="card">
                 <h2>⚙️ Controls</h2>
+                <p class="card-intro">Think of this as the on/off switchboard. Start the consumer first, then the producer. Stop buttons immediately send a shutdown signal to each Python process.</p>
                 <div class="stat">
                     <span class="stat-label">
                         <span class="status-indicator" id="producerStatus"></span>
@@ -545,6 +790,7 @@
             <div class="card">
                 <h2>🔧 Configuration</h2>
 
+                <p class="card-intro">Tell the producer how long to run and how often to send readings. The dashboard calculates the total messages for you and keeps the last update visible below.</p>
                 <label>Duration</label>
                 <div class="input-group">
                     <div class="input-wrapper">
@@ -583,6 +829,7 @@
             <!-- Alerts Card -->
             <div class="card">
                 <h2>🚨 Alerts</h2>
+                <p class="card-intro">Every anomaly, failure, or manual action is stored here in plain English. Use it as the event log when something looks off.</p>
                 <div class="alert-list" id="alertList">
                     <div style="text-align: center; color: #94a3b8; padding: 20px;">
                         No alerts yet
@@ -594,6 +841,7 @@
         <!-- 50 Parameters by Category -->
         <div class="card">
             <h2>🎯 All Sensor Parameters (50)</h2>
+            <p class="card-intro">Grouped by category so you can see how the 50 different readings are trending without memorizing names. Toggle categories to focus on the ones you care about.</p>
             <div class="tabs" id="categoryTabs"></div>
             <div id="categoryContent"></div>
         </div>
@@ -601,6 +849,7 @@
         <!-- Readings History Card -->
         <div class="card">
             <h2>📡 Live Sensor Readings</h2>
+            <p class="card-intro">A rolling timeline of raw values pulled straight from the database. Pick a category and skim the cards to spot jumps or dips.</p>
             <label>Select Category to Monitor</label>
             <select id="historyCategory" onchange="changeHistoryCategory()" style="width: 100%; padding: 14px; border-radius: 12px; background: rgba(15, 23, 42, 0.6); color: #e2e8f0; border: 1px solid rgba(148, 163, 184, 0.2); font-size: 15px; font-weight: 600; margin-bottom: 20px; cursor: pointer;">
                 <option value="environmental">🌍 Environmental Sensors</option>

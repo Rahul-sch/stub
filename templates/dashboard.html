@@ -403,6 +403,79 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
         }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: rgba(71, 85, 105, 0.3);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .tab:hover {
+            background: rgba(71, 85, 105, 0.5);
+            border-color: rgba(96, 165, 250, 0.3);
+        }
+        .tab.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .sensor-item {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(96, 165, 250, 0.1);
+            transition: all 0.3s;
+        }
+        .sensor-item:hover {
+            border-color: rgba(96, 165, 250, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(96, 165, 250, 0.1);
+        }
+        .sensor-name {
+            color: #94a3b8;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .sensor-value {
+            font-size: 24px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sensor-unit {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-left: 4px;
+        }
     </style>
 </head>
 <body>
@@ -418,7 +491,7 @@
                     <div class="big-stat-value" id="totalCount">0</div>
                     <div class="big-stat-label">Total Messages</div>
                 </div>
-                <div id="averages"></div>
+                <div id="keyStats"></div>
             </div>
 
             <!-- Control Card -->
@@ -519,6 +592,13 @@
             </div>
         </div>
 
+        <!-- 50 Parameters by Category -->
+        <div class="card">
+            <h2>🎯 All Sensor Parameters (50)</h2>
+            <div class="tabs" id="categoryTabs"></div>
+            <div id="categoryContent"></div>
+        </div>
+
         <!-- Readings History Card -->
         <div class="card">
             <h2>📡 Readings History</h2>
@@ -573,20 +653,86 @@
             return isNaN(date.getTime()) ? value : date.toLocaleString();
         }
 
+        let activeCategory = 'environmental';
+        const categoryIcons = {
+            'environmental': '🌍',
+            'mechanical': '⚙️',
+            'thermal': '🔥',
+            'electrical': '⚡',
+            'fluid': '💧'
+        };
+
+        function switchCategory(category) {
+            activeCategory = category;
+            // Update tab UI
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.category === category);
+            });
+            // Update content UI
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.dataset.category === category);
+            });
+        }
+
         function updateStats() {
             fetch('/api/stats')
                 .then(r => r.json())
                 .then(data => {
                     document.getElementById('totalCount').textContent = data.total_count || 0;
 
-                    if (data.averages) {
-                        document.getElementById('averages').innerHTML = `
-                            <div class="stat"><span class="stat-label">Avg Temperature</span><span class="stat-value">${formatNumber(data.averages.temperature)}°F</span></div>
-                            <div class="stat"><span class="stat-label">Avg Pressure</span><span class="stat-value">${formatNumber(data.averages.pressure)} PSI</span></div>
-                            <div class="stat"><span class="stat-label">Avg Vibration</span><span class="stat-value">${formatNumber(data.averages.vibration)} mm/s</span></div>
-                            <div class="stat"><span class="stat-label">Avg Humidity</span><span class="stat-value">${formatNumber(data.averages.humidity)}%</span></div>
-                            <div class="stat"><span class="stat-label">Avg RPM</span><span class="stat-value">${formatNumber(data.averages.rpm, 0)}</span></div>
+                    // Update key stats (top 5)
+                    const keyStatsEl = document.getElementById('keyStats');
+                    if (keyStatsEl && data.recent_readings && data.recent_readings.length > 0) {
+                        const latest = data.recent_readings[0];
+                        keyStatsEl.innerHTML = `
+                            <div class="stat"><span class="stat-label">RPM</span><span class="stat-value">${formatNumber(latest.rpm, 0)}</span></div>
+                            <div class="stat"><span class="stat-label">Temperature</span><span class="stat-value">${formatNumber(latest.temperature)}°F</span></div>
+                            <div class="stat"><span class="stat-label">Vibration</span><span class="stat-value">${formatNumber(latest.vibration)} mm/s</span></div>
+                            <div class="stat"><span class="stat-label">Pressure</span><span class="stat-value">${formatNumber(latest.pressure)} PSI</span></div>
+                            <div class="stat"><span class="stat-label">Humidity</span><span class="stat-value">${formatNumber(latest.humidity)}%</span></div>
                         `;
+                    }
+
+                    // Update categorized sensor data
+                    if (data.stats_by_category) {
+                        const tabsEl = document.getElementById('categoryTabs');
+                        const contentEl = document.getElementById('categoryContent');
+
+                        if (tabsEl && !tabsEl.hasChildNodes()) {
+                            // Build tabs (only once)
+                            const categories = Object.keys(data.stats_by_category);
+                            tabsEl.innerHTML = categories.map(cat => {
+                                const catData = data.stats_by_category[cat];
+                                const icon = categoryIcons[cat] || '📊';
+                                const isActive = cat === activeCategory ? 'active' : '';
+                                return `<div class="tab ${isActive}" data-category="${cat}" onclick="switchCategory('${cat}')">${icon} ${catData.name}</div>`;
+                            }).join('');
+                        }
+
+                        if (contentEl) {
+                            // Build content for all categories
+                            const categories = Object.keys(data.stats_by_category);
+                            contentEl.innerHTML = categories.map(cat => {
+                                const catData = data.stats_by_category[cat];
+                                const isActive = cat === activeCategory ? 'active' : '';
+                                const sensorsHtml = Object.entries(catData.sensors).map(([name, info]) => {
+                                    const displayName = name.replace(/_/g, ' ').toUpperCase();
+                                    const value = info.value !== null && info.value !== undefined ? formatNumber(info.value) : '--';
+                                    return `
+                                        <div class="sensor-item">
+                                            <div class="sensor-name">${displayName}</div>
+                                            <div class="sensor-value">${value}<span class="sensor-unit">${info.unit}</span></div>
+                                        </div>
+                                    `;
+                                }).join('');
+
+                                return `
+                                    <div class="tab-content ${isActive}" data-category="${cat}">
+                                        <div class="sensor-grid">${sensorsHtml}</div>
+                                    </div>
+                                `;
+                            }).join('');
+                        }
                     }
 
                     const readings = data.recent_readings || [];

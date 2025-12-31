@@ -80,31 +80,28 @@ class SensorDataProducer:
         return None
 
     def generate_sensor_reading(self):
-        """Generate a correlated sensor reading with timestamp."""
+        """Generate a correlated sensor reading with all 50 parameters."""
         # Start with RPM as the base - machinery speed drives other values
         rpm = round(random.uniform(
             config.SENSOR_RANGES['rpm']['min'],
             config.SENSOR_RANGES['rpm']['max']
         ), 2)
 
-        # Higher RPM = Higher temperature (machinery heats up with speed)
-        # Normalize RPM to 0-1 range, then map to temperature range
+        # Normalize RPM to 0-1 range for correlations
         rpm_normalized = (rpm - config.SENSOR_RANGES['rpm']['min']) / (
             config.SENSOR_RANGES['rpm']['max'] - config.SENSOR_RANGES['rpm']['min']
         )
+
+        # === ENVIRONMENTAL SENSORS ===
+        # Higher RPM = Higher temperature (machinery heats up with speed)
         temp_min = config.SENSOR_RANGES['temperature']['min']
         temp_max = config.SENSOR_RANGES['temperature']['max']
         temperature = round(temp_min + (rpm_normalized * (temp_max - temp_min)) + random.uniform(-5, 5), 2)
-        temperature = max(temp_min, min(temp_max, temperature))  # Clamp to range
+        temperature = max(temp_min, min(temp_max, temperature))
 
-        # Higher RPM = Higher vibration (faster rotation = more vibration)
-        vib_min = config.SENSOR_RANGES['vibration']['min']
-        vib_max = config.SENSOR_RANGES['vibration']['max']
-        vibration = round(vib_min + (rpm_normalized * (vib_max - vib_min)) + random.uniform(-1, 1), 2)
-        vibration = max(vib_min, min(vib_max, vibration))
+        temp_normalized = (temperature - temp_min) / (temp_max - temp_min)
 
         # Higher temperature = Lower humidity (heat dries air)
-        temp_normalized = (temperature - temp_min) / (temp_max - temp_min)
         hum_min = config.SENSOR_RANGES['humidity']['min']
         hum_max = config.SENSOR_RANGES['humidity']['max']
         humidity = round(hum_max - (temp_normalized * (hum_max - hum_min)) + random.uniform(-5, 5), 2)
@@ -116,13 +113,274 @@ class SensorDataProducer:
         pressure = round(press_min + (temp_normalized * 0.6 * (press_max - press_min)) + random.uniform(0, 3), 2)
         pressure = max(press_min, min(press_max, pressure))
 
+        # Ambient temperature slightly lower than machinery temperature
+        ambient_temp = round(temperature - random.uniform(5, 15), 2)
+        ambient_temp = max(config.SENSOR_RANGES['ambient_temp']['min'],
+                          min(config.SENSOR_RANGES['ambient_temp']['max'], ambient_temp))
+
+        # Dew point correlates with humidity and ambient temperature
+        dew_point = round(ambient_temp - ((100 - humidity) / 5), 2)
+        dew_point = max(config.SENSOR_RANGES['dew_point']['min'],
+                       min(config.SENSOR_RANGES['dew_point']['max'], dew_point))
+
+        # Higher RPM = More particles and worse air quality
+        air_quality_index = int(100 + (rpm_normalized * 200) + random.uniform(-50, 50))
+        air_quality_index = max(config.SENSOR_RANGES['air_quality_index']['min'],
+                               min(config.SENSOR_RANGES['air_quality_index']['max'], air_quality_index))
+
+        co2_level = int(600 + (rpm_normalized * 800) + random.uniform(-100, 100))
+        co2_level = max(config.SENSOR_RANGES['co2_level']['min'],
+                       min(config.SENSOR_RANGES['co2_level']['max'], co2_level))
+
+        particle_count = int(10000 + (rpm_normalized * 60000) + random.uniform(-5000, 5000))
+        particle_count = max(config.SENSOR_RANGES['particle_count']['min'],
+                            min(config.SENSOR_RANGES['particle_count']['max'], particle_count))
+
+        # Higher RPM = Higher noise
+        noise_level = int(60 + (rpm_normalized * 30) + random.uniform(-5, 5))
+        noise_level = max(config.SENSOR_RANGES['noise_level']['min'],
+                         min(config.SENSOR_RANGES['noise_level']['max'], noise_level))
+
+        light_intensity = int(random.uniform(config.SENSOR_RANGES['light_intensity']['min'],
+                                            config.SENSOR_RANGES['light_intensity']['max']))
+
+        # === MECHANICAL SENSORS ===
+        # Higher RPM = Higher vibration
+        vib_min = config.SENSOR_RANGES['vibration']['min']
+        vib_max = config.SENSOR_RANGES['vibration']['max']
+        vibration = round(vib_min + (rpm_normalized * (vib_max - vib_min)) + random.uniform(-1, 1), 2)
+        vibration = max(vib_min, min(vib_max, vibration))
+
+        # Torque correlates with RPM (power output)
+        torque = int(100 + (rpm_normalized * 300) + random.uniform(-30, 30))
+        torque = max(config.SENSOR_RANGES['torque']['min'],
+                    min(config.SENSOR_RANGES['torque']['max'], torque))
+
+        # Shaft alignment varies slightly with vibration
+        shaft_alignment = round(vibration * 0.05 * random.choice([-1, 1]) + random.uniform(-0.1, 0.1), 3)
+        shaft_alignment = max(config.SENSOR_RANGES['shaft_alignment']['min'],
+                             min(config.SENSOR_RANGES['shaft_alignment']['max'], shaft_alignment))
+
+        # Bearing temperature correlates with RPM
+        bearing_temp = int(80 + (rpm_normalized * 80) + random.uniform(-10, 10))
+        bearing_temp = max(config.SENSOR_RANGES['bearing_temp']['min'],
+                          min(config.SENSOR_RANGES['bearing_temp']['max'], bearing_temp))
+
+        # Motor current correlates with torque and RPM
+        motor_current = int(20 + (rpm_normalized * 60) + random.uniform(-5, 5))
+        motor_current = max(config.SENSOR_RANGES['motor_current']['min'],
+                           min(config.SENSOR_RANGES['motor_current']['max'], motor_current))
+
+        belt_tension = int(40 + (rpm_normalized * 40) + random.uniform(-5, 5))
+        belt_tension = max(config.SENSOR_RANGES['belt_tension']['min'],
+                          min(config.SENSOR_RANGES['belt_tension']['max'], belt_tension))
+
+        # Higher RPM = More gear wear
+        gear_wear = int(20 + (rpm_normalized * 50) + random.uniform(-10, 10))
+        gear_wear = max(config.SENSOR_RANGES['gear_wear']['min'],
+                       min(config.SENSOR_RANGES['gear_wear']['max'], gear_wear))
+
+        coupling_temp = int(70 + (rpm_normalized * 60) + random.uniform(-5, 5))
+        coupling_temp = max(config.SENSOR_RANGES['coupling_temp']['min'],
+                           min(config.SENSOR_RANGES['coupling_temp']['max'], coupling_temp))
+
+        lubrication_pressure = int(25 + (rpm_normalized * 25) + random.uniform(-3, 3))
+        lubrication_pressure = max(config.SENSOR_RANGES['lubrication_pressure']['min'],
+                                  min(config.SENSOR_RANGES['lubrication_pressure']['max'], lubrication_pressure))
+
+        # === THERMAL SENSORS ===
+        # Coolant temperature correlates with machinery temperature
+        coolant_temp = int(150 + (temp_normalized * 60) + random.uniform(-10, 10))
+        coolant_temp = max(config.SENSOR_RANGES['coolant_temp']['min'],
+                          min(config.SENSOR_RANGES['coolant_temp']['max'], coolant_temp))
+
+        # Exhaust temperature correlates with RPM and machinery temp
+        exhaust_temp = int(400 + (rpm_normalized * 400) + random.uniform(-50, 50))
+        exhaust_temp = max(config.SENSOR_RANGES['exhaust_temp']['min'],
+                          min(config.SENSOR_RANGES['exhaust_temp']['max'], exhaust_temp))
+
+        oil_temp = int(160 + (rpm_normalized * 70) + random.uniform(-10, 10))
+        oil_temp = max(config.SENSOR_RANGES['oil_temp']['min'],
+                      min(config.SENSOR_RANGES['oil_temp']['max'], oil_temp))
+
+        radiator_temp = int(160 + (temp_normalized * 60) + random.uniform(-10, 10))
+        radiator_temp = max(config.SENSOR_RANGES['radiator_temp']['min'],
+                           min(config.SENSOR_RANGES['radiator_temp']['max'], radiator_temp))
+
+        # Higher RPM = Better thermal efficiency (optimal operating range)
+        thermal_efficiency = int(70 + (rpm_normalized * 20) + random.uniform(-5, 5))
+        thermal_efficiency = max(config.SENSOR_RANGES['thermal_efficiency']['min'],
+                                min(config.SENSOR_RANGES['thermal_efficiency']['max'], thermal_efficiency))
+
+        heat_dissipation = int(1000 + (rpm_normalized * 3000) + random.uniform(-200, 200))
+        heat_dissipation = max(config.SENSOR_RANGES['heat_dissipation']['min'],
+                              min(config.SENSOR_RANGES['heat_dissipation']['max'], heat_dissipation))
+
+        inlet_temp = int(ambient_temp + random.uniform(0, 20))
+        inlet_temp = max(config.SENSOR_RANGES['inlet_temp']['min'],
+                        min(config.SENSOR_RANGES['inlet_temp']['max'], inlet_temp))
+
+        outlet_temp = int(inlet_temp + 40 + (rpm_normalized * 50) + random.uniform(-10, 10))
+        outlet_temp = max(config.SENSOR_RANGES['outlet_temp']['min'],
+                         min(config.SENSOR_RANGES['outlet_temp']['max'], outlet_temp))
+
+        core_temp = int(temperature + 50 + (rpm_normalized * 50) + random.uniform(-10, 10))
+        core_temp = max(config.SENSOR_RANGES['core_temp']['min'],
+                       min(config.SENSOR_RANGES['core_temp']['max'], core_temp))
+
+        surface_temp = int(temperature + random.uniform(-10, 30))
+        surface_temp = max(config.SENSOR_RANGES['surface_temp']['min'],
+                          min(config.SENSOR_RANGES['surface_temp']['max'], surface_temp))
+
+        # === ELECTRICAL SENSORS ===
+        # Voltage stable with slight variation
+        voltage = int(120 + random.uniform(-5, 5))
+        voltage = max(config.SENSOR_RANGES['voltage']['min'],
+                     min(config.SENSOR_RANGES['voltage']['max'], voltage))
+
+        # Current correlates with motor load (RPM and torque)
+        current = int(10 + (rpm_normalized * 30) + random.uniform(-3, 3))
+        current = max(config.SENSOR_RANGES['current']['min'],
+                     min(config.SENSOR_RANGES['current']['max'], current))
+
+        # Power factor degrades slightly at higher loads
+        power_factor = round(0.95 - (rpm_normalized * 0.15) + random.uniform(-0.05, 0.05), 3)
+        power_factor = max(config.SENSOR_RANGES['power_factor']['min'],
+                          min(config.SENSOR_RANGES['power_factor']['max'], power_factor))
+
+        frequency = round(60.0 + random.uniform(-0.5, 0.5), 2)
+        frequency = max(config.SENSOR_RANGES['frequency']['min'],
+                       min(config.SENSOR_RANGES['frequency']['max'], frequency))
+
+        resistance = round(10 + random.uniform(-5, 30), 2)
+        resistance = max(config.SENSOR_RANGES['resistance']['min'],
+                        min(config.SENSOR_RANGES['resistance']['max'], resistance))
+
+        capacitance = int(100 + random.uniform(-50, 400))
+        capacitance = max(config.SENSOR_RANGES['capacitance']['min'],
+                         min(config.SENSOR_RANGES['capacitance']['max'], capacitance))
+
+        inductance = round(2.0 + random.uniform(-1, 5), 2)
+        inductance = max(config.SENSOR_RANGES['inductance']['min'],
+                        min(config.SENSOR_RANGES['inductance']['max'], inductance))
+
+        phase_angle = int(random.uniform(config.SENSOR_RANGES['phase_angle']['min'],
+                                        config.SENSOR_RANGES['phase_angle']['max']))
+
+        # Higher current = More harmonic distortion
+        harmonic_distortion = int(2 + (current / 50 * 10) + random.uniform(-2, 2))
+        harmonic_distortion = max(config.SENSOR_RANGES['harmonic_distortion']['min'],
+                                 min(config.SENSOR_RANGES['harmonic_distortion']['max'], harmonic_distortion))
+
+        ground_fault = int(random.uniform(config.SENSOR_RANGES['ground_fault']['min'],
+                                         config.SENSOR_RANGES['ground_fault']['max']))
+
+        # === FLUID DYNAMICS SENSORS ===
+        # Flow rate correlates with pump speed (RPM)
+        flow_rate = int(100 + (rpm_normalized * 350) + random.uniform(-30, 30))
+        flow_rate = max(config.SENSOR_RANGES['flow_rate']['min'],
+                       min(config.SENSOR_RANGES['flow_rate']['max'], flow_rate))
+
+        # Fluid pressure correlates with flow rate
+        flow_normalized = flow_rate / 500
+        fluid_pressure = int(20 + (flow_normalized * 60) + random.uniform(-5, 5))
+        fluid_pressure = max(config.SENSOR_RANGES['fluid_pressure']['min'],
+                            min(config.SENSOR_RANGES['fluid_pressure']['max'], fluid_pressure))
+
+        # Viscosity varies with temperature (hotter = less viscous)
+        viscosity = int(50 - (temp_normalized * 30) + random.uniform(-5, 5))
+        viscosity = max(config.SENSOR_RANGES['viscosity']['min'],
+                       min(config.SENSOR_RANGES['viscosity']['max'], viscosity))
+
+        density = round(1.0 + random.uniform(-0.3, 0.3), 2)
+        density = max(config.SENSOR_RANGES['density']['min'],
+                     min(config.SENSOR_RANGES['density']['max'], density))
+
+        # Reynolds number correlates with flow rate
+        reynolds_number = int(4000 + (flow_normalized * 5000) + random.uniform(-500, 500))
+        reynolds_number = max(config.SENSOR_RANGES['reynolds_number']['min'],
+                             min(config.SENSOR_RANGES['reynolds_number']['max'], reynolds_number))
+
+        pipe_pressure_drop = int(5 + (flow_normalized * 35) + random.uniform(-3, 3))
+        pipe_pressure_drop = max(config.SENSOR_RANGES['pipe_pressure_drop']['min'],
+                                min(config.SENSOR_RANGES['pipe_pressure_drop']['max'], pipe_pressure_drop))
+
+        # Pump efficiency optimal at mid-range RPM
+        pump_efficiency = int(75 + ((0.5 - abs(rpm_normalized - 0.5)) * 30) + random.uniform(-5, 5))
+        pump_efficiency = max(config.SENSOR_RANGES['pump_efficiency']['min'],
+                             min(config.SENSOR_RANGES['pump_efficiency']['max'], pump_efficiency))
+
+        cavitation_index = int(2 + random.uniform(-1, 5))
+        cavitation_index = max(config.SENSOR_RANGES['cavitation_index']['min'],
+                              min(config.SENSOR_RANGES['cavitation_index']['max'], cavitation_index))
+
+        # Higher flow rate = More turbulence
+        turbulence = int(20 + (flow_normalized * 60) + random.uniform(-10, 10))
+        turbulence = max(config.SENSOR_RANGES['turbulence']['min'],
+                        min(config.SENSOR_RANGES['turbulence']['max'], turbulence))
+
+        valve_position = int(30 + (flow_normalized * 50) + random.uniform(-10, 10))
+        valve_position = max(config.SENSOR_RANGES['valve_position']['min'],
+                            min(config.SENSOR_RANGES['valve_position']['max'], valve_position))
+
+        # Build complete reading with all 50 parameters
         reading = {
             'timestamp': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S'),
+            # Environmental
             'temperature': temperature,
             'pressure': pressure,
-            'vibration': vibration,
             'humidity': humidity,
-            'rpm': rpm
+            'ambient_temp': ambient_temp,
+            'dew_point': dew_point,
+            'air_quality_index': air_quality_index,
+            'co2_level': co2_level,
+            'particle_count': particle_count,
+            'noise_level': noise_level,
+            'light_intensity': light_intensity,
+            # Mechanical
+            'vibration': vibration,
+            'rpm': rpm,
+            'torque': torque,
+            'shaft_alignment': shaft_alignment,
+            'bearing_temp': bearing_temp,
+            'motor_current': motor_current,
+            'belt_tension': belt_tension,
+            'gear_wear': gear_wear,
+            'coupling_temp': coupling_temp,
+            'lubrication_pressure': lubrication_pressure,
+            # Thermal
+            'coolant_temp': coolant_temp,
+            'exhaust_temp': exhaust_temp,
+            'oil_temp': oil_temp,
+            'radiator_temp': radiator_temp,
+            'thermal_efficiency': thermal_efficiency,
+            'heat_dissipation': heat_dissipation,
+            'inlet_temp': inlet_temp,
+            'outlet_temp': outlet_temp,
+            'core_temp': core_temp,
+            'surface_temp': surface_temp,
+            # Electrical
+            'voltage': voltage,
+            'current': current,
+            'power_factor': power_factor,
+            'frequency': frequency,
+            'resistance': resistance,
+            'capacitance': capacitance,
+            'inductance': inductance,
+            'phase_angle': phase_angle,
+            'harmonic_distortion': harmonic_distortion,
+            'ground_fault': ground_fault,
+            # Fluid Dynamics
+            'flow_rate': flow_rate,
+            'fluid_pressure': fluid_pressure,
+            'viscosity': viscosity,
+            'density': density,
+            'reynolds_number': reynolds_number,
+            'pipe_pressure_drop': pipe_pressure_drop,
+            'pump_efficiency': pump_efficiency,
+            'cavitation_index': cavitation_index,
+            'turbulence': turbulence,
+            'valve_position': valve_position
         }
         return reading
 
@@ -140,11 +398,12 @@ class SensorDataProducer:
 
             self.message_count += 1
 
-            # Log message sent
+            # Log message sent with key parameters
             self.logger.info(f"Message {self.message_count}/{self.total_messages} sent: "
                            f"timestamp={data['timestamp']}, "
+                           f"rpm={data['rpm']}, "
                            f"temp={data['temperature']}°F, "
-                           f"pressure={data['pressure']}PSI")
+                           f"vibration={data['vibration']}mm/s")
 
             # Log progress every N messages
             if self.message_count % config.LOG_PROGRESS_INTERVAL == 0:

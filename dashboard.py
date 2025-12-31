@@ -158,38 +158,55 @@ def start_kafka_monitor():
         heartbeat_thread_started = True
 
 def get_stats():
-    """Get current statistics from database"""
+    """Get current statistics from database with all 50 parameters organized by category"""
     conn = get_db_connection()
     if not conn:
         return {'error': 'Database not connected'}
 
     try:
+        import config
         cursor = conn.cursor()
 
         # Total count
         cursor.execute("SELECT COUNT(*) FROM sensor_readings;")
         total_count = cursor.fetchone()[0]
 
-        # Recent readings (last 20)
+        # Recent readings (last 10 with key parameters)
         cursor.execute("""
-            SELECT timestamp, temperature, pressure, vibration, humidity, rpm, created_at
+            SELECT timestamp, rpm, temperature, vibration, pressure, humidity, created_at
             FROM sensor_readings
             ORDER BY created_at DESC
-            LIMIT 20;
+            LIMIT 10;
         """)
         recent_readings = cursor.fetchall()
 
-        # Average values
-        cursor.execute("""
-            SELECT
-                AVG(temperature) as avg_temp,
-                AVG(pressure) as avg_pressure,
-                AVG(vibration) as avg_vibration,
-                AVG(humidity) as avg_humidity,
-                AVG(rpm) as avg_rpm
-            FROM sensor_readings;
-        """)
-        averages = cursor.fetchone()
+        # Calculate averages for all 50 parameters organized by category
+        stats_by_category = {}
+        for category_key, category_name in config.SENSOR_CATEGORIES.items():
+            # Get sensors in this category
+            sensors = [name for name, spec in config.SENSOR_RANGES.items()
+                      if spec.get('category') == category_key]
+
+            if sensors:
+                # Build dynamic query for averages
+                avg_fields = ', '.join([f"AVG({sensor})::NUMERIC(10,2) as avg_{sensor}" for sensor in sensors])
+                query = f"SELECT {avg_fields} FROM sensor_readings;"
+                cursor.execute(query)
+                averages = cursor.fetchone()
+
+                # Build category stats
+                category_stats = {}
+                for i, sensor in enumerate(sensors):
+                    value = averages[i] if averages and averages[i] is not None else None
+                    category_stats[sensor] = {
+                        'value': float(value) if value is not None else None,
+                        'unit': config.SENSOR_RANGES[sensor].get('unit', '')
+                    }
+
+                stats_by_category[category_key] = {
+                    'name': category_name,
+                    'sensors': category_stats
+                }
 
         cursor.close()
         conn.close()
@@ -199,21 +216,15 @@ def get_stats():
             'recent_readings': [
                 {
                     'timestamp': str(reading[0]),
-                    'temperature': reading[1],
-                    'pressure': reading[2],
+                    'rpm': reading[1],
+                    'temperature': reading[2],
                     'vibration': reading[3],
-                    'humidity': reading[4],
-                    'rpm': reading[5],
+                    'pressure': reading[4],
+                    'humidity': reading[5],
                     'created_at': str(reading[6])
                 } for reading in recent_readings
             ] if recent_readings else [],
-            'averages': {
-                'temperature': round(averages[0], 2) if averages[0] else 0,
-                'pressure': round(averages[1], 2) if averages[1] else 0,
-                'vibration': round(averages[2], 2) if averages[2] else 0,
-                'humidity': round(averages[3], 2) if averages[3] else 0,
-                'rpm': round(averages[4], 2) if averages[4] else 0
-            } if averages else None
+            'stats_by_category': stats_by_category
         }
     except Exception as e:
         return {'error': str(e)}
@@ -448,7 +459,7 @@ def clear_data():
 
 @app.route('/api/export')
 def export_data():
-    """Export recent readings as CSV."""
+    """Export recent readings as CSV with all 50 parameters."""
     limit = request.args.get('limit', default=500, type=int)
     if limit is None:
         limit = 500
@@ -461,7 +472,18 @@ def export_data():
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT timestamp, temperature, pressure, vibration, humidity, rpm, created_at
+            SELECT
+                timestamp, created_at,
+                temperature, pressure, humidity, ambient_temp, dew_point,
+                air_quality_index, co2_level, particle_count, noise_level, light_intensity,
+                vibration, rpm, torque, shaft_alignment, bearing_temp,
+                motor_current, belt_tension, gear_wear, coupling_temp, lubrication_pressure,
+                coolant_temp, exhaust_temp, oil_temp, radiator_temp, thermal_efficiency,
+                heat_dissipation, inlet_temp, outlet_temp, core_temp, surface_temp,
+                voltage, current, power_factor, frequency, resistance,
+                capacitance, inductance, phase_angle, harmonic_distortion, ground_fault,
+                flow_rate, fluid_pressure, viscosity, density, reynolds_number,
+                pipe_pressure_drop, pump_efficiency, cavitation_index, turbulence, valve_position
             FROM sensor_readings
             ORDER BY created_at DESC
             LIMIT %s
@@ -474,12 +496,25 @@ def export_data():
 
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['timestamp', 'temperature', 'pressure', 'vibration', 'humidity', 'rpm', 'created_at'])
+        # Write CSV header with all 50 parameters
+        writer.writerow([
+            'timestamp', 'created_at',
+            'temperature', 'pressure', 'humidity', 'ambient_temp', 'dew_point',
+            'air_quality_index', 'co2_level', 'particle_count', 'noise_level', 'light_intensity',
+            'vibration', 'rpm', 'torque', 'shaft_alignment', 'bearing_temp',
+            'motor_current', 'belt_tension', 'gear_wear', 'coupling_temp', 'lubrication_pressure',
+            'coolant_temp', 'exhaust_temp', 'oil_temp', 'radiator_temp', 'thermal_efficiency',
+            'heat_dissipation', 'inlet_temp', 'outlet_temp', 'core_temp', 'surface_temp',
+            'voltage', 'current', 'power_factor', 'frequency', 'resistance',
+            'capacitance', 'inductance', 'phase_angle', 'harmonic_distortion', 'ground_fault',
+            'flow_rate', 'fluid_pressure', 'viscosity', 'density', 'reynolds_number',
+            'pipe_pressure_drop', 'pump_efficiency', 'cavitation_index', 'turbulence', 'valve_position'
+        ])
         for row in rows:
             writer.writerow(row)
 
         response = make_response(output.getvalue())
-        filename = f"sensor_readings_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+        filename = f"sensor_readings_50params_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
         response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
         response.headers['Content-Type'] = 'text/csv'
         return response

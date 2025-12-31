@@ -117,7 +117,8 @@ class SensorDataConsumer:
 
     def validate_message(self, data):
         """Validate that message contains required fields."""
-        required_fields = ['timestamp', 'temperature', 'pressure', 'vibration', 'humidity', 'rpm']
+        # Only timestamp and the 3 NOT NULL sensor fields are strictly required
+        required_fields = ['timestamp', 'temperature', 'pressure', 'humidity', 'vibration', 'rpm']
 
         for field in required_fields:
             if field not in data:
@@ -166,20 +167,64 @@ class SensorDataConsumer:
                 conn.close()
 
     def insert_reading(self, reading):
-        """Insert sensor reading into database."""
+        """Insert sensor reading with all 50 parameters into database."""
         insert_query = """
-            INSERT INTO sensor_readings (timestamp, temperature, pressure, vibration, humidity, rpm)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO sensor_readings (
+                timestamp,
+                temperature, pressure, humidity, ambient_temp, dew_point,
+                air_quality_index, co2_level, particle_count, noise_level, light_intensity,
+                vibration, rpm, torque, shaft_alignment, bearing_temp,
+                motor_current, belt_tension, gear_wear, coupling_temp, lubrication_pressure,
+                coolant_temp, exhaust_temp, oil_temp, radiator_temp, thermal_efficiency,
+                heat_dissipation, inlet_temp, outlet_temp, core_temp, surface_temp,
+                voltage, current, power_factor, frequency, resistance,
+                capacitance, inductance, phase_angle, harmonic_distortion, ground_fault,
+                flow_rate, fluid_pressure, viscosity, density, reynolds_number,
+                pipe_pressure_drop, pump_efficiency, cavitation_index, turbulence, valve_position
+            )
+            VALUES (
+                %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s
+            )
         """
 
         try:
             self.db_cursor.execute(insert_query, (
                 reading['timestamp'],
-                reading['temperature'],
-                reading['pressure'],
-                reading['vibration'],
-                reading['humidity'],
-                reading['rpm']
+                # Environmental
+                reading['temperature'], reading['pressure'], reading['humidity'],
+                reading.get('ambient_temp'), reading.get('dew_point'),
+                reading.get('air_quality_index'), reading.get('co2_level'),
+                reading.get('particle_count'), reading.get('noise_level'), reading.get('light_intensity'),
+                # Mechanical
+                reading['vibration'], reading['rpm'],
+                reading.get('torque'), reading.get('shaft_alignment'), reading.get('bearing_temp'),
+                reading.get('motor_current'), reading.get('belt_tension'), reading.get('gear_wear'),
+                reading.get('coupling_temp'), reading.get('lubrication_pressure'),
+                # Thermal
+                reading.get('coolant_temp'), reading.get('exhaust_temp'), reading.get('oil_temp'),
+                reading.get('radiator_temp'), reading.get('thermal_efficiency'),
+                reading.get('heat_dissipation'), reading.get('inlet_temp'), reading.get('outlet_temp'),
+                reading.get('core_temp'), reading.get('surface_temp'),
+                # Electrical
+                reading.get('voltage'), reading.get('current'), reading.get('power_factor'),
+                reading.get('frequency'), reading.get('resistance'),
+                reading.get('capacitance'), reading.get('inductance'), reading.get('phase_angle'),
+                reading.get('harmonic_distortion'), reading.get('ground_fault'),
+                # Fluid Dynamics
+                reading.get('flow_rate'), reading.get('fluid_pressure'), reading.get('viscosity'),
+                reading.get('density'), reading.get('reynolds_number'),
+                reading.get('pipe_pressure_drop'), reading.get('pump_efficiency'),
+                reading.get('cavitation_index'), reading.get('turbulence'), reading.get('valve_position')
             ))
             self.db_conn.commit()
             return True
@@ -220,11 +265,12 @@ class SensorDataConsumer:
 
                 self.message_count += 1
 
-                # Log message processed
+                # Log message processed with key parameters
                 self.logger.info(f"Message {self.message_count} processed: "
                                f"timestamp={data['timestamp']}, "
+                               f"rpm={data['rpm']}, "
                                f"temp={data['temperature']}°F, "
-                               f"pressure={data['pressure']}PSI")
+                               f"vibration={data['vibration']}mm/s")
 
                 # Log progress every N messages
                 if self.message_count % config.LOG_PROGRESS_INTERVAL == 0:

@@ -176,51 +176,6 @@ Modern web interface providing real-time monitoring, process control, anomaly vi
 
 ---
 
-## BUILD TIMELINE
-
-### Completed Development
-
-| Phase | Duration | Focus | Deliverables |
-|-------|----------|-------|--------------|
-| **Phase 1** | Weeks 1-2 | Foundation | Docker setup, basic producer/consumer, minimal dashboard |
-| **Phase 2** | Weeks 3-4 | Enhanced Monitoring | 50 sensors, categories, rule-based anomalies, alerts |
-| **Phase 3** | Weeks 5-7 | ML Integration | Isolation Forest, auto-training, anomaly_detections table |
-| **Phase 4** | Weeks 8-9 | AI Analysis | Context analyzer, Groq integration, per-anomaly reports |
-| **Phase 5** | Weeks 10 | Advanced Features | Thresholds, injection, export, session reports, docs |
-
-### Timeline Visualization
-
-```
-Week 1-2   ████████░░░░░░░░░░░░  Foundation
-Week 3-4   ████████████░░░░░░░░  Enhanced Monitoring  
-Week 5-7   ████████████████░░░░  ML Integration
-Week 8-9   ████████████████████  AI Analysis
-Week 10    ████████████████████  Polish & Documentation
-```
-
----
-
-## RESOURCE REQUIREMENTS
-
-### Team Composition
-
-| Role | Responsibilities | Allocation |
-|------|-----------------|------------|
-| **Backend/ML Engineer** | Python, Kafka, ML models, AI integration | Full-time |
-| **Frontend Developer** | Dashboard UI, real-time updates, UX | Part-time |
-| **DevOps Engineer** | Docker, infrastructure, deployment | Part-time |
-| **Domain Consultant** | Industrial sensor expertise, validation | Advisory |
-
-### Infrastructure Costs
-
-| Resource | Development | Production (Est.) |
-|----------|-------------|-------------------|
-| **Compute** | Local machine | $200-400/month (cloud) |
-| **Kafka** | Docker container | $150-300/month (managed) |
-| **PostgreSQL** | Docker container | $50-100/month (managed) |
-| **Groq API** | Free tier | $50-200/month |
-| **Total** | ~$0/month | $450-1000/month |
-
 ### Hardware Requirements
 
 | Environment | Requirements |

@@ -7,13 +7,29 @@ Contains all settings for Kafka, PostgreSQL, timing, and sensor parameters.
 # TIMING CONFIGURATION
 # ============================================================================
 
+# Default configuration values so the dashboard can reset safely
+DEFAULT_DURATION_HOURS = 3.0
+DEFAULT_INTERVAL_SECONDS = 10
+
+# Limits for dashboard config validation
+CONFIG_LIMITS = {
+    'duration_hours': {
+        'min': 0,
+        'max': 168  # one week
+    },
+    'interval_seconds': {
+        'min': 1,
+        'max': 3600  # once an hour
+    }
+}
+
 # Duration for data generation (hours)
 # Set to 0.01 for quick test (36 seconds, ~1-2 messages)
 # Set to 24 for production run (24 hours, 2,880 messages)
-DURATION_HOURS = 3.05
+DURATION_HOURS = DEFAULT_DURATION_HOURS
 
 # Interval between sensor readings (seconds)
-INTERVAL_SECONDS = 5
+INTERVAL_SECONDS = DEFAULT_INTERVAL_SECONDS
 
 # ============================================================================
 # KAFKA CONFIGURATION

@@ -148,6 +148,15 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
         }
+        .btn-secondary {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1e293b;
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+        }
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
+        }
         .btn-toggle {
             background: rgba(71, 85, 105, 0.5);
             color: white;
@@ -288,6 +297,70 @@
         .history-metric.hidden {
             display: none;
         }
+        .chart-container {
+            position: relative;
+            height: 260px;
+            margin-top: 20px;
+        }
+        .chart-meta {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 360px;
+            overflow-y: auto;
+        }
+        .alert-item {
+            background: rgba(148, 163, 184, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .alert-type {
+            font-weight: 700;
+            color: #f8fafc;
+            font-size: 14px;
+        }
+        .alert-message {
+            color: #cbd5f5;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .alert-meta {
+            text-align: right;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .alert-badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .alert-badge.info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .alert-badge.warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .alert-badge.error { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+        .alert-badge.critical { background: rgba(248, 113, 113, 0.25); color: #fecaca; }
+        .config-meta {
+            margin-top: 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            min-height: 16px;
+        }
         .metric-value {
             font-size: 20px;
             font-weight: 900;
@@ -373,7 +446,16 @@
                     <button class="btn-danger" onclick="stopComponent('consumer')">⏹ Stop</button>
                 </div>
 
+                <div class="stat" style="margin-top: 20px;">
+                    <span class="stat-label">
+                        <span class="status-indicator" id="kafkaStatus"></span>
+                        Kafka Broker
+                    </span>
+                    <span class="stat-value" id="kafkaStatusDetails">Checking...</span>
+                </div>
+
                 <div class="controls" style="margin-top: 20px;">
+                    <button class="btn-secondary" onclick="exportData()">🗂️ Export CSV</button>
                     <button class="btn-warning" onclick="clearData()">🗑️ Clear All Data</button>
                 </div>
             </div>
@@ -402,7 +484,9 @@
 
                 <div class="controls">
                     <button class="btn-primary" onclick="updateConfig()">💾 Update Config</button>
+                    <button class="btn-secondary" onclick="resetConfig()">🔄 Reset Defaults</button>
                 </div>
+                <div class="config-meta" id="configMessage">Ready for updates.</div>
 
                 <div class="preset-container">
                     <div class="preset-title">⚡ Quick Presets</div>
@@ -411,6 +495,25 @@
                         <button class="btn-primary" onclick="setOneMin()">1 Minute</button>
                         <button class="btn-primary" onclick="setOneHour()">1 Hour</button>
                         <button class="btn-primary" onclick="setProduction()">24 Hours</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trend Card -->
+            <div class="card">
+                <h2>📈 Sensor Trends</h2>
+                <div class="chart-container">
+                    <canvas id="readingsChart"></canvas>
+                </div>
+                <div class="chart-meta">Latest 20 readings</div>
+            </div>
+
+            <!-- Alerts Card -->
+            <div class="card">
+                <h2>🚨 Alerts</h2>
+                <div class="alert-list" id="alertList">
+                    <div style="text-align: center; color: #94a3b8; padding: 20px;">
+                        No alerts yet
                     </div>
                 </div>
             </div>
@@ -430,6 +533,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const visibleMetrics = {
             temperature: true,
@@ -438,12 +542,35 @@
             humidity: true,
             rpm: true
         };
+        const chartColors = {
+            temperature: '#f87171',
+            pressure: '#fbbf24',
+            vibration: '#34d399',
+            humidity: '#38bdf8',
+            rpm: '#c084fc'
+        };
+        let readingsChart = null;
+        let configLimits = null;
+        let configDefaults = null;
 
         function toggleMetric(metric) {
             visibleMetrics[metric] = !visibleMetrics[metric];
             const btn = document.querySelector(`[data-metric="${metric}"]`);
             btn.classList.toggle('active');
             updateStats();
+        }
+
+        function formatNumber(value, decimals = 2) {
+            if (value === null || value === undefined || isNaN(value)) {
+                return '--';
+            }
+            return Number(value).toFixed(decimals);
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '';
+            const date = new Date(value);
+            return isNaN(date.getTime()) ? value : date.toLocaleString();
         }
 
         function updateStats() {
@@ -454,37 +581,38 @@
 
                     if (data.averages) {
                         document.getElementById('averages').innerHTML = `
-                            <div class="stat"><span class="stat-label">Avg Temperature</span><span class="stat-value">${data.averages.temperature}°F</span></div>
-                            <div class="stat"><span class="stat-label">Avg Pressure</span><span class="stat-value">${data.averages.pressure} PSI</span></div>
-                            <div class="stat"><span class="stat-label">Avg Vibration</span><span class="stat-value">${data.averages.vibration} mm/s</span></div>
-                            <div class="stat"><span class="stat-label">Avg Humidity</span><span class="stat-value">${data.averages.humidity}%</span></div>
-                            <div class="stat"><span class="stat-label">Avg RPM</span><span class="stat-value">${data.averages.rpm}</span></div>
+                            <div class="stat"><span class="stat-label">Avg Temperature</span><span class="stat-value">${formatNumber(data.averages.temperature)}°F</span></div>
+                            <div class="stat"><span class="stat-label">Avg Pressure</span><span class="stat-value">${formatNumber(data.averages.pressure)} PSI</span></div>
+                            <div class="stat"><span class="stat-label">Avg Vibration</span><span class="stat-value">${formatNumber(data.averages.vibration)} mm/s</span></div>
+                            <div class="stat"><span class="stat-label">Avg Humidity</span><span class="stat-value">${formatNumber(data.averages.humidity)}%</span></div>
+                            <div class="stat"><span class="stat-label">Avg RPM</span><span class="stat-value">${formatNumber(data.averages.rpm, 0)}</span></div>
                         `;
                     }
 
-                    if (data.recent_readings && data.recent_readings.length > 0) {
-                        const historyHTML = data.recent_readings.map(reading => `
+                    const readings = data.recent_readings || [];
+                    if (readings.length > 0) {
+                        const historyHTML = readings.map(reading => `
                             <div class="history-item">
-                                <div class="history-timestamp">${reading.created_at}</div>
+                                <div class="history-timestamp">${formatDateTime(reading.created_at)}</div>
                                 <div class="history-grid">
                                     <div class="history-metric ${visibleMetrics.temperature ? '' : 'hidden'}">
-                                        <div class="metric-value">${reading.temperature}°F</div>
+                                        <div class="metric-value">${formatNumber(reading.temperature)}°F</div>
                                         <div class="metric-label">Temperature</div>
                                     </div>
                                     <div class="history-metric ${visibleMetrics.pressure ? '' : 'hidden'}">
-                                        <div class="metric-value">${reading.pressure}</div>
+                                        <div class="metric-value">${formatNumber(reading.pressure)}</div>
                                         <div class="metric-label">Pressure (PSI)</div>
                                     </div>
                                     <div class="history-metric ${visibleMetrics.vibration ? '' : 'hidden'}">
-                                        <div class="metric-value">${reading.vibration}</div>
+                                        <div class="metric-value">${formatNumber(reading.vibration)}</div>
                                         <div class="metric-label">Vibration (mm/s)</div>
                                     </div>
                                     <div class="history-metric ${visibleMetrics.humidity ? '' : 'hidden'}">
-                                        <div class="metric-value">${reading.humidity}%</div>
+                                        <div class="metric-value">${formatNumber(reading.humidity)}%</div>
                                         <div class="metric-label">Humidity</div>
                                     </div>
                                     <div class="history-metric ${visibleMetrics.rpm ? '' : 'hidden'}">
-                                        <div class="metric-value">${reading.rpm}</div>
+                                        <div class="metric-value">${formatNumber(reading.rpm, 0)}</div>
                                         <div class="metric-label">RPM</div>
                                     </div>
                                 </div>
@@ -494,17 +622,101 @@
                     } else {
                         document.getElementById('readingsHistory').innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet</div>';
                     }
+
+                    updateChart(readings);
                 });
+        }
+
+        function updateChart(readings) {
+            const canvas = document.getElementById('readingsChart');
+            if (!canvas) return;
+
+            const ordered = (readings || []).slice().reverse();
+            const labels = ordered.map(reading => {
+                const ts = reading.timestamp || reading.created_at;
+                const date = new Date(ts);
+                return isNaN(date.getTime()) ? ts : date.toLocaleTimeString();
+            });
+            const datasets = Object.keys(chartColors).map(metric => ({
+                label: metric.charAt(0).toUpperCase() + metric.slice(1),
+                data: ordered.map(reading => {
+                    const value = reading[metric];
+                    return value === null || value === undefined ? null : Number(value);
+                }),
+                borderColor: chartColors[metric],
+                backgroundColor: chartColors[metric],
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false,
+                spanGaps: true,
+                tension: 0.3,
+                hidden: !visibleMetrics[metric]
+            }));
+
+            if (!readingsChart) {
+                readingsChart = new Chart(canvas.getContext('2d'), {
+                    type: 'line',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#e2e8f0' } }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(148, 163, 184, 0.2)' }
+                            },
+                            y: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(148, 163, 184, 0.2)' }
+                            }
+                        }
+                    }
+                });
+            } else {
+                readingsChart.data.labels = labels;
+                readingsChart.data.datasets = datasets;
+                readingsChart.update();
+            }
         }
 
         function updateStatus() {
             fetch('/api/status')
                 .then(r => r.json())
                 .then(data => {
-                    document.getElementById('producerStatus').className =
-                        'status-indicator ' + (data.producer_running ? 'status-running' : 'status-stopped');
-                    document.getElementById('consumerStatus').className =
-                        'status-indicator ' + (data.consumer_running ? 'status-running' : 'status-stopped');
+                    const producerEl = document.getElementById('producerStatus');
+                    const consumerEl = document.getElementById('consumerStatus');
+                    if (producerEl) {
+                        producerEl.className = 'status-indicator ' + (data.producer_running ? 'status-running' : 'status-stopped');
+                    }
+                    if (consumerEl) {
+                        consumerEl.className = 'status-indicator ' + (data.consumer_running ? 'status-running' : 'status-stopped');
+                    }
+
+                    if (data.kafka) {
+                        const kafkaIndicator = document.getElementById('kafkaStatus');
+                        const kafkaDetails = document.getElementById('kafkaStatusDetails');
+                        if (kafkaIndicator) {
+                            let className = 'status-indicator ';
+                            if (data.kafka.status === 'healthy') {
+                                className += 'status-running';
+                            } else if (data.kafka.status === 'unhealthy') {
+                                className += 'status-stopped';
+                            }
+                            kafkaIndicator.className = className;
+                        }
+                        if (kafkaDetails) {
+                            if (data.kafka.status === 'healthy') {
+                                kafkaDetails.textContent = data.kafka.latency_ms ? `OK (${data.kafka.latency_ms} ms)` : 'OK';
+                            } else if (data.kafka.status === 'unhealthy') {
+                                kafkaDetails.textContent = data.kafka.error || 'Unreachable';
+                            } else {
+                                kafkaDetails.textContent = 'Checking...';
+                            }
+                        }
+                    }
                 });
         }
 
@@ -512,28 +724,67 @@
             fetch('/api/config')
                 .then(r => r.json())
                 .then(data => {
-                    document.getElementById('durationHours').value = data.duration_hours;
-                    document.getElementById('durationMinutes').value = data.duration_minutes;
-                    document.getElementById('intervalSeconds').value = data.interval_seconds;
+                    document.getElementById('durationHours').value = data.duration_hours ?? 0;
+                    document.getElementById('durationMinutes').value = data.duration_minutes ?? 0;
+                    document.getElementById('intervalSeconds').value = data.interval_seconds ?? 5;
+                    configLimits = data.limits || null;
+                    configDefaults = data.defaults || null;
+                    if (configLimits) {
+                        const intervalInput = document.getElementById('intervalSeconds');
+                        intervalInput.min = configLimits.interval_seconds?.min ?? 1;
+                        intervalInput.max = configLimits.interval_seconds?.max ?? 3600;
+                    }
+                    displayConfigMessage('Ready for updates.');
                 });
         }
 
+        function displayConfigMessage(message, isError = false) {
+            const el = document.getElementById('configMessage');
+            if (!el) return;
+            el.textContent = message;
+            el.style.color = isError ? '#f87171' : '#34d399';
+        }
+
         function updateConfig() {
-            const data = {
-                duration_hours: parseInt(document.getElementById('durationHours').value),
-                duration_minutes: parseInt(document.getElementById('durationMinutes').value),
-                interval_seconds: parseInt(document.getElementById('intervalSeconds').value)
+            const payload = {
+                duration_hours: parseInt(document.getElementById('durationHours').value, 10),
+                duration_minutes: parseInt(document.getElementById('durationMinutes').value, 10),
+                interval_seconds: parseInt(document.getElementById('intervalSeconds').value, 10)
             };
 
             fetch('/api/config', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
+                body: JSON.stringify(payload)
             })
             .then(r => r.json())
             .then(result => {
-                alert(result.success ? '✅ Config updated!' : '❌ Failed to update config');
-            });
+                if (result.success) {
+                    displayConfigMessage('Configuration updated!', false);
+                    loadConfig();
+                } else {
+                    displayConfigMessage(result.error || 'Failed to update config', true);
+                }
+            })
+            .catch(() => displayConfigMessage('Failed to update config', true));
+        }
+
+        function resetConfig() {
+            fetch('/api/config/reset', { method: 'POST' })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        displayConfigMessage('Reset to defaults.', false);
+                        loadConfig();
+                    } else {
+                        displayConfigMessage(result.error || 'Failed to reset config', true);
+                    }
+                })
+                .catch(() => displayConfigMessage('Failed to reset config', true));
+        }
+
+        function exportData(limit = 500) {
+            window.open(`/api/export?limit=${limit}`, '_blank');
         }
 
         function startComponent(component) {
@@ -565,6 +816,37 @@
             }
         }
 
+        function loadAlerts() {
+            fetch('/api/alerts?limit=20')
+                .then(r => r.json())
+                .then(data => {
+                    const container = document.getElementById('alertList');
+                    if (!container) return;
+
+                    const alerts = data.alerts || [];
+                    if (alerts.length === 0) {
+                        container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 20px;">No alerts yet</div>';
+                        return;
+                    }
+
+                    container.innerHTML = alerts.map(alert => {
+                        const severity = (alert.severity || 'info').toLowerCase();
+                        return `
+                            <div class="alert-item">
+                                <div>
+                                    <div class="alert-type">${alert.alert_type}</div>
+                                    <div class="alert-message">${alert.message}</div>
+                                </div>
+                                <div class="alert-meta">
+                                    <span class="alert-badge ${severity}">${alert.severity}</span>
+                                    <div class="alert-time">${formatDateTime(alert.created_at)}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                });
+        }
+
         function setQuickTest() {
             document.getElementById('durationHours').value = 0;
             document.getElementById('durationMinutes').value = 2;
@@ -593,12 +875,14 @@
         setInterval(() => {
             updateStats();
             updateStatus();
+            loadAlerts();
         }, 2000);
 
         // Initial load
         updateStats();
         updateStatus();
         loadConfig();
+        loadAlerts();
     </script>
 </body>
 </html>

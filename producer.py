@@ -30,6 +30,9 @@ class SensorDataProducer:
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
+        # Windows-specific signal for process termination
+        if sys.platform == 'win32':
+            signal.signal(signal.SIGBREAK, self.signal_handler)
 
         self.logger.info(f"Producer initialized - Duration: {config.DURATION_HOURS} hours, "
                         f"Interval: {config.INTERVAL_SECONDS}s, "

@@ -47,3 +47,18 @@ FROM sensor_readings;
 GRANT ALL PRIVILEGES ON TABLE sensor_readings TO sensoruser;
 GRANT ALL PRIVILEGES ON SEQUENCE sensor_readings_id_seq TO sensoruser;
 GRANT SELECT ON sensor_stats TO sensoruser;
+
+-- Store pipeline alerts (anomalies, heartbeat failures, etc.)
+CREATE TABLE IF NOT EXISTS alerts (
+    id SERIAL PRIMARY KEY,
+    alert_type VARCHAR(64) NOT NULL,
+    source VARCHAR(64) NOT NULL,
+    severity VARCHAR(32) NOT NULL DEFAULT 'INFO',
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_alerts_created_at ON alerts(created_at DESC);
+
+GRANT ALL PRIVILEGES ON TABLE alerts TO sensoruser;
+GRANT ALL PRIVILEGES ON SEQUENCE alerts_id_seq TO sensoruser;

@@ -31,6 +31,9 @@ class SensorDataConsumer:
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
+        # Windows-specific signal for process termination
+        if sys.platform == 'win32':
+            signal.signal(signal.SIGBREAK, self.signal_handler)
 
         self.logger.info("Consumer initialized")
 
@@ -123,6 +126,45 @@ class SensorDataConsumer:
 
         return True
 
+    def detect_anomalies(self, reading):
+        """Return list of anomaly descriptions for out-of-range sensor values."""
+        anomalies = []
+
+        for sensor_name, bounds in config.SENSOR_RANGES.items():
+            value = reading.get(sensor_name)
+            if value is None:
+                continue
+
+            if value < bounds['min'] or value > bounds['max']:
+                unit = bounds.get('unit', '')
+                anomalies.append(
+                    f"{sensor_name.title()} out of range ({value}{unit} not in "
+                    f"{bounds['min']} - {bounds['max']}) at {reading.get('timestamp')}"
+                )
+
+        return anomalies
+
+    def record_alert(self, alert_type, message, severity='HIGH', source='consumer'):
+        """Persist an alert so the dashboard can display it."""
+        try:
+            conn = psycopg2.connect(**config.DB_CONFIG)
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO alerts (alert_type, source, severity, message)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (alert_type, source, severity, message)
+            )
+            conn.commit()
+        except Exception as e:
+            self.logger.error(f"Failed to record alert: {e}")
+        finally:
+            if 'cursor' in locals():
+                cursor.close()
+            if 'conn' in locals():
+                conn.close()
+
     def insert_reading(self, reading):
         """Insert sensor reading into database."""
         insert_query = """
@@ -144,6 +186,7 @@ class SensorDataConsumer:
 
         except Exception as e:
             self.logger.error(f"Failed to insert reading into database: {e}")
+            self.record_alert('DB_WRITE_FAILURE', str(e), severity='ERROR')
             self.db_conn.rollback()
             return False
 
@@ -156,6 +199,18 @@ class SensorDataConsumer:
             # Validate message
             if not self.validate_message(data):
                 self.logger.warning(f"Invalid message skipped: {message.value}")
+                self.consumer.commit()
+                return False
+
+            # Check for anomalies before inserting
+            anomalies = self.detect_anomalies(data)
+            if anomalies:
+                for anomaly in anomalies:
+                    self.logger.warning(f"Anomaly detected: {anomaly}")
+                    self.record_alert('SENSOR_ANOMALY', anomaly, severity='CRITICAL')
+
+                # Skip inserting bad data but do not reprocess it
+                self.consumer.commit()
                 return False
 
             # Insert into database

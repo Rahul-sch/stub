@@ -185,3 +185,33 @@ LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 # Log progress every N messages
 LOG_PROGRESS_INTERVAL = 10
+
+# ============================================================================
+# ML DETECTION CONFIGURATION
+# ============================================================================
+
+import os
+
+# Enable/disable ML-based anomaly detection
+ML_DETECTION_ENABLED = True
+
+# Isolation Forest parameters
+ISOLATION_FOREST_CONTAMINATION = 0.05  # Expected anomaly rate (5%)
+ISOLATION_FOREST_N_ESTIMATORS = 100  # Number of trees
+MIN_TRAINING_SAMPLES = 100  # Minimum readings before training model
+
+# Context analysis settings
+CONTEXT_WINDOW_SIZE = 10  # Readings before/after anomaly to analyze
+
+# Model storage path
+MODELS_DIR = os.path.join(os.path.dirname(__file__), 'models')
+
+# ============================================================================
+# CHATGPT API CONFIGURATION
+# ============================================================================
+
+# OpenAI API key (set via environment variable for security)
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+
+# Model to use for report generation
+CHATGPT_MODEL = 'gpt-4'  # or 'gpt-3.5-turbo' for lower cost

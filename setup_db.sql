@@ -141,3 +141,46 @@ CREATE INDEX IF NOT EXISTS idx_alerts_type ON alerts(alert_type);
 
 GRANT ALL PRIVILEGES ON TABLE alerts TO sensoruser;
 GRANT ALL PRIVILEGES ON SEQUENCE alerts_id_seq TO sensoruser;
+
+-- =============================================================================
+-- ML Anomaly Detection Tables
+-- =============================================================================
+
+-- Store ML-detected anomalies with scores
+CREATE TABLE IF NOT EXISTS anomaly_detections (
+    id SERIAL PRIMARY KEY,
+    reading_id INT REFERENCES sensor_readings(id) ON DELETE CASCADE,
+    detection_method VARCHAR(32) NOT NULL, -- 'isolation_forest' or 'lstm_autoencoder'
+    anomaly_score FLOAT NOT NULL,
+    is_anomaly BOOLEAN NOT NULL DEFAULT FALSE,
+    detected_sensors TEXT[], -- which sensors contributed to the anomaly
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_anomaly_detections_reading ON anomaly_detections(reading_id);
+CREATE INDEX IF NOT EXISTS idx_anomaly_detections_created ON anomaly_detections(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_anomaly_detections_is_anomaly ON anomaly_detections(is_anomaly);
+
+GRANT ALL PRIVILEGES ON TABLE anomaly_detections TO sensoruser;
+GRANT ALL PRIVILEGES ON SEQUENCE anomaly_detections_id_seq TO sensoruser;
+
+-- Store ChatGPT-generated analysis reports
+CREATE TABLE IF NOT EXISTS analysis_reports (
+    id SERIAL PRIMARY KEY,
+    anomaly_id INT REFERENCES anomaly_detections(id) ON DELETE CASCADE,
+    context_data JSONB, -- 10 readings before/after
+    correlations JSONB, -- parameter correlations
+    chatgpt_analysis TEXT,
+    root_cause TEXT,
+    prevention_recommendations TEXT,
+    status VARCHAR(32) DEFAULT 'pending', -- 'pending', 'generating', 'completed', 'failed'
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    completed_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_analysis_reports_anomaly ON analysis_reports(anomaly_id);
+CREATE INDEX IF NOT EXISTS idx_analysis_reports_status ON analysis_reports(status);
+CREATE INDEX IF NOT EXISTS idx_analysis_reports_created ON analysis_reports(created_at DESC);
+
+GRANT ALL PRIVILEGES ON TABLE analysis_reports TO sensoruser;
+GRANT ALL PRIVILEGES ON SEQUENCE analysis_reports_id_seq TO sensoruser;

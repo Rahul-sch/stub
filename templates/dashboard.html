@@ -643,6 +643,223 @@
             color: #94a3b8;
             line-height: 1.6;
         }
+
+        /* ML Anomaly Detection Styles */
+        .anomaly-item {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid #ef4444;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            transition: all 0.3s;
+        }
+        .anomaly-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
+        }
+        .anomaly-info {
+            flex: 1;
+        }
+        .anomaly-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .anomaly-score {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .anomaly-method {
+            color: #94a3b8;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .anomaly-timestamp {
+            color: #60a5fa;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .anomaly-sensors {
+            color: #cbd5e1;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        .anomaly-sensors span {
+            display: inline-block;
+            background: rgba(96, 165, 250, 0.15);
+            color: #60a5fa;
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-right: 6px;
+            margin-top: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .anomaly-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .btn-report {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        .btn-report:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+        .btn-report:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-view-report {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .btn-view-report:hover {
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        .report-status {
+            font-size: 11px;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: #1e293b;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow: hidden;
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #f8fafc;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.3s;
+        }
+        .modal-close:hover {
+            color: #ef4444;
+        }
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(90vh - 80px);
+            color: #e2e8f0;
+            line-height: 1.7;
+        }
+        .modal-body h3 {
+            color: #60a5fa;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .modal-body h3:first-child {
+            margin-top: 0;
+        }
+        .modal-body ul {
+            margin-left: 20px;
+            margin-bottom: 16px;
+        }
+        .modal-body li {
+            margin-bottom: 8px;
+        }
+        .modal-body p {
+            margin-bottom: 12px;
+        }
+        .report-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+        }
+        .report-meta-item {
+            text-align: center;
+        }
+        .report-meta-label {
+            color: #94a3b8;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        .report-meta-value {
+            color: #60a5fa;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -834,6 +1051,48 @@
                     <div style="text-align: center; color: #94a3b8; padding: 20px;">
                         No alerts yet
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ML Anomaly Detection Card -->
+        <div class="card" style="margin-bottom: 24px;">
+            <h2>🤖 ML Anomaly Detection</h2>
+            <p class="card-intro">Isolation Forest model detects unusual patterns across all 50 sensor parameters. Click "Generate Report" to get AI-powered root cause analysis.</p>
+            
+            <!-- ML Stats -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                <div class="big-stat" style="padding: 20px;">
+                    <div class="big-stat-value" id="mlTotalAnomalies" style="font-size: 36px;">0</div>
+                    <div class="big-stat-label">Anomalies Detected</div>
+                </div>
+                <div class="big-stat" style="padding: 20px;">
+                    <div class="big-stat-value" id="mlAnomalyRate" style="font-size: 36px;">0%</div>
+                    <div class="big-stat-label">Recent Rate</div>
+                </div>
+                <div class="big-stat" style="padding: 20px;">
+                    <div class="big-stat-value" id="mlReportsGenerated" style="font-size: 36px;">0</div>
+                    <div class="big-stat-label">Reports Generated</div>
+                </div>
+            </div>
+            
+            <!-- Anomaly List -->
+            <div class="anomaly-list" id="anomalyList" style="max-height: 400px; overflow-y: auto;">
+                <div style="text-align: center; color: #94a3b8; padding: 40px;">
+                    No ML anomalies detected yet. Start the pipeline to begin monitoring.
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Modal -->
+        <div id="reportModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📋 Anomaly Analysis Report</h2>
+                    <button class="modal-close" onclick="closeReportModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="reportContent">
+                    Loading...
                 </div>
             </div>
         </div>
@@ -1285,11 +1544,219 @@
             document.getElementById('intervalSeconds').value = 30;
         }
 
+        // ========== ML Anomaly Detection Functions ==========
+        
+        function loadMLStats() {
+            fetch('/api/ml-stats')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) return;
+                    
+                    document.getElementById('mlTotalAnomalies').textContent = data.total_anomalies || 0;
+                    document.getElementById('mlAnomalyRate').textContent = (data.recent_anomaly_rate || 0).toFixed(1) + '%';
+                    document.getElementById('mlReportsGenerated').textContent = data.completed_reports || 0;
+                })
+                .catch(() => {});
+        }
+        
+        function loadAnomalies() {
+            fetch('/api/anomalies?limit=20&only_anomalies=true')
+                .then(r => r.json())
+                .then(data => {
+                    const container = document.getElementById('anomalyList');
+                    if (!container) return;
+                    
+                    const anomalies = data.anomalies || [];
+                    if (anomalies.length === 0) {
+                        container.innerHTML = `
+                            <div style="text-align: center; color: #94a3b8; padding: 40px;">
+                                No ML anomalies detected yet. Start the pipeline to begin monitoring.
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    container.innerHTML = anomalies.map(anomaly => {
+                        const sensors = anomaly.detected_sensors || [];
+                        const sensorTags = sensors.slice(0, 5).map(s => 
+                            `<span>${s.replace(/_/g, ' ')}</span>`
+                        ).join('');
+                        const moreSensors = sensors.length > 5 ? `<span>+${sensors.length - 5} more</span>` : '';
+                        
+                        let actionBtn = '';
+                        if (anomaly.report_id && anomaly.report_status === 'completed') {
+                            actionBtn = `
+                                <button class="btn-report btn-view-report" onclick="viewReport(${anomaly.report_id})">
+                                    📄 View Report
+                                </button>
+                            `;
+                        } else if (anomaly.report_status === 'generating') {
+                            actionBtn = `
+                                <button class="btn-report" disabled>
+                                    <span class="loading-spinner"></span> Generating...
+                                </button>
+                            `;
+                        } else {
+                            actionBtn = `
+                                <button class="btn-report" onclick="generateReport(${anomaly.id}, this)">
+                                    🤖 Generate Report
+                                </button>
+                            `;
+                        }
+                        
+                        return `
+                            <div class="anomaly-item">
+                                <div class="anomaly-info">
+                                    <div class="anomaly-header">
+                                        <span class="anomaly-score">Score: ${anomaly.anomaly_score.toFixed(4)}</span>
+                                        <span class="anomaly-method">${anomaly.detection_method}</span>
+                                    </div>
+                                    <div class="anomaly-timestamp">${formatDateTime(anomaly.created_at)}</div>
+                                    <div class="anomaly-sensors">
+                                        <strong>Contributing sensors:</strong><br>
+                                        ${sensorTags}${moreSensors}
+                                    </div>
+                                </div>
+                                <div class="anomaly-actions">
+                                    ${actionBtn}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                })
+                .catch(() => {});
+        }
+        
+        function generateReport(anomalyId, button) {
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<span class="loading-spinner"></span> Generating...';
+            }
+            
+            fetch(`/api/generate-report/${anomalyId}`, { method: 'POST' })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('✅ Report generated successfully!');
+                        loadAnomalies();
+                        loadMLStats();
+                        viewReport(result.report_id);
+                    } else {
+                        alert('❌ Failed to generate report: ' + (result.error || 'Unknown error'));
+                        if (button) {
+                            button.disabled = false;
+                            button.innerHTML = '🤖 Generate Report';
+                        }
+                    }
+                })
+                .catch(err => {
+                    alert('❌ Error generating report');
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = '🤖 Generate Report';
+                    }
+                });
+        }
+        
+        function viewReport(reportId) {
+            const modal = document.getElementById('reportModal');
+            const content = document.getElementById('reportContent');
+            
+            modal.style.display = 'flex';
+            content.innerHTML = '<div style="text-align: center; padding: 40px;"><span class="loading-spinner" style="width: 40px; height: 40px; border-width: 3px;"></span><p style="margin-top: 16px;">Loading report...</p></div>';
+            
+            fetch(`/api/reports/${reportId}`)
+                .then(r => r.json())
+                .then(report => {
+                    if (report.error) {
+                        content.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 40px;">${report.error}</div>`;
+                        return;
+                    }
+                    
+                    // Format the report
+                    const analysis = report.chatgpt_analysis || 'No analysis available';
+                    
+                    content.innerHTML = `
+                        <div class="report-meta">
+                            <div class="report-meta-item">
+                                <div class="report-meta-label">Report ID</div>
+                                <div class="report-meta-value">#${report.id}</div>
+                            </div>
+                            <div class="report-meta-item">
+                                <div class="report-meta-label">Anomaly ID</div>
+                                <div class="report-meta-value">#${report.anomaly_id}</div>
+                            </div>
+                            <div class="report-meta-item">
+                                <div class="report-meta-label">Generated</div>
+                                <div class="report-meta-value">${formatDateTime(report.completed_at || report.created_at)}</div>
+                            </div>
+                            <div class="report-meta-item">
+                                <div class="report-meta-label">Status</div>
+                                <div class="report-meta-value" style="color: ${report.status === 'completed' ? '#10b981' : '#f59e0b'}">${report.status.toUpperCase()}</div>
+                            </div>
+                        </div>
+                        <div class="report-analysis">
+                            ${formatMarkdown(analysis)}
+                        </div>
+                    `;
+                })
+                .catch(err => {
+                    content.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 40px;">Failed to load report</div>`;
+                });
+        }
+        
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+        
+        // Close modal on escape key or clicking outside
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeReportModal();
+        });
+        
+        document.getElementById('reportModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeReportModal();
+        });
+        
+        // Simple markdown formatter
+        function formatMarkdown(text) {
+            if (!text) return '';
+            
+            // Escape HTML
+            text = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            // Headers
+            text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            text = text.replace(/^## (.*$)/gm, '<h3 style="font-size: 18px;">$1</h3>');
+            text = text.replace(/^# (.*$)/gm, '<h3 style="font-size: 20px;">$1</h3>');
+            
+            // Bold
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Italic
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Lists
+            text = text.replace(/^- (.*$)/gm, '<li>$1</li>');
+            text = text.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+            
+            // Numbered lists
+            text = text.replace(/^\d+\. (.*$)/gm, '<li>$1</li>');
+            
+            // Line breaks
+            text = text.replace(/\n\n/g, '</p><p>');
+            text = text.replace(/\n/g, '<br>');
+            
+            return '<p>' + text + '</p>';
+        }
+
         // Auto-refresh every 2 seconds
         setInterval(() => {
             updateStats();
             updateStatus();
             loadAlerts();
+            loadMLStats();
+            loadAnomalies();
         }, 2000);
 
         // Initial load
@@ -1298,6 +1765,8 @@
         updateStatus();
         loadConfig();
         loadAlerts();
+        loadMLStats();
+        loadAnomalies();
     </script>
 </body>
 </html>

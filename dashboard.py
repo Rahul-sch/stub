@@ -16,6 +16,15 @@ import io
 from datetime import datetime
 from kafka import KafkaAdminClient
 
+# Import ML components
+try:
+    from report_generator import ReportGenerator, get_report, get_report_by_anomaly
+    from analysis_engine import ContextAnalyzer, get_anomaly_details
+    ML_REPORTS_AVAILABLE = True
+except ImportError as e:
+    ML_REPORTS_AVAILABLE = False
+    print(f"ML report generation not available: {e}")
+
 app = Flask(__name__)
 
 # Store process IDs
@@ -570,6 +579,192 @@ def clear_data():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/anomalies')
+def api_anomalies():
+    """Get ML-detected anomalies."""
+    limit = request.args.get('limit', default=50, type=int)
+    only_anomalies = request.args.get('only_anomalies', default='true', type=str).lower() == 'true'
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database not connected'}), 500
+    
+    try:
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT 
+                ad.id, ad.reading_id, ad.detection_method, ad.anomaly_score,
+                ad.is_anomaly, ad.detected_sensors, ad.created_at,
+                sr.timestamp, sr.temperature, sr.pressure, sr.rpm, sr.vibration,
+                ar.id as report_id, ar.status as report_status
+            FROM anomaly_detections ad
+            JOIN sensor_readings sr ON ad.reading_id = sr.id
+            LEFT JOIN analysis_reports ar ON ad.id = ar.anomaly_id
+        """
+        
+        if only_anomalies:
+            query += " WHERE ad.is_anomaly = TRUE"
+        
+        query += " ORDER BY ad.created_at DESC LIMIT %s"
+        
+        cursor.execute(query, (limit,))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        anomalies = []
+        for row in rows:
+            anomalies.append({
+                'id': row[0],
+                'reading_id': row[1],
+                'detection_method': row[2],
+                'anomaly_score': row[3],
+                'is_anomaly': row[4],
+                'detected_sensors': row[5] or [],
+                'created_at': str(row[6]),
+                'reading_timestamp': str(row[7]),
+                'temperature': row[8],
+                'pressure': row[9],
+                'rpm': row[10],
+                'vibration': row[11],
+                'report_id': row[12],
+                'report_status': row[13]
+            })
+        
+        return jsonify({'anomalies': anomalies})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/anomalies/<int:anomaly_id>')
+def api_anomaly_detail(anomaly_id):
+    """Get details of a specific anomaly."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    anomaly = get_anomaly_details(anomaly_id)
+    if not anomaly:
+        return jsonify({'error': 'Anomaly not found'}), 404
+    
+    return jsonify(anomaly)
+
+
+@app.route('/api/generate-report/<int:anomaly_id>', methods=['POST'])
+def api_generate_report(anomaly_id):
+    """Generate an analysis report for an anomaly."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    try:
+        generator = ReportGenerator()
+        report_id, report_data = generator.generate_and_save_report(anomaly_id)
+        
+        if report_id:
+            return jsonify({
+                'success': True,
+                'report_id': report_id,
+                'message': 'Report generated successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to generate report'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/reports/<int:report_id>')
+def api_get_report(report_id):
+    """Get a generated report."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    report = get_report(report_id)
+    if not report:
+        return jsonify({'error': 'Report not found'}), 404
+    
+    return jsonify(report)
+
+
+@app.route('/api/reports/by-anomaly/<int:anomaly_id>')
+def api_get_report_by_anomaly(anomaly_id):
+    """Get report for a specific anomaly."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    report = get_report_by_anomaly(anomaly_id)
+    if not report:
+        return jsonify({'error': 'Report not found'}), 404
+    
+    return jsonify(report)
+
+
+@app.route('/api/ml-stats')
+def api_ml_stats():
+    """Get ML detection statistics."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database not connected'}), 500
+    
+    try:
+        cursor = conn.cursor()
+        
+        # Total detections and anomalies
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_detections,
+                COUNT(*) FILTER (WHERE is_anomaly = TRUE) as total_anomalies,
+                AVG(anomaly_score) as avg_score,
+                MIN(anomaly_score) as min_score,
+                MAX(anomaly_score) as max_score
+            FROM anomaly_detections
+        """)
+        stats = cursor.fetchone()
+        
+        # Recent anomaly rate (last 100 readings)
+        cursor.execute("""
+            SELECT 
+                COUNT(*) FILTER (WHERE is_anomaly = TRUE)::FLOAT / 
+                NULLIF(COUNT(*), 0) * 100 as recent_anomaly_rate
+            FROM (
+                SELECT is_anomaly FROM anomaly_detections 
+                ORDER BY created_at DESC LIMIT 100
+            ) recent
+        """)
+        recent_rate = cursor.fetchone()[0] or 0
+        
+        # Reports generated
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_reports,
+                COUNT(*) FILTER (WHERE status = 'completed') as completed_reports
+            FROM analysis_reports
+        """)
+        report_stats = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'total_detections': stats[0] or 0,
+            'total_anomalies': stats[1] or 0,
+            'avg_score': round(stats[2], 4) if stats[2] else 0,
+            'min_score': round(stats[3], 4) if stats[3] else 0,
+            'max_score': round(stats[4], 4) if stats[4] else 0,
+            'recent_anomaly_rate': round(recent_rate, 2),
+            'total_reports': report_stats[0] or 0,
+            'completed_reports': report_stats[1] or 0,
+            'ml_available': ML_REPORTS_AVAILABLE
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/export')
 def export_data():

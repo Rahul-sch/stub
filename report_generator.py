@@ -87,6 +87,17 @@ class ReportGenerator:
         before_count = len(analysis_summary.get('context', {}).get('before', []))
         after_count = len(analysis_summary.get('context', {}).get('after', []))
         
+        # Add LSTM analysis if available
+        lstm_analysis = ""
+        if detection_method in ['lstm_autoencoder', 'hybrid']:
+            lstm_analysis = f"""
+## LSTM TEMPORAL ANALYSIS
+The LSTM Autoencoder detected this anomaly by analyzing temporal patterns across the last 20 readings.
+- Detection Method: {detection_method}
+- This indicates a sequence-based anomaly where the pattern of sensor readings over time deviates from learned normal behavior
+- LSTM is particularly effective at detecting gradual degradation and temporal correlations that point-based methods might miss
+"""
+
         prompt = f"""You are an industrial sensor data analyst expert. Analyze the following anomaly detected in a manufacturing/industrial sensor system.
 
 ## ANOMALY DETECTION DETAILS
@@ -94,7 +105,7 @@ class ReportGenerator:
 - Anomaly Score: {anomaly_score:.4f} (lower/more negative = more anomalous)
 - Timestamp: {anomaly_reading.get('timestamp', 'N/A')}
 - Primary Sensors Flagged: {', '.join(detected_sensors) if detected_sensors else 'None specifically identified'}
-
+{lstm_analysis}
 ## SENSOR READINGS AT ANOMALY
 The system monitors 50 sensor parameters across 5 categories:
 - Environmental (temperature, pressure, humidity, air quality, etc.)
@@ -528,6 +539,317 @@ GROQ_API_KEY=your_key_here
         
         report_data['id'] = report_id
         return report_id, report_data
+    
+    def generate_future_anomaly_report(self):
+        """Generate a report analyzing future anomaly predictions from LSTM.
+        
+        Returns:
+            str: The generated report text
+        """
+        try:
+            # Import LSTM predictor
+            from lstm_predictor import get_predictor
+            from lstm_detector import get_lstm_detector, is_lstm_available
+            
+            if not is_lstm_available():
+                return "# LSTM Future Anomaly Report\n\nLSTM Autoencoder is not available. Install TensorFlow to enable future anomaly predictions."
+            
+            lstm_detector = get_lstm_detector()
+            if not lstm_detector or not lstm_detector.is_trained:
+                return "# LSTM Future Anomaly Report\n\nLSTM model is not trained yet. Train the model with sufficient data (500+ readings recommended) to enable future predictions."
+            
+            # Get current prediction (includes sensor_analyses and sensor_details)
+            predictor = get_predictor()
+            prediction = predictor.predict_future_anomaly()
+            
+            # Get recent predictions for trend analysis
+            recent_predictions = predictor.get_recent_predictions(limit=10)
+            
+            # Enhance prompt with sensor analysis details
+            # Try AI first, but always generate data-driven report as fallback
+            if self.client:
+                try:
+                    self.logger.info(f"Calling Groq API for future anomaly analysis")
+                    prompt = self._build_future_prediction_prompt(prediction, recent_predictions, lstm_detector)
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are an expert in predictive maintenance and LSTM-based anomaly forecasting. Provide detailed, actionable analysis."
+                            },
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        temperature=0.7,
+                        max_tokens=4000
+                    )
+                    self.logger.info("Groq API response received successfully")
+                    return response.choices[0].message.content
+                except Exception as e:
+                    self.logger.warning(f"Groq API failed, using data-driven fallback: {e}")
+            
+            # Generate data-driven fallback report with actual LSTM data
+            return self._generate_lstm_fallback_report(prediction, recent_predictions, lstm_detector)
+            
+        except Exception as e:
+            self.logger.error(f"Failed to generate future anomaly report: {e}")
+            return f"# LSTM Future Anomaly Report\n\nError generating report: {str(e)}"
+    
+    def _build_future_prediction_prompt(self, current_prediction, recent_predictions, lstm_detector):
+        """Build prompt for future anomaly prediction analysis."""
+        
+        # Current prediction details
+        risk_score = current_prediction.get('risk_score', 0)
+        predicted_window = current_prediction.get('predicted_window', 'N/A')
+        confidence = current_prediction.get('confidence', 0)
+        trend = current_prediction.get('trend', 'unknown')
+        current_error = current_prediction.get('current_error', 0)
+        threshold = current_prediction.get('threshold', 0)
+        contributing_sensors = current_prediction.get('contributing_sensors', [])
+        
+        # Risk level
+        if risk_score >= 70:
+            risk_level = "HIGH"
+        elif risk_score >= 40:
+            risk_level = "MEDIUM"
+        else:
+            risk_level = "LOW"
+        
+        # Trend analysis
+        if len(recent_predictions) > 1:
+            risk_scores = [p.get('risk_score', 0) for p in recent_predictions]
+            avg_risk = sum(risk_scores) / len(risk_scores)
+            risk_trend = "increasing" if risk_scores[-1] > avg_risk else "decreasing"
+        else:
+            avg_risk = risk_score
+            risk_trend = trend
+        
+        # Format recent predictions
+        recent_text = ""
+        for i, pred in enumerate(recent_predictions[:5], 1):
+            recent_text += f"  {i}. Risk: {pred.get('risk_score', 0):.1f}%, "
+            recent_text += f"Trend: {pred.get('trend', 'N/A')}, "
+            recent_text += f"Error: {pred.get('current_error', 0):.4f}\n"
+        
+        prompt = f"""You are an expert in predictive maintenance and LSTM-based anomaly forecasting. Analyze the following future anomaly prediction from an LSTM Autoencoder model monitoring an industrial sensor system.
+
+## CURRENT RISK ASSESSMENT
+- **Risk Score:** {risk_score:.1f}% ({risk_level} RISK)
+- **Predicted Window:** {predicted_window}
+- **Confidence:** {confidence * 100:.0f}%
+- **Reconstruction Error Trend:** {trend}
+- **Current Reconstruction Error:** {current_error:.4f}
+- **Anomaly Threshold:** {threshold:.4f}
+- **Contributing Sensors:** {', '.join(contributing_sensors[:10]) if contributing_sensors else 'None specifically identified'}
+
+## LSTM MODEL DETAILS
+- **Model Type:** LSTM Autoencoder (Sequence-based temporal analysis)
+- **Sequence Length:** {lstm_detector.sequence_length} readings
+- **Detection Threshold:** {threshold:.4f}
+- **Model Status:** Trained and operational
+
+## RECENT PREDICTION HISTORY
+(Last 5 predictions showing trend)
+{recent_text if recent_text else "No recent history available"}
+
+## TREND ANALYSIS
+- **Average Recent Risk:** {avg_risk:.1f}%
+- **Risk Trajectory:** {risk_trend}
+- **Pattern:** The reconstruction error is {trend}, indicating {'increasing anomaly risk' if trend == 'increasing' else 'decreasing anomaly risk' if trend == 'decreasing' else 'stable conditions'}
+
+---
+
+Based on this LSTM analysis, provide a **FUTURE ANOMALY PREDICTION REPORT** with the following sections:
+
+### 1. PREDICTIVE SUMMARY
+Explain what the LSTM model is detecting and what it means for future system health. Include:
+- What temporal patterns indicate potential future anomalies
+- How the reconstruction error trend suggests upcoming issues
+- The significance of the risk score and confidence level
+
+### 2. TEMPORAL PATTERN ANALYSIS
+Describe the sequence-based patterns the LSTM has identified:
+- What sensor sequences are deviating from normal learned behavior
+- How these patterns typically manifest in industrial systems
+- Why LSTM is detecting this when point-based methods might not
+
+### 3. RISK TIMELINE
+Provide a detailed timeline of expected risk evolution:
+- Immediate (next 1-5 readings)
+- Short-term (next 5-10 readings)
+- Medium-term (next 10-20 readings)
+Include specific actions for each timeframe.
+
+### 4. PREVENTIVE ACTIONS
+List specific, actionable steps to prevent the predicted anomaly:
+- Immediate monitoring adjustments
+- Maintenance tasks to schedule
+- System parameters to adjust
+- Sensors to watch closely
+
+### 5. CONFIDENCE ASSESSMENT
+Explain the {confidence * 100:.0f}% confidence level:
+- What factors contribute to this confidence
+- How reliable is this prediction
+- What additional data would improve confidence
+
+### 6. RECOMMENDED MONITORING STRATEGY
+Suggest a monitoring plan:
+- Which sensors to monitor more frequently
+- What thresholds to set for early warning
+- How often to re-evaluate the prediction
+
+Format your response in clear markdown with headers and bullet points for readability. Be specific and actionable."""
+
+        return prompt
+    
+    def _format_sensor_analyses(self, sensor_analyses, sensor_details):
+        """Format sensor analyses for report."""
+        if not sensor_analyses:
+            return "No detailed sensor analysis available."
+        
+        formatted = ""
+        for i, sensor in enumerate(sensor_analyses[:10], 1):
+            severity_emoji = {
+                'critical': '🔴',
+                'high': '🟠',
+                'medium': '🟡',
+                'low': '🟢'
+            }.get(sensor['severity'], '⚪')
+            
+            formatted += f"\n### {i}. {severity_emoji} **{sensor['sensor']}** ({sensor['severity'].upper()})\n\n"
+            formatted += f"**Why it's problematic:**\n"
+            formatted += f"{sensor['reason']}\n\n"
+            
+            formatted += f"**Details:**\n"
+            formatted += f"- Current Value: {sensor['current_value']:.2f}\n"
+            formatted += f"- Trend: {sensor['trend']} ({sensor['trend_rate']:+.2f} per reading)\n"
+            formatted += f"- Reconstruction Error: {sensor['reconstruction_error']:.4f} ({sensor['error_percentile']:.1f}% percentile)\n"
+            
+            if sensor.get('predicted_failure_reading'):
+                formatted += f"- ⚠️ **Predicted Failure:** Reading #{sensor['predicted_failure_reading']}\n"
+            
+            formatted += "\n"
+        
+        return formatted
+    
+    def _generate_lstm_fallback_report(self, prediction, recent_predictions, lstm_detector):
+        """Generate comprehensive data-driven fallback report with actual LSTM data."""
+        from datetime import datetime
+        
+        risk_score = prediction.get('risk_score', 0)
+        predicted_window = prediction.get('predicted_window', 'N/A')
+        confidence = prediction.get('confidence', 0)
+        trend = prediction.get('trend', 'unknown')
+        current_error = prediction.get('current_error', 0)
+        threshold = prediction.get('threshold', 0)
+        contributing_sensors = prediction.get('contributing_sensors', [])
+        sensor_analyses = prediction.get('sensor_analyses', [])
+        sensor_details = prediction.get('sensor_details', {})
+        
+        # Risk level
+        if risk_score >= 70:
+            risk_level, risk_color = "HIGH", "🔴"
+        elif risk_score >= 40:
+            risk_level, risk_color = "MEDIUM", "🟡"
+        else:
+            risk_level, risk_color = "LOW", "🟢"
+        
+        trend_emoji = {'increasing': '📈', 'decreasing': '📉', 'stable': '➡️'}.get(trend, '❓')
+        
+        # Build comprehensive report
+        return f"""# LSTM Future Anomaly Prediction Report
+
+## Executive Summary
+
+{risk_color} **Risk Level: {risk_level}** - **{risk_score:.1f}% Risk Score**
+
+The LSTM Autoencoder analyzed the last {lstm_detector.sequence_length} readings and predicts:
+
+**{predicted_window}**
+
+**Confidence:** {confidence * 100:.0f}% | **Trend:** {trend_emoji} {trend.title()}
+
+---
+
+## Current Risk Assessment
+
+### Key Metrics
+- **Risk Score:** {risk_score:.1f}% ({risk_level})
+- **Confidence:** {confidence * 100:.0f}%
+- **Reconstruction Error:** {current_error:.4f}
+- **Threshold:** {threshold:.4f}
+- **Proximity:** {(current_error/threshold * 100):.1f}% of threshold
+- **Trend:** {trend_emoji} {trend.title()}
+
+### Interpretation
+
+{"**⚠️ HIGH RISK** - Immediate attention required. LSTM detects critical deviations from normal patterns." if risk_score >= 70 else "**⚠️ MEDIUM RISK** - Monitor closely. LSTM shows concerning pattern deviations." if risk_score >= 40 else "**✅ LOW RISK** - Normal operation. Patterns match learned behavior."}
+
+---
+
+## Reconstruction Error Trend: {trend_emoji} {trend.title()}
+
+{"**Rising** - Progressive degradation detected. Risk increasing." if trend == 'increasing' else "**Falling** - System recovering. Risk decreasing." if trend == 'decreasing' else "**Stable** - No significant change in risk level."}
+
+---
+
+## Problematic Sensors Analysis
+
+{f"**{len(contributing_sensors)} sensors identified as problematic:**\n\n" if contributing_sensors else "**No specific sensors identified.** Risk is distributed across system.\n\n"}
+
+{self._format_sensor_analyses(prediction.get('sensor_analyses', []), prediction.get('sensor_details', {}))}
+
+---
+
+## Action Plan
+
+### Immediate (Next 1-5 Readings)
+{"⚠️ **Investigate now** - Check sensors and systems immediately" if risk_score >= 70 else "👀 **Monitor closely** - Check dashboard every 2-5 minutes" if risk_score >= 40 else "✅ **Continue normally** - Standard monitoring"}
+
+### Short-term (Next 5-10 Readings)
+{f"{trend_emoji} **Watch trend** - Error is {trend}" + (" - prepare for escalation" if trend == 'increasing' else " - system recovering" if trend == 'decreasing' else "")}
+
+### Medium-term (Next 10-20 Readings)
+{"🛠️ **Schedule maintenance** for affected systems" if risk_score >= 40 else "✅ **Routine maintenance** - Follow standard schedule"}
+
+---
+
+## Technical Details
+
+**LSTM Model:**
+- Sequence Length: {lstm_detector.sequence_length} readings
+- Features: 50 sensor parameters
+- Threshold: {threshold:.4f}
+- Current Error: {current_error:.4f}
+- Status: ✅ Trained & Operational
+
+**How It Works:**
+1. Analyzes last {lstm_detector.sequence_length} readings as temporal sequence
+2. Attempts to reconstruct pattern using learned normal behavior
+3. High reconstruction error = abnormal pattern = future anomaly risk
+4. Trend analysis predicts if risk is rising or falling
+
+---
+
+## Summary
+
+{risk_color} **{risk_level} RISK ({risk_score:.1f}%)**
+
+- **Trend:** {trend_emoji} {trend.title()}
+- **Confidence:** {confidence * 100:.0f}%
+- **Prediction:** {predicted_window}
+- **Action:** {"⚠️ Investigate immediately" if risk_score >= 70 else "👀 Monitor closely" if risk_score >= 40 else "✅ Continue normal operations"}
+
+---
+
+*Data-driven analysis based on LSTM temporal pattern detection. For AI-powered insights, configure Groq API key in `.env` file.*
+
+**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
 
     def _update_report_status(self, anomaly_id, status):
         """Update or create a report status entry."""
@@ -1035,6 +1357,151 @@ Format your response in clear markdown with headers, bullet points, and tables w
 
 ---
 *For detailed AI-powered root cause analysis, configure GROQ_API_KEY in config.py*"""
+    
+    def generate_future_anomaly_report(self):
+        """Generate a report analyzing future anomaly predictions from LSTM.
+        
+        Returns:
+            str: The generated report text
+        """
+        try:
+            # Import LSTM predictor
+            from lstm_predictor import get_predictor
+            from lstm_detector import get_lstm_detector, is_lstm_available
+            
+            if not is_lstm_available():
+                return "# LSTM Future Anomaly Report\n\nLSTM Autoencoder is not available. Install TensorFlow to enable future anomaly predictions."
+            
+            lstm_detector = get_lstm_detector()
+            if not lstm_detector or not lstm_detector.is_trained:
+                return "# LSTM Future Anomaly Report\n\nLSTM model is not trained yet. Train the model with sufficient data (500+ readings recommended) to enable future predictions."
+            
+            # Get current prediction
+            predictor = get_predictor()
+            prediction = predictor.predict_future_anomaly()
+            
+            # Get recent predictions for trend analysis
+            recent_predictions = predictor.get_recent_predictions(limit=10)
+            
+            # Build prompt for Groq
+            prompt = self._build_future_prediction_prompt(prediction, recent_predictions, lstm_detector)
+            
+            # Call AI
+            report = self._call_ai(prompt)
+            
+            return report
+            
+        except Exception as e:
+            self.logger.error(f"Failed to generate future anomaly report: {e}")
+            return f"# LSTM Future Anomaly Report\n\nError generating report: {str(e)}"
+    
+    def _build_future_prediction_prompt(self, current_prediction, recent_predictions, lstm_detector):
+        """Build prompt for future anomaly prediction analysis."""
+        
+        # Current prediction details
+        risk_score = current_prediction.get('risk_score', 0)
+        predicted_window = current_prediction.get('predicted_window', 'N/A')
+        confidence = current_prediction.get('confidence', 0)
+        trend = current_prediction.get('trend', 'unknown')
+        current_error = current_prediction.get('current_error', 0)
+        threshold = current_prediction.get('threshold', 0)
+        contributing_sensors = current_prediction.get('contributing_sensors', [])
+        
+        # Risk level
+        if risk_score >= 70:
+            risk_level = "HIGH"
+        elif risk_score >= 40:
+            risk_level = "MEDIUM"
+        else:
+            risk_level = "LOW"
+        
+        # Trend analysis
+        if len(recent_predictions) > 1:
+            risk_scores = [p.get('risk_score', 0) for p in recent_predictions]
+            avg_risk = sum(risk_scores) / len(risk_scores)
+            risk_trend = "increasing" if risk_scores[-1] > avg_risk else "decreasing"
+        else:
+            avg_risk = risk_score
+            risk_trend = trend
+        
+        # Format recent predictions
+        recent_text = ""
+        for i, pred in enumerate(recent_predictions[:5], 1):
+            recent_text += f"  {i}. Risk: {pred.get('risk_score', 0):.1f}%, "
+            recent_text += f"Trend: {pred.get('trend', 'N/A')}, "
+            recent_text += f"Error: {pred.get('current_error', 0):.4f}\n"
+        
+        prompt = f"""You are an expert in predictive maintenance and LSTM-based anomaly forecasting. Analyze the following future anomaly prediction from an LSTM Autoencoder model monitoring an industrial sensor system.
+
+## CURRENT RISK ASSESSMENT
+- **Risk Score:** {risk_score:.1f}% ({risk_level} RISK)
+- **Predicted Window:** {predicted_window}
+- **Confidence:** {confidence * 100:.0f}%
+- **Reconstruction Error Trend:** {trend}
+- **Current Reconstruction Error:** {current_error:.4f}
+- **Anomaly Threshold:** {threshold:.4f}
+- **Contributing Sensors:** {', '.join(contributing_sensors[:10]) if contributing_sensors else 'None specifically identified'}
+
+## LSTM MODEL DETAILS
+- **Model Type:** LSTM Autoencoder (Sequence-based temporal analysis)
+- **Sequence Length:** {lstm_detector.sequence_length} readings
+- **Detection Threshold:** {threshold:.4f}
+- **Model Status:** Trained and operational
+
+## RECENT PREDICTION HISTORY
+(Last 5 predictions showing trend)
+{recent_text if recent_text else "No recent history available"}
+
+## TREND ANALYSIS
+- **Average Recent Risk:** {avg_risk:.1f}%
+- **Risk Trajectory:** {risk_trend}
+- **Pattern:** The reconstruction error is {trend}, indicating {'increasing anomaly risk' if trend == 'increasing' else 'decreasing anomaly risk' if trend == 'decreasing' else 'stable conditions'}
+
+---
+
+Based on this LSTM analysis, provide a **FUTURE ANOMALY PREDICTION REPORT** with the following sections:
+
+### 1. PREDICTIVE SUMMARY
+Explain what the LSTM model is detecting and what it means for future system health. Include:
+- What temporal patterns indicate potential future anomalies
+- How the reconstruction error trend suggests upcoming issues
+- The significance of the risk score and confidence level
+
+### 2. TEMPORAL PATTERN ANALYSIS
+Describe the sequence-based patterns the LSTM has identified:
+- What sensor sequences are deviating from normal learned behavior
+- How these patterns typically manifest in industrial systems
+- Why LSTM is detecting this when point-based methods might not
+
+### 3. RISK TIMELINE
+Provide a detailed timeline of expected risk evolution:
+- Immediate (next 1-5 readings)
+- Short-term (next 5-10 readings)
+- Medium-term (next 10-20 readings)
+Include specific actions for each timeframe.
+
+### 4. PREVENTIVE ACTIONS
+List specific, actionable steps to prevent the predicted anomaly:
+- Immediate monitoring adjustments
+- Maintenance tasks to schedule
+- System parameters to adjust
+- Sensors to watch closely
+
+### 5. CONFIDENCE ASSESSMENT
+Explain the {confidence * 100:.0f}% confidence level:
+- What factors contribute to this confidence
+- How reliable is this prediction
+- What additional data would improve confidence
+
+### 6. RECOMMENDED MONITORING STRATEGY
+Suggest a monitoring plan:
+- Which sensors to monitor more frequently
+- What thresholds to set for early warning
+- How often to re-evaluate the prediction
+
+Format your response in clear markdown with headers and bullet points for readability. Be specific and actionable."""
+
+        return prompt
 
 
 def generate_full_session_report():

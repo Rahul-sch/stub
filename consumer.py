@@ -15,16 +15,17 @@ from psycopg2 import sql, OperationalError
 
 import config
 
-# ML Detection imports
+# ML Detection imports - Combined Pipeline (Isolation Forest + LSTM)
 if config.ML_DETECTION_ENABLED:
     try:
-        from ml_detector import get_detector, record_anomaly_detection
+        from combined_pipeline import get_combined_detector, LSTM_AVAILABLE
         ML_AVAILABLE = True
     except ImportError as e:
         ML_AVAILABLE = False
         logging.warning(f"ML detection not available: {e}")
 else:
     ML_AVAILABLE = False
+    LSTM_AVAILABLE = False
 
 
 class SensorDataConsumer:
@@ -253,7 +254,10 @@ class SensorDataConsumer:
             return None
 
     def run_ml_detection(self, reading, reading_id):
-        """Run ML-based anomaly detection on a reading.
+        """Run ML-based anomaly detection using combined pipeline.
+        
+        Uses Isolation Forest and/or LSTM Autoencoder based on config.
+        Strategy is set via config.HYBRID_DETECTION_STRATEGY.
         
         Args:
             reading: Dict with sensor values
@@ -263,26 +267,30 @@ class SensorDataConsumer:
             return
         
         try:
-            detector = get_detector()
-            is_anomaly, score, contributing_sensors = detector.detect(reading)
+            # Get combined detector (handles IF + LSTM)
+            detector = get_combined_detector()
+            
+            # Run detection with configured strategy
+            is_anomaly, score, contributing_sensors, method = detector.detect(reading, reading_id)
             
             # Record the detection result
-            detection_id = record_anomaly_detection(
+            detection_id = detector.record_detection(
                 reading_id=reading_id,
-                detection_method='isolation_forest',
-                anomaly_score=score,
                 is_anomaly=is_anomaly,
-                detected_sensors=contributing_sensors
+                score=score,
+                sensors=contributing_sensors,
+                method=method
             )
             
             if is_anomaly:
                 sensors_str = ', '.join(contributing_sensors[:5]) if contributing_sensors else 'multiple parameters'
+                method_display = method.upper().replace('_', ' ')
                 self.logger.warning(
-                    f"ML Anomaly detected (score: {score:.4f}): {sensors_str}"
+                    f"{method_display} anomaly detected (score: {score:.4f}): {sensors_str}"
                 )
                 self.record_alert(
                     'SENSOR_ANOMALY_ML',
-                    f"Isolation Forest detected anomaly (score: {score:.4f}) - "
+                    f"{method_display} detected anomaly (score: {score:.4f}) - "
                     f"Contributing sensors: {sensors_str}",
                     severity='HIGH'
                 )

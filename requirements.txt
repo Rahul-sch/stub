@@ -20,5 +20,5 @@ python-dotenv==1.0.0
 reportlab==4.0.7
 markdown==3.5.1
 
-# Optional: LSTM Autoencoder (uncomment if needed)
-# tensorflow==2.15.0
+# LSTM Autoencoder for sequence-based anomaly detection
+tensorflow>=2.16.1

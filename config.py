@@ -343,6 +343,34 @@ CONTEXT_WINDOW_SIZE = 10  # Readings before/after anomaly to analyze
 MODELS_DIR = os.path.join(os.path.dirname(__file__), 'models')
 
 # ============================================================================
+# LSTM AUTOENCODER CONFIGURATION
+# ============================================================================
+
+# Enable/disable LSTM Autoencoder (requires TensorFlow)
+LSTM_ENABLED = os.environ.get('LSTM_ENABLED', 'true').lower() == 'true'
+
+# LSTM Model Parameters
+LSTM_SEQUENCE_LENGTH = int(os.environ.get('LSTM_SEQUENCE_LENGTH', '20'))
+LSTM_ENCODING_DIM = int(os.environ.get('LSTM_ENCODING_DIM', '32'))
+LSTM_THRESHOLD_PERCENTILE = float(os.environ.get('LSTM_THRESHOLD_PERCENTILE', '95'))
+
+# Minimum readings required before using LSTM
+LSTM_MIN_READINGS = int(os.environ.get('LSTM_MIN_READINGS', '100'))
+
+# ============================================================================
+# HYBRID DETECTION CONFIGURATION
+# ============================================================================
+
+# Hybrid Detection Strategy
+# Options:
+#   'isolation_forest' - Only use Isolation Forest (default, fast)
+#   'lstm' - Only use LSTM (requires TensorFlow and trained model)
+#   'hybrid_or' - Flag anomaly if EITHER method detects it
+#   'hybrid_and' - Flag anomaly only if BOTH methods agree
+#   'hybrid_smart' - IF primary, LSTM catches what IF misses (recommended)
+HYBRID_DETECTION_STRATEGY = os.environ.get('HYBRID_DETECTION_STRATEGY', 'hybrid_smart')
+
+# ============================================================================
 # AI REPORT GENERATION CONFIGURATION (Groq)
 # ============================================================================
 

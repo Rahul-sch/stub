@@ -21,9 +21,13 @@ from kafka import KafkaAdminClient
 try:
     from report_generator import ReportGenerator, get_report, get_report_by_anomaly
     from analysis_engine import ContextAnalyzer, get_anomaly_details
+    from lstm_predictor import get_predictor, predict_next_anomaly
+    from lstm_detector import get_lstm_detector, is_lstm_available
     ML_REPORTS_AVAILABLE = True
+    LSTM_AVAILABLE = is_lstm_available()
 except ImportError as e:
     ML_REPORTS_AVAILABLE = False
+    LSTM_AVAILABLE = False
     print(f"ML report generation not available: {e}")
 
 app = Flask(__name__)
@@ -793,6 +797,160 @@ def api_get_report_by_anomaly(anomaly_id):
     return jsonify(report)
 
 
+def generate_pdf_from_markdown(markdown_text, title="Report"):
+    """Generate PDF from markdown text.
+    
+    Args:
+        markdown_text: Markdown formatted text
+        title: PDF document title
+        
+    Returns:
+        BytesIO buffer containing the PDF
+    """
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER
+    from reportlab.lib import colors
+    import io
+    import re
+    
+    # Create PDF buffer
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, title=title)
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#1e40af'),
+        spaceAfter=12,
+        fontName='Helvetica-Bold'
+    )
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#059669'),
+        spaceAfter=8,
+        spaceBefore=12,
+        fontName='Helvetica-Bold'
+    )
+    body_style = ParagraphStyle(
+        'CustomBody',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=6,
+        alignment=TA_LEFT,
+        leftIndent=0
+    )
+    
+    # Build content
+    elements = []
+    
+    # Add title
+    elements.append(Paragraph(title, title_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Parse markdown - handle multi-line content better
+    lines = markdown_text.split('\n')
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        # Skip empty lines (but add spacing)
+        if not line:
+            elements.append(Spacer(1, 0.1*inch))
+            i += 1
+            continue
+        
+        # Check for headers (process in order: ###, ##, #)
+        if line.startswith('###'):
+            header_text = line.replace('###', '').strip()
+            # Remove emojis and clean up
+            header_text = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', header_text).strip()
+            if header_text:
+                elements.append(Paragraph(header_text, heading_style))
+        elif line.startswith('##'):
+            header_text = line.replace('##', '').strip()
+            # Remove emojis and clean up
+            header_text = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', header_text).strip()
+            if header_text:
+                elements.append(Paragraph(header_text, heading_style))
+        elif line.startswith('#'):
+            header_text = line.replace('#', '').strip()
+            # Remove duplicate title
+            if 'LSTM Future Anomaly Prediction Report' in header_text:
+                i += 1
+                continue  # Skip duplicate title
+            # Remove emojis and clean up
+            header_text = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', header_text).strip()
+            if header_text:
+                elements.append(Paragraph(header_text, heading_style))
+        # Check for horizontal rules
+        elif line.strip() in ['---', '***', '___']:
+            elements.append(Spacer(1, 0.2*inch))
+        # Check for list items
+        elif line.startswith('- ') or line.startswith('* '):
+            list_text = line[2:].strip()
+            # Convert markdown bold to reportlab bold
+            list_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', list_text)
+            list_text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', list_text)
+            # Remove emojis
+            list_text = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', list_text).strip()
+            if list_text:
+                elements.append(Paragraph(f"• {list_text}", body_style))
+        # Numbered list
+        elif re.match(r'^\d+\.', line):
+            list_text = re.sub(r'^\d+\.\s*', '', line)
+            # Convert markdown bold to reportlab bold
+            list_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', list_text)
+            list_text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', list_text)
+            # Remove emojis
+            list_text = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', list_text).strip()
+            if list_text:
+                elements.append(Paragraph(list_text, body_style))
+        # Regular paragraph
+        else:
+            # Clean up any escaped characters
+            line = line.replace('\\n', ' ').replace('\\t', ' ')
+            
+            # Convert markdown bold to reportlab bold
+            line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
+            line = re.sub(r'\*(.*?)\*', r'<i>\1</i>', line)
+            
+            # Remove emojis (they don't render well in PDF)
+            line = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', line).strip()
+            
+            # Only add non-empty lines
+            if line:
+                elements.append(Paragraph(line, body_style))
+        
+        i += 1
+    
+    # Add footer
+    elements.append(Spacer(1, 0.5*inch))
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#64748b'),
+        alignment=TA_CENTER
+    )
+    elements.append(Paragraph("<i>Generated by Sensor Data Pipeline Dashboard</i>", footer_style))
+    elements.append(Paragraph(f"<i>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>", footer_style))
+    
+    # Build PDF
+    doc.build(elements)
+    
+    # Return buffer
+    buffer.seek(0)
+    return buffer
+
+
 @app.route('/api/reports/<int:report_id>/pdf')
 def api_get_report_pdf(report_id):
     """Generate and download a PDF report."""
@@ -1250,6 +1408,174 @@ def export_data():
         return response
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/generate-future-report', methods=['POST'])
+def api_generate_future_report():
+    """Generate and download LSTM future anomaly prediction report as PDF."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML reports not available'}), 503
+    
+    if not LSTM_AVAILABLE:
+        return jsonify({'error': 'LSTM not available'}), 503
+    
+    try:
+        # Get report generator
+        report_gen = ReportGenerator()
+        
+        # Generate the future anomaly report
+        report_text = report_gen.generate_future_anomaly_report()
+        
+        # Generate PDF
+        pdf_buffer = generate_pdf_from_markdown(
+            report_text,
+            f"LSTM Future Anomaly Prediction Report - {datetime.now().strftime('%Y-%m-%d')}"
+        )
+        
+        # Return PDF
+        response = make_response(pdf_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=future_anomaly_report_{datetime.now().strftime("%Y-%m-%d")}.pdf'
+        return response
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/lstm-predictions')
+def api_lstm_predictions():
+    """Get LSTM future anomaly predictions with detailed sensor analysis."""
+    if not LSTM_AVAILABLE:
+        return jsonify({
+            'available': False,
+            'error': 'LSTM not available'
+        })
+    
+    try:
+        predictor = get_predictor()
+        
+        # Get current prediction (now includes sensor_analyses and sensor_details)
+        current_prediction = predict_next_anomaly()
+        
+        # Get LSTM detector info
+        lstm_detector = get_lstm_detector()
+        
+        return jsonify({
+            'available': True,
+            'trained': lstm_detector.is_trained if lstm_detector else False,
+            'current_prediction': current_prediction,
+            'model_info': {
+                'threshold': float(lstm_detector.threshold) if lstm_detector and lstm_detector.is_trained else 0,
+                'sequence_length': lstm_detector.sequence_length if lstm_detector else 0
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'available': True,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/lstm-status')
+def api_lstm_status():
+    """Get LSTM model training status and quality metrics."""
+    if not LSTM_AVAILABLE:
+        return jsonify({
+            'available': False,
+            'trained': False,
+            'quality_score': 0,
+            'message': 'LSTM not available - TensorFlow not installed'
+        })
+    
+    try:
+        lstm_detector = get_lstm_detector()
+        
+        if not lstm_detector or not lstm_detector.is_trained:
+            return jsonify({
+                'available': True,
+                'trained': False,
+                'quality_score': 0,
+                'message': 'LSTM model not trained yet'
+            })
+        
+        # Get reading count
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM sensor_readings')
+        reading_count = cursor.fetchone()[0]
+        cursor.close()
+        conn.close()
+        
+        # Calculate quality score (0-100)
+        quality_score = calculate_lstm_quality_score(lstm_detector, reading_count)
+        
+        return jsonify({
+            'available': True,
+            'trained': True,
+            'quality_score': quality_score,
+            'threshold': float(lstm_detector.threshold),
+            'sequence_length': lstm_detector.sequence_length,
+            'reading_count': reading_count,
+            'message': get_quality_message(quality_score)
+        })
+    except Exception as e:
+        return jsonify({
+            'available': True,
+            'error': str(e)
+        }), 500
+
+
+def calculate_lstm_quality_score(lstm_detector, reading_count):
+    """Calculate LSTM training quality score (0-100)."""
+    score = 0
+    
+    # Data amount score (0-40 points)
+    if reading_count >= 1000:
+        data_score = 40
+    elif reading_count >= 500:
+        data_score = 30 + (reading_count - 500) / 500 * 10
+    elif reading_count >= 100:
+        data_score = 10 + (reading_count - 100) / 400 * 20
+    else:
+        data_score = reading_count / 100 * 10
+    score += data_score
+    
+    # Model performance score (0-30 points)
+    # Based on threshold - lower threshold means model is more sensitive
+    threshold = lstm_detector.threshold
+    if threshold < 0.5:
+        perf_score = 30
+    elif threshold < 1.0:
+        perf_score = 20 + (1.0 - threshold) / 0.5 * 10
+    elif threshold < 2.0:
+        perf_score = 10 + (2.0 - threshold) / 1.0 * 10
+    else:
+        perf_score = max(0, 10 - (threshold - 2.0) * 2)
+    score += perf_score
+    
+    # Sequence coverage score (0-30 points)
+    # More data = better coverage
+    if reading_count >= 1000:
+        coverage_score = 30
+    elif reading_count >= 500:
+        coverage_score = 20 + (reading_count - 500) / 500 * 10
+    else:
+        coverage_score = reading_count / 500 * 20
+    score += coverage_score
+    
+    return min(100, max(0, score))
+
+
+def get_quality_message(quality_score):
+    """Get quality message based on score."""
+    if quality_score >= 80:
+        return 'Excellent - Model is well-trained and reliable'
+    elif quality_score >= 60:
+        return 'Good - Model is adequately trained'
+    elif quality_score >= 40:
+        return 'Fair - Model needs more training data'
+    else:
+        return 'Poor - Collect more data for better predictions'
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

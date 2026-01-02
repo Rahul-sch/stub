@@ -1369,6 +1369,127 @@
         </div>
       </div>
 
+      <!-- LSTM Future Prediction Card -->
+      <div class="card" style="margin-bottom: 24px">
+        <h2>🔮 LSTM Future Anomaly Prediction</h2>
+        <p class="card-intro">
+          LSTM Autoencoder analyzes temporal patterns to predict potential future anomalies.
+        </p>
+        
+        <!-- LSTM Status -->
+        <div id="lstmStatusContainer" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 600; color: #cbd5e1;">Training Quality</span>
+            <span id="lstmQualityPercent" style="font-weight: 600; color: #10b981;">--</span>
+          </div>
+          <div style="background: #1e293b; border-radius: 8px; height: 24px; overflow: hidden; position: relative;">
+            <div id="lstmQualityBar" style="
+              height: 100%;
+              width: 0%;
+              background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+              transition: width 0.5s ease, background 0.5s ease;
+              border-radius: 8px;
+            "></div>
+            <div style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12px;
+              font-weight: 600;
+              color: white;
+              text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            " id="lstmQualityText">Loading...</div>
+          </div>
+          <div id="lstmStatusMessage" style="margin-top: 8px; font-size: 13px; color: #94a3b8; text-align: center;">
+            Checking LSTM status...
+          </div>
+        </div>
+
+        <!-- Current Prediction -->
+        <div id="lstmPredictionContainer" style="
+          background: linear-gradient(135deg, #1e293b, #0f172a);
+          border: 1px solid #334155;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 16px;
+        ">
+          <h3 style="margin: 0 0 16px 0; color: #e2e8f0; font-size: 16px;">Current Risk Assessment</h3>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Risk Score</div>
+              <div id="lstmRiskScore" style="font-size: 24px; font-weight: 700; color: #10b981;">--</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Confidence</div>
+              <div id="lstmConfidence" style="font-size: 24px; font-weight: 700; color: #3b82f6;">--</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Predicted Window</div>
+            <div id="lstmPredictedWindow" style="font-size: 14px; color: #e2e8f0; font-weight: 500;">--</div>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Trend</div>
+            <div id="lstmTrend" style="font-size: 14px; color: #e2e8f0; font-weight: 500;">--</div>
+          </div>
+
+          <div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Contributing Sensors</div>
+            <div id="lstmSensors" style="font-size: 13px; color: #cbd5e1;">--</div>
+          </div>
+        </div>
+
+        <!-- Problematic Sensors Analysis -->
+        <div id="lstmSensorAnalysisContainer" style="
+          background: linear-gradient(135deg, #1e293b, #0f172a);
+          border: 1px solid #334155;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 16px;
+          display: none;
+        ">
+          <h3 style="margin: 0 0 16px 0; color: #e2e8f0; font-size: 16px;">🔍 Problematic Sensors Analysis</h3>
+          <p style="margin: 0 0 16px 0; font-size: 13px; color: #94a3b8;">
+            Sensors that are trending toward problems and why:
+          </p>
+          <div id="lstmSensorAnalysisList" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Sensor analysis items will be inserted here -->
+          </div>
+        </div>
+
+        <!-- Generate Future Report Button -->
+        <button
+          id="generateFutureReportBtn"
+          onclick="generateFutureReport(this)"
+          style="
+            width: 100%;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 15px;
+          "
+        >
+          <span>📊</span>
+          <span>Generate Future Anomaly Report (PDF)</span>
+        </button>
+      </div>
+
       <!-- ML Anomaly Detection Card -->
       <div class="card" style="margin-bottom: 24px">
         <div
@@ -2676,6 +2797,204 @@
           .catch(console.error);
       }
 
+      // ========== LSTM Prediction Functions ==========
+
+      function loadLSTMStatus() {
+        fetch("/api/lstm-status")
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.available) {
+              document.getElementById("lstmQualityText").textContent = "Not Available";
+              document.getElementById("lstmStatusMessage").textContent = data.message || "LSTM not available";
+              document.getElementById("lstmQualityBar").style.width = "0%";
+              return;
+            }
+
+            if (!data.trained) {
+              document.getElementById("lstmQualityText").textContent = "Not Trained";
+              document.getElementById("lstmStatusMessage").textContent = data.message || "Model not trained";
+              document.getElementById("lstmQualityBar").style.width = "0%";
+              return;
+            }
+
+            // Update quality bar
+            const quality = data.quality_score || 0;
+            document.getElementById("lstmQualityPercent").textContent = quality.toFixed(0) + "%";
+            document.getElementById("lstmQualityBar").style.width = quality + "%";
+            document.getElementById("lstmQualityText").textContent = quality.toFixed(0) + "%";
+            document.getElementById("lstmStatusMessage").textContent = data.message || "Model trained";
+
+            // Color based on quality
+            const bar = document.getElementById("lstmQualityBar");
+            if (quality >= 80) {
+              bar.style.background = "linear-gradient(90deg, #10b981, #059669)";
+            } else if (quality >= 60) {
+              bar.style.background = "linear-gradient(90deg, #f59e0b, #10b981)";
+            } else {
+              bar.style.background = "linear-gradient(90deg, #ef4444, #f59e0b)";
+            }
+          })
+          .catch(console.error);
+      }
+
+      function loadLSTMPredictions() {
+        fetch("/api/lstm-predictions")
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.available || !data.trained) {
+              document.getElementById("lstmRiskScore").textContent = "N/A";
+              document.getElementById("lstmConfidence").textContent = "N/A";
+              document.getElementById("lstmPredictedWindow").textContent = "LSTM not trained";
+              document.getElementById("lstmTrend").textContent = "N/A";
+              document.getElementById("lstmSensors").textContent = "N/A";
+              return;
+            }
+
+            const pred = data.current_prediction;
+            
+            // Risk score with color
+            const riskScore = pred.risk_score || 0;
+            const riskEl = document.getElementById("lstmRiskScore");
+            riskEl.textContent = riskScore.toFixed(1) + "%";
+            
+            if (riskScore >= 70) {
+              riskEl.style.color = "#ef4444";
+            } else if (riskScore >= 40) {
+              riskEl.style.color = "#f59e0b";
+            } else {
+              riskEl.style.color = "#10b981";
+            }
+
+            // Confidence
+            const confidence = pred.confidence || 0;
+            document.getElementById("lstmConfidence").textContent = (confidence * 100).toFixed(0) + "%";
+
+            // Predicted window
+            document.getElementById("lstmPredictedWindow").textContent = pred.predicted_window || "N/A";
+
+            // Trend with emoji
+            const trend = pred.trend || "unknown";
+            let trendText = trend;
+            if (trend === "increasing") {
+              trendText = "📈 Increasing (Risk Rising)";
+            } else if (trend === "decreasing") {
+              trendText = "📉 Decreasing (Risk Falling)";
+            } else if (trend === "stable") {
+              trendText = "➡️ Stable";
+            }
+            document.getElementById("lstmTrend").textContent = trendText;
+
+            // Contributing sensors
+            const sensors = pred.contributing_sensors || [];
+            if (sensors.length > 0) {
+              document.getElementById("lstmSensors").textContent = sensors.slice(0, 5).join(", ");
+            } else {
+              document.getElementById("lstmSensors").textContent = "None identified";
+            }
+
+            // Display detailed sensor analysis
+            const sensorAnalyses = pred.sensor_analyses || [];
+            const analysisContainer = document.getElementById("lstmSensorAnalysisContainer");
+            const analysisList = document.getElementById("lstmSensorAnalysisList");
+
+            if (sensorAnalyses.length > 0) {
+              analysisContainer.style.display = "block";
+              analysisList.innerHTML = "";
+
+              // Show top 5 most problematic sensors
+              sensorAnalyses.slice(0, 5).forEach((sensor) => {
+                const severityColors = {
+                  'critical': '#ef4444',
+                  'high': '#f59e0b',
+                  'medium': '#eab308',
+                  'low': '#10b981'
+                };
+                const severityEmojis = {
+                  'critical': '🔴',
+                  'high': '🟠',
+                  'medium': '🟡',
+                  'low': '🟢'
+                };
+
+                const item = document.createElement("div");
+                item.style.cssText = `
+                  background: rgba(30, 41, 59, 0.5);
+                  border-left: 3px solid ${severityColors[sensor.severity] || '#64748b'};
+                  padding: 12px;
+                  border-radius: 6px;
+                `;
+
+                const sensorName = document.createElement("div");
+                sensorName.style.cssText = "font-weight: 600; color: #e2e8f0; margin-bottom: 6px; font-size: 14px;";
+                sensorName.textContent = `${severityEmojis[sensor.severity] || '⚪'} ${sensor.sensor} (${sensor.severity.toUpperCase()})`;
+                item.appendChild(sensorName);
+
+                const reason = document.createElement("div");
+                reason.style.cssText = "font-size: 12px; color: #cbd5e1; margin-bottom: 4px; line-height: 1.4;";
+                reason.textContent = sensor.reason;
+                item.appendChild(reason);
+
+                if (sensor.predicted_failure_reading) {
+                  const failure = document.createElement("div");
+                  failure.style.cssText = "font-size: 11px; color: #f59e0b; margin-top: 4px;";
+                  failure.textContent = `⚠️ Predicted failure at reading: ${sensor.predicted_failure_reading}`;
+                  item.appendChild(failure);
+                }
+
+                const trendInfo = document.createElement("div");
+                trendInfo.style.cssText = "font-size: 11px; color: #94a3b8; margin-top: 4px;";
+                const trendEmoji = sensor.trend === 'increasing' ? '📈' : sensor.trend === 'decreasing' ? '📉' : '➡️';
+                trendInfo.textContent = `${trendEmoji} Trend: ${sensor.trend} (${sensor.trend_rate > 0 ? '+' : ''}${sensor.trend_rate.toFixed(2)} per reading) | Current: ${sensor.current_value.toFixed(2)}`;
+                item.appendChild(trendInfo);
+
+                analysisList.appendChild(item);
+              });
+            } else {
+              analysisContainer.style.display = "none";
+            }
+          })
+          .catch(console.error);
+      }
+
+      function generateFutureReport(button) {
+        button.disabled = true;
+        button.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Generating...';
+
+        fetch("/api/generate-future-report", { method: "POST" })
+          .then((r) => {
+            if (!r.ok) throw new Error("Failed to generate report");
+            return r.blob();
+          })
+          .then((blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `future_anomaly_report_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            button.innerHTML = '<span>✓</span><span>Report Downloaded!</span>';
+            button.style.background = "linear-gradient(135deg, #10b981, #059669)";
+            setTimeout(() => {
+              button.innerHTML = '<span>📊</span><span>Generate Future Anomaly Report (PDF)</span>';
+              button.style.background = "linear-gradient(135deg, #8b5cf6, #7c3aed)";
+              button.disabled = false;
+            }, 3000);
+          })
+          .catch((err) => {
+            console.error(err);
+            button.innerHTML = '<span>✗</span><span>Failed</span>';
+            button.style.background = "linear-gradient(135deg, #ef4444, #dc2626)";
+            setTimeout(() => {
+              button.innerHTML = '<span>📊</span><span>Generate Future Anomaly Report (PDF)</span>';
+              button.style.background = "linear-gradient(135deg, #8b5cf6, #7c3aed)";
+              button.disabled = false;
+            }, 3000);
+          });
+      }
+
       // ========== ML Anomaly Detection Functions ==========
 
       function loadMLStats() {
@@ -3470,6 +3789,7 @@ Report generated by Sensor Data Pipeline Dashboard
         loadAlerts();
         loadMLStats();
         loadAnomalies();
+        loadLSTMPredictions();
       }, 2000);
 
       // Initial load
@@ -3481,6 +3801,8 @@ Report generated by Sensor Data Pipeline Dashboard
       loadMLStats();
       loadAnomalies();
       loadInjectionSettings();
+      loadLSTMStatus();
+      loadLSTMPredictions();
     </script>
   </body>
 </html>

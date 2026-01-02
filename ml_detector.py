@@ -177,6 +177,14 @@ class AnomalyDetector:
             # Scale the data
             scaled_data = self.scaler.fit_transform(feature_data)
             
+            # Create a fresh model instance to avoid version compatibility issues
+            self.model = IsolationForest(
+                contamination=self.contamination,
+                n_estimators=self.n_estimators,
+                random_state=42,
+                n_jobs=-1  # Use all CPU cores
+            )
+            
             # Train the model
             self.model.fit(scaled_data)
             self.is_trained = True
@@ -326,7 +334,7 @@ def record_anomaly_detection(reading_id, detection_method, anomaly_score,
     
     Args:
         reading_id: ID of the sensor reading
-        detection_method: 'isolation_forest' or 'lstm_autoencoder'
+        detection_method: 'isolation_forest', 'lstm_autoencoder', or 'hybrid'
         anomaly_score: The anomaly score from the model
         is_anomaly: Whether it was classified as an anomaly
         detected_sensors: List of sensor names that contributed

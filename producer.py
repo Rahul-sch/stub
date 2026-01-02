@@ -17,7 +17,7 @@ from kafka.errors import KafkaError
 import config
 
 # Dashboard API URL for injection settings
-DASHBOARD_API_URL = 'http://localhost:5000'
+DASHBOARD_API_URL = 'http://localhost:5001'
 
 
 class SensorDataProducer:

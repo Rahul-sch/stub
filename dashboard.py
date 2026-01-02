@@ -7,6 +7,7 @@ from flask import Flask, render_template, jsonify, request, make_response
 import psycopg2
 import subprocess
 import os
+import sys
 import signal
 import json
 import threading
@@ -430,27 +431,47 @@ def reset_config():
     else:
         return jsonify({'success': False, 'error': message})
 
-@app.route('/api/start/<component>')
+@app.route('/api/start/<component>', methods=['POST'])
 def start_component(component):
     """Start producer or consumer"""
     if component not in ['producer', 'consumer']:
         return jsonify({'success': False, 'error': 'Invalid component'})
 
     try:
-        venv_python = os.path.join(os.path.dirname(__file__), 'venv', 'Scripts', 'python.exe')
+        # Determine Python executable path (cross-platform)
         script_path = os.path.join(os.path.dirname(__file__), f'{component}.py')
+        
+        # Check for venv first (Windows)
+        if os.name == 'nt':
+            venv_python = os.path.join(os.path.dirname(__file__), 'venv', 'Scripts', 'python.exe')
+            if os.path.exists(venv_python):
+                python_exe = venv_python
+            else:
+                python_exe = sys.executable  # Use current Python
+        else:
+            # macOS/Linux
+            venv_python = os.path.join(os.path.dirname(__file__), 'venv', 'bin', 'python')
+            if os.path.exists(venv_python):
+                python_exe = venv_python
+            else:
+                python_exe = sys.executable  # Use current Python
 
-        proc = subprocess.Popen(
-            [venv_python, script_path],
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-        )
+        # Prepare subprocess arguments
+        popen_args = [python_exe, script_path]
+        popen_kwargs = {}
+        
+        # Only use Windows-specific creationflags on Windows
+        if os.name == 'nt':
+            popen_kwargs['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP
+
+        proc = subprocess.Popen(popen_args, **popen_kwargs)
         processes[component] = proc  # Store the process object, not just PID
 
         return jsonify({'success': True, 'pid': proc.pid})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/api/stop/<component>')
+@app.route('/api/stop/<component>', methods=['POST'])
 def stop_component(component):
     """Stop producer or consumer"""
     if component not in ['producer', 'consumer']:
@@ -467,11 +488,21 @@ def stop_component(component):
                 subprocess.run(['taskkill', '/F', '/T', '/PID', str(pid)],
                              capture_output=True, timeout=5)
             else:
-                proc.kill()
+                # macOS/Linux: Try graceful shutdown first (SIGTERM), then force kill (SIGKILL)
+                try:
+                    proc.terminate()  # Send SIGTERM
+                    try:
+                        proc.wait(timeout=2)  # Wait up to 2 seconds
+                    except subprocess.TimeoutExpired:
+                        # Process didn't respond, force kill
+                        proc.kill()  # Send SIGKILL
+                        proc.wait(timeout=1)
+                except ProcessLookupError:
+                    pass  # Process already dead
 
             try:
-                proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:
+                proc.wait(timeout=1)
+            except (subprocess.TimeoutExpired, ProcessLookupError):
                 pass
 
             killed_pids.append(pid)
@@ -479,10 +510,11 @@ def stop_component(component):
 
         # Also search for any running processes with the component script name
         # This catches processes started outside the dashboard
+        script_name = f'{component}.py'
+        
         if os.name == 'nt':
+            # Windows: Use WMIC
             try:
-                # Use WMIC to find Python processes running the component script
-                script_name = f'{component}.py'
                 result = subprocess.run(
                     ['wmic', 'process', 'where', f"CommandLine like '%{script_name}%'", 'get', 'CommandLine,ProcessId'],
                     capture_output=True, text=True, timeout=2
@@ -505,6 +537,42 @@ def stop_component(component):
                         pass
             except:
                 pass
+        else:
+            # macOS/Linux: Use ps to find and kill processes
+            # Note: 'ps aux' works on macOS and most Linux distributions
+            try:
+                result = subprocess.run(
+                    ['ps', 'aux'],
+                    capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0:
+                    lines = result.stdout.strip().split('\n')
+                    for line in lines:
+                        if script_name in line and 'python' in line.lower() and 'grep' not in line:
+                            try:
+                                # Extract PID (second column in ps aux output)
+                                parts = line.split()
+                                if len(parts) >= 2 and parts[1].isdigit():
+                                    pid = int(parts[1])
+                                    # Only kill if not already killed
+                                    if pid not in killed_pids:
+                                        try:
+                                            os.kill(pid, signal.SIGTERM)
+                                            # Wait a bit, then force kill if still running
+                                            time.sleep(0.5)
+                                            try:
+                                                os.kill(pid, 0)  # Check if process exists
+                                                os.kill(pid, signal.SIGKILL)  # Force kill
+                                            except ProcessLookupError:
+                                                pass  # Process already dead
+                                            killed_pids.append(pid)
+                                        except ProcessLookupError:
+                                            pass  # Process doesn't exist
+                            except (ValueError, IndexError):
+                                pass
+            except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+                # ps command not available or failed - continue without error
+                pass
 
         if killed_pids:
             return jsonify({'success': True, 'pids': killed_pids})
@@ -517,18 +585,22 @@ def is_component_running(component):
     """Check if a component (producer or consumer) is running, even if not tracked by dashboard"""
     # First check tracked process
     proc = processes.get(component)
-    if proc and proc.poll() is None:
-        return True
-
-    # If tracked process is dead, clean it up
     if proc:
-        processes[component] = None
+        # Check if process is still alive
+        poll_result = proc.poll()
+        if poll_result is None:
+            # Process is still running
+            return True
+        else:
+            # Process has terminated, clean it up
+            processes[component] = None
 
-    # Search for any running process with the component script name on Windows
+    # Search for any running process with the component script name
+    script_name = f'{component}.py'
+    
     if os.name == 'nt':
+        # Windows: Use WMIC
         try:
-            script_name = f'{component}.py'
-            # Use WMIC to get both ProcessId and CommandLine
             result = subprocess.run(
                 ['wmic', 'process', 'where', f"CommandLine like '%{script_name}%'", 'get', 'CommandLine,ProcessId'],
                 capture_output=True, text=True, timeout=2
@@ -543,6 +615,23 @@ def is_component_running(component):
                     return True
         except Exception:
             # If WMIC fails, return False (assume not running)
+            pass
+    else:
+        # macOS/Linux: Use ps to find processes
+        # Note: 'ps aux' works on macOS and most Linux distributions
+        # For systems where 'ps aux' doesn't work, we fall back gracefully
+        try:
+            result = subprocess.run(
+                ['ps', 'aux'],
+                capture_output=True, text=True, timeout=2
+            )
+            if result.returncode == 0:
+                lines = result.stdout.strip().split('\n')
+                for line in lines:
+                    if script_name in line and 'python' in line.lower() and 'grep' not in line:
+                        return True
+        except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+            # ps command not available or failed - assume process not running
             pass
 
     return False
@@ -993,4 +1082,4 @@ def export_data():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)

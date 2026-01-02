@@ -2381,7 +2381,9 @@
       }
 
       function startComponent(component) {
-        fetch(`/api/start/${component}`)
+        fetch(`/api/start/${component}`, {
+          method: 'POST'
+        })
           .then((r) => r.json())
           .then((result) => {
             alert(
@@ -2390,11 +2392,16 @@
                 : `❌ Failed: ${result.error}`
             );
             updateStatus();
+          })
+          .catch((error) => {
+            alert(`❌ Failed to start ${component}: ${error.message}`);
           });
       }
 
       function stopComponent(component) {
-        fetch(`/api/stop/${component}`)
+        fetch(`/api/stop/${component}`, {
+          method: 'POST'
+        })
           .then((r) => r.json())
           .then((result) => {
             alert(
@@ -2403,6 +2410,9 @@
                 : `❌ Failed: ${result.error}`
             );
             updateStatus();
+          })
+          .catch((error) => {
+            alert(`❌ Failed to stop ${component}: ${error.message}`);
           });
       }
 

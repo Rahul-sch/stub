@@ -793,6 +793,176 @@ def api_get_report_by_anomaly(anomaly_id):
     return jsonify(report)
 
 
+@app.route('/api/reports/<int:report_id>/pdf')
+def api_get_report_pdf(report_id):
+    """Generate and download a PDF report."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+        from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
+        from reportlab.lib import colors
+        import markdown
+        import re
+        
+        # Get the report data
+        report = get_report(report_id)
+        if not report:
+            return jsonify({'error': 'Report not found'}), 404
+        
+        # Create PDF in memory
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, 
+                               rightMargin=72, leftMargin=72,
+                               topMargin=72, bottomMargin=18)
+        
+        # Container for PDF elements
+        elements = []
+        
+        # Define styles
+        styles = getSampleStyleSheet()
+        
+        # Custom title style
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#1e40af'),
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        # Custom heading style
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=16,
+            textColor=colors.HexColor('#059669'),
+            spaceAfter=12,
+            spaceBefore=12,
+            fontName='Helvetica-Bold',
+            borderWidth=1,
+            borderColor=colors.HexColor('#d1fae5'),
+            borderPadding=5
+        )
+        
+        # Body text style
+        body_style = ParagraphStyle(
+            'CustomBody',
+            parent=styles['BodyText'],
+            fontSize=11,
+            leading=16,
+            alignment=TA_JUSTIFY,
+            spaceAfter=12
+        )
+        
+        # Metadata style
+        meta_style = ParagraphStyle(
+            'MetaData',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.HexColor('#64748b'),
+            spaceAfter=6
+        )
+        
+        # Add title
+        elements.append(Paragraph("Anomaly Analysis Report", title_style))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Add metadata
+        elements.append(Paragraph(f"<b>Report ID:</b> #{report['id']}", meta_style))
+        elements.append(Paragraph(f"<b>Anomaly ID:</b> #{report['anomaly_id']}", meta_style))
+        
+        generated_time = report.get('completed_at') or report.get('created_at', 'N/A')
+        elements.append(Paragraph(f"<b>Generated:</b> {generated_time}", meta_style))
+        elements.append(Paragraph(f"<b>Status:</b> {report.get('status', 'N/A').upper()}", meta_style))
+        
+        elements.append(Spacer(1, 0.4*inch))
+        
+        # Process the analysis text
+        analysis = report.get('chatgpt_analysis', 'No analysis available')
+        
+        # Convert markdown to plain text with formatting
+        # Remove markdown code blocks
+        analysis = re.sub(r'```.*?```', '', analysis, flags=re.DOTALL)
+        
+        # Process markdown headers
+        lines = analysis.split('\n')
+        for line in lines:
+            line = line.strip()
+            if not line:
+                elements.append(Spacer(1, 0.1*inch))
+                continue
+            
+            # Check for headers
+            if line.startswith('###'):
+                header_text = line.replace('###', '').strip()
+                elements.append(Paragraph(header_text, heading_style))
+            elif line.startswith('##'):
+                header_text = line.replace('##', '').strip()
+                elements.append(Paragraph(header_text, heading_style))
+            elif line.startswith('#'):
+                header_text = line.replace('#', '').strip()
+                elements.append(Paragraph(header_text, heading_style))
+            # Check for list items
+            elif line.startswith('- ') or line.startswith('* '):
+                list_text = line[2:].strip()
+                # Convert markdown bold to reportlab bold
+                list_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', list_text)
+                list_text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', list_text)
+                elements.append(Paragraph(f"• {list_text}", body_style))
+            # Numbered list
+            elif re.match(r'^\d+\.', line):
+                list_text = re.sub(r'^\d+\.\s*', '', line)
+                # Convert markdown bold to reportlab bold
+                list_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', list_text)
+                list_text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', list_text)
+                elements.append(Paragraph(list_text, body_style))
+            # Regular paragraph
+            else:
+                # Convert markdown bold to reportlab bold
+                line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
+                line = re.sub(r'\*(.*?)\*', r'<i>\1</i>', line)
+                elements.append(Paragraph(line, body_style))
+        
+        # Add footer
+        elements.append(Spacer(1, 0.5*inch))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor('#64748b'),
+            alignment=TA_CENTER
+        )
+        elements.append(Paragraph("<i>Generated by Sensor Data Pipeline Dashboard</i>", footer_style))
+        elements.append(Paragraph(f"<i>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>", footer_style))
+        
+        # Build PDF
+        doc.build(elements)
+        
+        # Get PDF data
+        pdf_data = buffer.getvalue()
+        buffer.close()
+        
+        # Create response
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=anomaly_report_{report_id}_{datetime.now().strftime("%Y-%m-%d")}.pdf'
+        
+        return response
+        
+    except Exception as e:
+        import traceback
+        print(f"PDF generation error: {e}")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Failed to generate PDF: {str(e)}'}), 500
+
+
 @app.route('/api/generate-full-report', methods=['POST'])
 def api_generate_full_session_report():
     """Generate a comprehensive report for the entire monitoring session."""

@@ -144,22 +144,24 @@ Format your response in clear markdown with headers and bullet points for readab
 
         return prompt
 
-    def _call_ai(self, prompt):
+    def _call_ai(self, prompt, analysis_summary=None, anomaly_data=None):
         """Call the Groq AI API to generate analysis.
         
         Args:
             prompt: The analysis prompt
+            analysis_summary: Dict from ContextAnalyzer (for fallback report)
+            anomaly_data: Dict with anomaly details (for fallback report)
             
         Returns:
             str: The generated analysis text
         """
         if not OPENAI_AVAILABLE:
-            self.logger.warning("OpenAI library not available")
-            return self._generate_fallback_report(prompt)
+            self.logger.warning("OpenAI library not available - using data-driven fallback report")
+            return self._generate_fallback_report(analysis_summary, anomaly_data)
         
         if not self.client:
-            self.logger.warning("Groq API client not initialized - check API key")
-            return self._generate_fallback_report(prompt)
+            self.logger.warning("Groq API client not initialized (check GROQ_API_KEY in .env) - using data-driven fallback report")
+            return self._generate_fallback_report(analysis_summary, anomaly_data)
         
         try:
             self.logger.info(f"Calling Groq API with model: {self.model}")
@@ -184,46 +186,199 @@ Format your response in clear markdown with headers and bullet points for readab
             return response.choices[0].message.content
             
         except Exception as e:
-            self.logger.error(f"Groq API call failed: {e}")
-            return self._generate_fallback_report(prompt)
+            self.logger.error(f"Groq API call failed: {e} - using data-driven fallback report")
+            return self._generate_fallback_report(analysis_summary, anomaly_data)
 
-    def _generate_fallback_report(self, prompt):
-        """Generate a basic report when ChatGPT is unavailable.
+    def _generate_fallback_report(self, analysis_summary=None, anomaly_data=None):
+        """Generate a data-driven report when AI API is unavailable.
+        
+        Uses actual sensor data from analysis_summary to create meaningful,
+        actionable reports instead of generic placeholder text.
         
         Args:
-            prompt: The original prompt (for extracting data)
+            analysis_summary: Dict from ContextAnalyzer.generate_analysis_summary()
+            anomaly_data: Dict with anomaly detection details
             
         Returns:
-            str: A basic analysis report
+            str: A detailed analysis report based on actual data
         """
-        return """## Automated Analysis Report
+        # If no data available, return minimal fallback
+        if not analysis_summary:
+            return """## Automated Analysis Report
 
-**Note:** This is an automated fallback report. ChatGPT API is not available or not configured.
+**Note:** This is an automated fallback report. No anomaly data was available for analysis.
 
-### 1. ROOT CAUSE ANALYSIS
-Based on the sensor deviations detected, this anomaly appears to involve multiple parameters exceeding their normal operating ranges. Further investigation is recommended to determine the specific root cause.
+Please configure your Groq API key in the `.env` file for AI-powered analysis:
+```
+GROQ_API_KEY=your_groq_api_key_here
+```
 
-### 2. AFFECTED SYSTEMS
-Review the flagged sensors in the anomaly detection to identify which systems require attention. Pay particular attention to sensors with high z-scores (>2.0).
+Get your free API key at: https://console.groq.com/keys"""
 
-### 3. SEVERITY ASSESSMENT
-**Severity: To Be Determined**
-Manual review of the sensor data is recommended to assess the actual severity level.
+        # Extract real data from analysis_summary
+        patterns = analysis_summary.get('patterns', {})
+        top_deviations = patterns.get('top_deviations', [])
+        correlations = analysis_summary.get('correlations', {})
+        significant_correlations = correlations.get('significant', [])
+        context = analysis_summary.get('context', {})
+        anomaly_reading = context.get('anomaly', {})
+        
+        # Get anomaly metadata
+        anomaly_score = anomaly_data.get('anomaly_score', 0) if anomaly_data else 0
+        detection_method = anomaly_data.get('detection_method', 'isolation_forest') if anomaly_data else 'unknown'
+        detected_sensors = anomaly_data.get('detected_sensors', []) if anomaly_data else []
+        timestamp = anomaly_reading.get('timestamp', 'N/A')
+        
+        # Determine severity based on z-scores
+        max_z_score = max([abs(d.get('z_score', 0)) for d in top_deviations]) if top_deviations else 0
+        if max_z_score > 3.0 or anomaly_score < -0.05:
+            severity = "CRITICAL"
+            severity_desc = "Immediate attention required - multiple sensors significantly outside normal range"
+        elif max_z_score > 2.5 or anomaly_score < -0.03:
+            severity = "HIGH"
+            severity_desc = "Urgent investigation needed - substantial deviation from baseline"
+        elif max_z_score > 2.0 or anomaly_score < -0.02:
+            severity = "MEDIUM"
+            severity_desc = "Monitor closely - notable deviation detected"
+        else:
+            severity = "LOW"
+            severity_desc = "Minor deviation - continue monitoring"
+        
+        # Build deviation details
+        deviation_text = ""
+        if top_deviations:
+            for i, dev in enumerate(top_deviations[:5], 1):
+                sensor = dev.get('sensor', 'unknown')
+                value = dev.get('anomaly_value', 'N/A')
+                baseline = dev.get('baseline_mean', 'N/A')
+                z_score = dev.get('z_score', 0)
+                pct_change = dev.get('percent_change', 0)
+                unit = dev.get('unit', '')
+                trend = dev.get('trend_direction', 'unknown')
+                category = dev.get('category', 'unknown')
+                
+                deviation_text += f"""
+**{i}. {sensor.replace('_', ' ').title()}** ({category})
+   - Current Value: **{value}{unit}**
+   - Baseline Mean: {baseline}{unit}
+   - Z-Score: **{z_score}** ({abs(pct_change):.1f}% {'above' if pct_change > 0 else 'below'} baseline)
+   - Trend: {trend}
+"""
+        else:
+            deviation_text = "No significant deviations detected in the analyzed sensors."
+        
+        # Build correlation details
+        correlation_text = ""
+        if significant_correlations:
+            correlation_text = "The following sensor pairs showed strong correlation during this anomaly:\n"
+            for corr in significant_correlations[:5]:
+                s1 = corr.get('sensor1', '').replace('_', ' ').title()
+                s2 = corr.get('sensor2', '').replace('_', ' ').title()
+                r = corr.get('correlation', 0)
+                strength = corr.get('strength', 'moderate')
+                correlation_text += f"- **{s1}** ↔ **{s2}**: r={r:.3f} ({strength} correlation)\n"
+        else:
+            correlation_text = "No significant correlations detected between sensors."
+        
+        # Build affected systems based on sensor categories
+        affected_categories = set()
+        for dev in top_deviations[:10]:
+            cat = dev.get('category')
+            if cat:
+                affected_categories.add(cat)
+        
+        affected_text = ""
+        category_recommendations = {
+            'mechanical': "Check rotating equipment (motors, bearings, belts) for wear or alignment issues",
+            'thermal': "Inspect cooling systems, check for blockages or coolant levels",
+            'electrical': "Verify power supply stability, check for loose connections or grounding issues",
+            'environmental': "Review HVAC systems, check for contamination or ventilation problems",
+            'fluid': "Inspect pumps, valves, and piping for leaks or pressure issues"
+        }
+        
+        for cat in affected_categories:
+            cat_name = cat.replace('_', ' ').title()
+            recommendation = category_recommendations.get(cat, "Inspect related equipment")
+            affected_text += f"- **{cat_name} System**: {recommendation}\n"
+        
+        if not affected_text:
+            affected_text = "Unable to determine affected systems from available data."
+        
+        # Build the complete report
+        report = f"""## Automated Anomaly Analysis Report
 
-### 4. PREVENTION RECOMMENDATIONS
-- Review and potentially adjust monitoring thresholds for flagged sensors
-- Implement regular maintenance schedules for affected equipment
-- Consider adding redundant sensors for critical parameters
-- Document this incident for future reference
-
-### 5. IMMEDIATE ACTIONS REQUIRED
-- Verify current sensor readings are within safe operating limits
-- Check for any physical signs of equipment stress or damage
-- Review recent operational changes that may have contributed
-- Consult with maintenance team if readings remain abnormal
+**Note:** This is a data-driven automated report. For enhanced AI-powered root cause analysis, configure your Groq API key in `.env`.
 
 ---
-*To enable AI-powered analysis, configure your OpenAI API key in the OPENAI_API_KEY environment variable.*"""
+
+### Detection Summary
+- **Timestamp:** {timestamp}
+- **Detection Method:** {detection_method.replace('_', ' ').title()}
+- **Anomaly Score:** {anomaly_score:.4f}
+- **Flagged Sensors:** {', '.join(detected_sensors) if detected_sensors else 'Auto-detected via ML'}
+
+---
+
+### 1. ROOT CAUSE ANALYSIS
+
+Based on the sensor data analysis, this anomaly is characterized by significant deviations in the following parameters:
+{deviation_text}
+
+**Correlation Analysis:**
+{correlation_text}
+
+The combination of these deviations suggests potential issues with interconnected systems. The {'strong ' if max_z_score > 2.5 else ''}correlation between affected sensors indicates this may be a systemic issue rather than isolated sensor failures.
+
+---
+
+### 2. AFFECTED SYSTEMS
+
+Based on the sensor categories showing deviations:
+{affected_text}
+
+---
+
+### 3. SEVERITY ASSESSMENT
+
+**Severity Level: {severity}**
+
+{severity_desc}
+
+- Maximum Z-Score: **{max_z_score:.2f}** standard deviations from baseline
+- Anomaly Score: **{anomaly_score:.4f}** (more negative = more anomalous)
+- Number of significantly affected sensors: **{len([d for d in top_deviations if abs(d.get('z_score', 0)) > 2.0])}**
+
+---
+
+### 4. PREVENTION RECOMMENDATIONS
+
+Based on the detected patterns:
+
+1. **Threshold Adjustment:** Review alert thresholds for {', '.join([d.get('sensor', '') for d in top_deviations[:3]]) if top_deviations else 'affected sensors'}
+2. **Predictive Monitoring:** Implement trend analysis for early detection of similar patterns
+3. **Correlation Monitoring:** Set up alerts for correlated sensor pairs to detect cascading failures
+4. **Maintenance Schedule:** Consider preventive maintenance for {'mechanical components' if 'mechanical' in affected_categories else 'affected systems'}
+5. **Documentation:** Log this incident for future reference and pattern recognition
+
+---
+
+### 5. IMMEDIATE ACTIONS REQUIRED
+
+1. **Verify Current State:** Check if the flagged sensors have returned to normal ranges
+2. **Physical Inspection:** Visually inspect equipment associated with: {', '.join(list(affected_categories)[:3]) if affected_categories else 'affected systems'}
+3. **Review Recent Changes:** Identify any operational or environmental changes preceding this anomaly
+4. **Monitor Trends:** Watch for recurring patterns over the next monitoring cycle
+5. **Escalate if Needed:** Contact maintenance team if severity is HIGH or CRITICAL
+
+---
+
+*For AI-powered root cause analysis with detailed recommendations, add your Groq API key to `.env`:*
+```
+GROQ_API_KEY=your_key_here
+```
+*Get a free key at: https://console.groq.com/keys*"""
+
+        return report
 
     def _extract_sections(self, analysis_text):
         """Extract root cause and recommendations from the analysis.
@@ -288,9 +443,9 @@ Manual review of the sensor data is recommended to assess the actual severity le
             self.logger.error(f"Failed to generate analysis summary for reading {reading_id}")
             return None
         
-        # Build prompt and call AI
+        # Build prompt and call AI (pass analysis_summary for fallback)
         prompt = self._build_prompt(anomaly_data, analysis_summary)
-        chatgpt_analysis = self._call_ai(prompt)
+        chatgpt_analysis = self._call_ai(prompt, analysis_summary, anomaly_data)
         
         # Extract sections
         root_cause, prevention = self._extract_sections(chatgpt_analysis)

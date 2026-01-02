@@ -1008,6 +1008,84 @@
         font-size: 18px;
         font-weight: 700;
       }
+      .report-analysis {
+        background: rgba(15, 23, 42, 0.4);
+        padding: 24px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        line-height: 1.8;
+        color: #e2e8f0;
+      }
+      .report-analysis h3 {
+        color: #10b981;
+        border-bottom: 2px solid rgba(16, 185, 129, 0.3);
+        padding-bottom: 12px;
+        margin-top: 32px;
+        margin-bottom: 16px;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .report-analysis h3:first-child {
+        margin-top: 0;
+      }
+      .report-analysis p {
+        margin-bottom: 16px;
+        line-height: 1.8;
+      }
+      .report-analysis ul {
+        margin-left: 24px;
+        margin-bottom: 16px;
+      }
+      .report-analysis li {
+        margin-bottom: 10px;
+        line-height: 1.7;
+      }
+      .report-analysis strong {
+        color: #60a5fa;
+        font-weight: 700;
+      }
+      .report-analysis em {
+        color: #fbbf24;
+        font-style: italic;
+      }
+      .report-analysis code {
+        background: rgba(30, 41, 59, 0.8);
+        color: #10b981;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+      }
+      .report-analysis pre {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(100, 116, 139, 0.3);
+        border-radius: 8px;
+        padding: 16px;
+        overflow-x: auto;
+        margin: 16px 0;
+      }
+      .report-analysis pre code {
+        background: none;
+        padding: 0;
+      }
+      .btn-download-report {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+      }
+      .btn-download-report:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+      }
       .loading-spinner {
         display: inline-block;
         width: 20px;
@@ -1547,9 +1625,19 @@
         <div class="modal-content">
           <div class="modal-header">
             <h2>📋 Anomaly Analysis Report</h2>
-            <button class="modal-close" onclick="closeReportModal()">
-              &times;
-            </button>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <button 
+                id="downloadReportBtn" 
+                class="btn-download-report" 
+                onclick="downloadCurrentReport()"
+                style="display: none;"
+              >
+                📥 Download
+              </button>
+              <button class="modal-close" onclick="closeReportModal()">
+                &times;
+              </button>
+            </div>
           </div>
           <div class="modal-body" id="reportContent">Loading...</div>
         </div>
@@ -2724,11 +2812,16 @@
           });
       }
 
+      // Store current report for download
+      let currentReport = null;
+
       function viewReport(reportId) {
         const modal = document.getElementById("reportModal");
         const content = document.getElementById("reportContent");
+        const downloadBtn = document.getElementById("downloadReportBtn");
 
         modal.style.display = "flex";
+        downloadBtn.style.display = "none"; // Hide until loaded
         content.innerHTML =
           '<div style="text-align: center; padding: 40px;"><span class="loading-spinner" style="width: 40px; height: 40px; border-width: 3px;"></span><p style="margin-top: 16px;">Loading report...</p></div>';
 
@@ -2739,6 +2832,10 @@
               content.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 40px;">${report.error}</div>`;
               return;
             }
+
+            // Store report for download
+            currentReport = report;
+            downloadBtn.style.display = "inline-flex"; // Show download button
 
             // Format the report
             const analysis = report.chatgpt_analysis || "No analysis available";
@@ -2779,6 +2876,53 @@
           })
           .catch((err) => {
             content.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 40px;">Failed to load report</div>`;
+          });
+      }
+
+      function downloadCurrentReport() {
+        if (!currentReport) {
+          alert("No report loaded to download");
+          return;
+        }
+
+        const report = currentReport;
+        
+        // Show loading indicator
+        const downloadBtn = document.getElementById("downloadReportBtn");
+        const originalText = downloadBtn.innerHTML;
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = "⏳ Generating PDF...";
+        
+        // Call the server-side PDF generation endpoint
+        fetch(`/api/reports/${report.id}/pdf`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.blob();
+          })
+          .then(blob => {
+            // Create a download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `anomaly_report_${report.id}_${new Date().toISOString().slice(0, 10)}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = originalText;
+          })
+          .catch(err => {
+            console.error('PDF download error:', err);
+            alert('Error downloading PDF: ' + err.message);
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = originalText;
           });
       }
 
@@ -3171,42 +3315,152 @@ Report generated by Sensor Data Pipeline Dashboard
           if (e.target === this) closeFullReportModal();
         });
 
-      // Simple markdown formatter
+      // Markdown formatter for PDF (light theme, print-friendly)
+      function formatMarkdownForPDF(text) {
+        if (!text) return "";
+
+        // Escape HTML first
+        text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+        // Process code blocks (```...```) before other processing
+        const codeBlocks = [];
+        text = text.replace(/```([^`]+)```/g, (match, code) => {
+          const index = codeBlocks.length;
+          codeBlocks.push(`<pre style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; overflow-x: auto; margin: 15px 0;"><code style="background: none; padding: 0; color: #059669; font-family: 'Courier New', monospace; font-size: 13px;">${code.trim()}</code></pre>`);
+          return `__CODEBLOCK_${index}__`;
+        });
+
+        // Process inline code (`...`)
+        text = text.replace(/`([^`]+)`/g, '<code style="background: #f1f5f9; color: #059669; padding: 2px 6px; border-radius: 4px; font-family: \'Courier New\', monospace; font-size: 13px;">$1</code>');
+
+        // Headers (process in order: h3, h2, h1 to avoid conflicts)
+        text = text.replace(/^### (.*$)/gm, '<h3 style="color: #059669; font-size: 18px; margin-top: 30px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #d1fae5;">$1</h3>');
+        text = text.replace(/^## (.*$)/gm, '<h3 style="color: #059669; font-size: 20px; margin-top: 30px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #d1fae5;">$1</h3>');
+        text = text.replace(/^# (.*$)/gm, '<h3 style="color: #059669; font-size: 22px; margin-top: 30px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #d1fae5;">$1</h3>');
+
+        // Bold (process before italic to handle ** vs *)
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1e40af; font-weight: 700;">$1</strong>');
+
+        // Italic
+        text = text.replace(/\*([^*]+)\*/g, '<em style="color: #92400e; font-style: italic;">$1</em>');
+
+        // Horizontal rules
+        text = text.replace(/^---+$/gm, '<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">');
+
+        // Lists - handle multi-level indentation
+        text = text.replace(/^(\s*)- (.*$)/gm, (match, indent, content) => {
+          const level = indent.length / 2;
+          return `<li style="margin-bottom: 10px; line-height: 1.7;">${content}</li>`;
+        });
+        
+        // Wrap lists in ul tags
+        text = text.replace(/(<li[^>]*>.*<\/li>\n?)+/g, (match) => {
+          return `<ul style="margin-left: 25px; margin-bottom: 15px;">${match}</ul>`;
+        });
+
+        // Numbered lists
+        text = text.replace(/^(\s*)\d+\. (.*$)/gm, (match, indent, content) => {
+          return `<li style="margin-bottom: 10px; line-height: 1.7;">${content}</li>`;
+        });
+        text = text.replace(/(<li>.*<\/li>\n?)+/g, (match) => {
+          // Only wrap if not already wrapped in ul
+          if (!match.includes('<ul>')) {
+            return `<ol style="margin-left: 25px; margin-bottom: 15px;">${match}</ol>`;
+          }
+          return match;
+        });
+
+        // Paragraphs and line breaks
+        text = text.replace(/\n\n+/g, "</p><p style='margin-bottom: 15px; line-height: 1.8;'>");
+        text = text.replace(/\n/g, "<br>");
+
+        // Wrap in paragraph tags
+        text = "<p style='margin-bottom: 15px; line-height: 1.8;'>" + text + "</p>";
+
+        // Clean up empty paragraphs
+        text = text.replace(/<p[^>]*><\/p>/g, "");
+        text = text.replace(/<p[^>]*>\s*<\/p>/g, "");
+
+        // Restore code blocks
+        codeBlocks.forEach((block, index) => {
+          text = text.replace(`__CODEBLOCK_${index}__`, block);
+        });
+
+        return text;
+      }
+
+      // Enhanced markdown formatter (for screen display)
       function formatMarkdown(text) {
         if (!text) return "";
 
-        // Escape HTML
+        // Escape HTML first
         text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-        // Headers
-        text = text.replace(/^### (.*$)/gm, "<h3>$1</h3>");
-        text = text.replace(
-          /^## (.*$)/gm,
-          '<h3 style="font-size: 18px;">$1</h3>'
-        );
-        text = text.replace(
-          /^# (.*$)/gm,
-          '<h3 style="font-size: 20px;">$1</h3>'
-        );
+        // Process code blocks (```...```) before other processing
+        const codeBlocks = [];
+        text = text.replace(/```([^`]+)```/g, (match, code) => {
+          const index = codeBlocks.length;
+          codeBlocks.push(`<pre><code>${code.trim()}</code></pre>`);
+          return `__CODEBLOCK_${index}__`;
+        });
 
-        // Bold
+        // Process inline code (`...`)
+        text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+        // Headers (process in order: h3, h2, h1 to avoid conflicts)
+        text = text.replace(/^### (.*$)/gm, "<h3>$1</h3>");
+        text = text.replace(/^## (.*$)/gm, '<h3 style="font-size: 18px;">$1</h3>');
+        text = text.replace(/^# (.*$)/gm, '<h3 style="font-size: 20px;">$1</h3>');
+
+        // Bold (process before italic to handle ** vs *)
         text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
         // Italic
-        text = text.replace(/\*(.*?)\*/g, "<em>$1</em>");
+        text = text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
 
-        // Lists
-        text = text.replace(/^- (.*$)/gm, "<li>$1</li>");
-        text = text.replace(/(<li>.*<\/li>\n?)+/g, "<ul>$&</ul>");
+        // Horizontal rules
+        text = text.replace(/^---+$/gm, '<hr style="border: none; border-top: 1px solid rgba(148, 163, 184, 0.2); margin: 20px 0;">');
+
+        // Lists - handle multi-level indentation
+        text = text.replace(/^(\s*)- (.*$)/gm, (match, indent, content) => {
+          const level = indent.length / 2;
+          return `<li data-level="${level}">${content}</li>`;
+        });
+        
+        // Wrap lists in ul tags
+        text = text.replace(/(<li[^>]*>.*<\/li>\n?)+/g, (match) => {
+          return `<ul>${match}</ul>`;
+        });
 
         // Numbered lists
-        text = text.replace(/^\d+\. (.*$)/gm, "<li>$1</li>");
+        text = text.replace(/^(\s*)\d+\. (.*$)/gm, (match, indent, content) => {
+          return `<li>${content}</li>`;
+        });
+        text = text.replace(/(<li>.*<\/li>\n?)+/g, (match) => {
+          // Only wrap if not already wrapped in ul
+          if (!match.includes('<ul>')) {
+            return `<ol>${match}</ol>`;
+          }
+          return match;
+        });
 
-        // Line breaks
-        text = text.replace(/\n\n/g, "</p><p>");
+        // Paragraphs and line breaks
+        text = text.replace(/\n\n+/g, "</p><p>");
         text = text.replace(/\n/g, "<br>");
 
-        return "<p>" + text + "</p>";
+        // Wrap in paragraph tags
+        text = "<p>" + text + "</p>";
+
+        // Clean up empty paragraphs
+        text = text.replace(/<p><\/p>/g, "");
+        text = text.replace(/<p>\s*<\/p>/g, "");
+
+        // Restore code blocks
+        codeBlocks.forEach((block, index) => {
+          text = text.replace(`__CODEBLOCK_${index}__`, block);
+        });
+
+        return text;
       }
 
       // Auto-refresh every 2 seconds

@@ -3,6 +3,25 @@ Configuration file for sensor data pipeline.
 Contains all settings for Kafka, PostgreSQL, timing, and sensor parameters.
 """
 
+import os
+import logging
+
+# Load environment variables from .env file (for development)
+# In production/Docker, environment variables are set via container config
+try:
+    from dotenv import load_dotenv
+    # Load .env from the same directory as this config file
+    _env_path = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(_env_path):
+        load_dotenv(_env_path)
+        logging.info(f"Loaded environment variables from {_env_path}")
+    else:
+        # Try loading from current directory as fallback
+        load_dotenv()
+except ImportError:
+    # python-dotenv not installed, rely on system environment variables
+    pass
+
 # ============================================================================
 # TIMING CONFIGURATION
 # ============================================================================
@@ -309,8 +328,6 @@ LOG_PROGRESS_INTERVAL = 10
 # ML DETECTION CONFIGURATION
 # ============================================================================
 
-import os
-
 # Enable/disable ML-based anomaly detection
 ML_DETECTION_ENABLED = True
 
@@ -329,9 +346,17 @@ MODELS_DIR = os.path.join(os.path.dirname(__file__), 'models')
 # AI REPORT GENERATION CONFIGURATION (Groq)
 # ============================================================================
 
-# Groq API key - set via environment variable GROQ_API_KEY
+# Groq API key - loaded from .env file or environment variable
 # Get your free API key at: https://console.groq.com/keys
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
+
+# Log API key status (without revealing the key)
+if GROQ_API_KEY and GROQ_API_KEY.startswith('gsk_'):
+    logging.info("Groq API key loaded successfully (starts with 'gsk_')")
+elif GROQ_API_KEY:
+    logging.warning("GROQ_API_KEY is set but doesn't start with 'gsk_' - may be invalid")
+else:
+    logging.warning("GROQ_API_KEY not set - AI reports will use fallback mode. Set it in .env file or environment.")
 
 # Groq API endpoint (OpenAI-compatible)
 GROQ_BASE_URL = 'https://api.groq.com/openai/v1'

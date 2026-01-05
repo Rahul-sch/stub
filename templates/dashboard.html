@@ -2075,6 +2075,43 @@
         'B': {},
         'C': {}
       };
+
+      // ========== Per-Machine Data Isolation ==========
+      // TRUE machine-scoped data storage - each machine has its own independent data
+      let machineData = {
+        'A': {
+          statsData: null,         // Full stats response for this machine
+          recentReadings: [],      // Live sensor readings history
+          alerts: [],              // Alerts for this machine
+          anomalies: [],           // ML anomalies for this machine
+          mlStats: { totalAnomalies: 0, anomalyRate: 0, reportsGenerated: 0 },
+          lstmPredictions: null,   // LSTM predictions for this machine
+          totalCount: 0            // Total message count for this machine
+        },
+        'B': {
+          statsData: null,
+          recentReadings: [],
+          alerts: [],
+          anomalies: [],
+          mlStats: { totalAnomalies: 0, anomalyRate: 0, reportsGenerated: 0 },
+          lstmPredictions: null,
+          totalCount: 0
+        },
+        'C': {
+          statsData: null,
+          recentReadings: [],
+          alerts: [],
+          anomalies: [],
+          mlStats: { totalAnomalies: 0, anomalyRate: 0, reportsGenerated: 0 },
+          lstmPredictions: null,
+          totalCount: 0
+        }
+      };
+
+      // Get the data for the currently selected machine
+      function getCurrentMachineData() {
+        return machineData[selectedMachineId];
+      }
       
       // Initialize all sensors as enabled with no baseline override
       function initializeMachineState() {
@@ -2101,12 +2138,105 @@
         });
         document.getElementById('adminMachineLabel').textContent = machineId;
         updateAdminPanel();
-        // Refresh all data displays with new machine filter
+
+        // ========== MACHINE DATA ISOLATION ==========
+        // Immediately render from cached data for this machine (instant UI update)
+        renderFromMachineCache(machineId);
+
+        // Then fetch fresh data (which will also update the cache)
         updateStats();
         loadAlerts();
         loadMLStats();
         loadAnomalies();
         loadLSTMPredictions();
+      }
+
+      // Render UI from machine-specific cache (instant switch)
+      function renderFromMachineCache(machineId) {
+        const machine = machineData[machineId];
+
+        // Render total count from cache
+        document.getElementById("totalCount").textContent = machine.totalCount;
+
+        // Render alerts from cache
+        const alertContainer = document.getElementById("alertList");
+        if (alertContainer) {
+          if (machine.alerts.length === 0) {
+            alertContainer.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;">No alerts for Machine ${machineId} yet</div>`;
+          } else {
+            alertContainer.innerHTML = machine.alerts.map((alert) => {
+              const severity = (alert.severity || "info").toLowerCase();
+              return `
+                <div class="alert-item">
+                  <div>
+                    <div class="alert-type">${alert.alert_type}</div>
+                    <div class="alert-message">${alert.message}</div>
+                  </div>
+                  <div class="alert-meta">
+                    <span class="alert-badge ${severity}">${alert.severity}</span>
+                    <div class="alert-time">${formatDateTime(alert.created_at)}</div>
+                  </div>
+                </div>
+              `;
+            }).join("");
+          }
+        }
+
+        // Render anomalies from cache
+        const anomalyContainer = document.getElementById("anomalyList");
+        if (anomalyContainer) {
+          if (machine.anomalies.length === 0) {
+            anomalyContainer.innerHTML = `
+              <div style="text-align: center; color: #94a3b8; padding: 40px;">
+                No ML anomalies detected for Machine ${machineId} yet. Start the pipeline to begin monitoring.
+              </div>
+            `;
+          } else {
+            anomalyContainer.innerHTML = machine.anomalies.map((anomaly) => {
+              const sensors = filterSensorsArray(anomaly.detected_sensors || []);
+              const sensorTags = sensors.slice(0, 5).map((s) => `<span>${s.replace(/_/g, " ")}</span>`).join("");
+              const moreSensors = sensors.length > 5 ? `<span>+${sensors.length - 5} more</span>` : "";
+              let actionBtn = "";
+              if (anomaly.report_id && anomaly.report_status === "completed") {
+                actionBtn = `<button class="btn-report btn-view-report" onclick="viewReport(${anomaly.report_id})">📄 View Report</button>`;
+              } else if (anomaly.report_status === "generating") {
+                actionBtn = `<button class="btn-report" disabled><span class="loading-spinner"></span> Generating...</button>`;
+              } else {
+                actionBtn = `<button class="btn-report" onclick="generateReport(${anomaly.id}, this)">🤖 Generate Report</button>`;
+              }
+              return `
+                <div class="anomaly-item">
+                  <div class="anomaly-info">
+                    <div class="anomaly-header">
+                      <span class="anomaly-score">Score: ${anomaly.anomaly_score.toFixed(4)}</span>
+                      <span class="anomaly-method">${anomaly.detection_method}</span>
+                    </div>
+                    <div class="anomaly-timestamp">${formatDateTime(anomaly.created_at)}</div>
+                    <div class="anomaly-sensors">
+                      <strong>Contributing sensors:</strong><br>
+                      ${sensorTags}${moreSensors}
+                    </div>
+                  </div>
+                  <div class="anomaly-actions">${actionBtn}</div>
+                </div>
+              `;
+            }).join("");
+          }
+        }
+
+        // Render ML stats from cache
+        document.getElementById("mlTotalAnomalies").textContent = machine.mlStats.totalAnomalies;
+        document.getElementById("mlAnomalyRate").textContent = machine.mlStats.anomalyRate.toFixed(1) + "%";
+        document.getElementById("mlReportsGenerated").textContent = machine.mlStats.reportsGenerated;
+
+        // Render live readings from cache
+        const readingsContainer = document.getElementById("readingsHistory");
+        if (readingsContainer) {
+          if (machine.recentReadings.length === 0) {
+            readingsContainer.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet for Machine ${machineId}</div>`;
+          }
+          // Full readings will be rendered by updateStats when it returns
+        }
       }
       
       function switchMode(mode) {
@@ -2640,16 +2770,40 @@
         fetch("/api/stats")
           .then((r) => r.json())
           .then((data) => {
+            // ========== MACHINE DATA ISOLATION ==========
+            // Store incoming data ONLY for the currently selected machine
+            const currentMachine = machineData[selectedMachineId];
+
             // Apply machine filtering (non-destructive wrapper)
             data = filterSensorData(data);
-            
-            // Calculate total count for selected machine (only enabled sensors)
-            const enabledSensors = getEnabledSensors();
-            const enabledCount = enabledSensors.length;
-            const totalSensors = Object.keys(sensorsByCategory).flatMap(cat => sensorsByCategory[cat]).length;
-            // Approximate machine count: scale by enabled sensors ratio
-            const machineCount = Math.round((data.total_count || 0) * (enabledCount / Math.max(1, totalSensors)));
-            document.getElementById("totalCount").textContent = machineCount;
+
+            // Store filtered data in machine-specific buffer
+            currentMachine.statsData = JSON.parse(JSON.stringify(data)); // Deep copy
+
+            // Accumulate readings for this machine (keep last 50)
+            if (data.recent_readings_full && data.recent_readings_full.length > 0) {
+              const newReadings = data.recent_readings_full;
+              // Merge new readings avoiding duplicates by timestamp
+              const existingTimestamps = new Set(currentMachine.recentReadings.map(r => r.created_at));
+              newReadings.forEach(reading => {
+                if (!existingTimestamps.has(reading.created_at)) {
+                  currentMachine.recentReadings.unshift(reading);
+                }
+              });
+              // Keep only last 50 readings per machine
+              currentMachine.recentReadings = currentMachine.recentReadings.slice(0, 50);
+            }
+
+            // Update total count for THIS machine specifically
+            // Each fetch increments machine-specific counter
+            const previousCount = currentMachine.totalCount || 0;
+            const newDataCount = (data.recent_readings_full || []).length;
+            if (newDataCount > 0) {
+              currentMachine.totalCount = previousCount + newDataCount;
+            }
+
+            // Display count from machine buffer
+            document.getElementById("totalCount").textContent = currentMachine.totalCount;
 
             // Update Statistics section with category tabs
             if (data.stats_by_category) {
@@ -2831,23 +2985,21 @@
               }
             }
 
-            // Render history for selected category
-            if (
-              data.recent_readings_full &&
-              data.recent_readings_full.length > 0
-            ) {
+            // Render history for selected category - USE MACHINE-SPECIFIC BUFFER
+            const machineReadings = currentMachine.recentReadings;
+            if (machineReadings && machineReadings.length > 0) {
               const allSensors = sensorsByCategory[selectedHistoryCategory] || [];
               const currentState = machineSensorState[selectedMachineId];
               // Filter out hidden sensors AND disabled sensors for current machine
               const sensors = allSensors.filter(sensor => {
-                return !hiddenSensors.has(sensor) && 
+                return !hiddenSensors.has(sensor) &&
                        (currentState[sensor]?.enabled !== false);
               });
               const sensorUnits =
                 data.stats_by_category?.[selectedHistoryCategory]?.sensors ||
                 {};
 
-              const historyHTML = data.recent_readings_full
+              const historyHTML = machineReadings
                 .map((reading) => {
                   const metricsHtml = sensors
                     .map((sensor) => {
@@ -2885,7 +3037,7 @@
                 historyHTML;
             } else {
               document.getElementById("readingsHistory").innerHTML =
-                '<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet</div>';
+                `<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet for Machine ${selectedMachineId}</div>`;
             }
           });
       }
@@ -3076,18 +3228,34 @@
             const container = document.getElementById("alertList");
             if (!container) return;
 
+            // ========== MACHINE DATA ISOLATION ==========
+            const currentMachine = machineData[selectedMachineId];
+
             const allAlerts = data.alerts || [];
             // Filter alerts: only show if they mention enabled sensors for selected machine
             const enabledSensors = getEnabledSensors();
-            const alerts = allAlerts.filter(alert => {
+            const filteredAlerts = allAlerts.filter(alert => {
               // Check if alert message mentions any enabled sensor
               const message = (alert.message || '').toLowerCase();
-              return enabledSensors.some(sensor => 
-                message.includes(sensor.toLowerCase()) || 
+              return enabledSensors.some(sensor =>
+                message.includes(sensor.toLowerCase()) ||
                 message.includes(sensor.replace(/_/g, ' ').toLowerCase())
               ) || enabledSensors.length === 0; // Show all if no sensors enabled (edge case)
             });
-            
+
+            // Store alerts in machine-specific buffer (accumulate unique alerts by ID)
+            const existingIds = new Set(currentMachine.alerts.map(a => a.id));
+            filteredAlerts.forEach(alert => {
+              if (!existingIds.has(alert.id)) {
+                currentMachine.alerts.unshift(alert);
+              }
+            });
+            // Keep only last 50 alerts per machine
+            currentMachine.alerts = currentMachine.alerts.slice(0, 50);
+
+            // Render from machine-specific buffer
+            const alerts = currentMachine.alerts;
+
             if (alerts.length === 0) {
               container.innerHTML =
                 `<div style="text-align: center; color: #94a3b8; padding: 20px;">No alerts for Machine ${selectedMachineId} yet</div>`;
@@ -3283,7 +3451,12 @@
         fetch("/api/lstm-predictions")
           .then((r) => r.json())
           .then((data) => {
+            // ========== MACHINE DATA ISOLATION ==========
+            const currentMachine = machineData[selectedMachineId];
+
             if (!data.available || !data.trained) {
+              // Store null prediction for this machine
+              currentMachine.lstmPredictions = null;
               document.getElementById("lstmRiskScore").textContent = "N/A";
               document.getElementById("lstmConfidence").textContent = "N/A";
               document.getElementById("lstmPredictedWindow").textContent = "LSTM not trained";
@@ -3293,12 +3466,15 @@
             }
 
             const pred = data.current_prediction;
-            
+
+            // Store prediction in machine-specific buffer
+            currentMachine.lstmPredictions = JSON.parse(JSON.stringify(pred));
+
             // Risk score with color
             const riskScore = pred.risk_score || 0;
             const riskEl = document.getElementById("lstmRiskScore");
             riskEl.textContent = riskScore.toFixed(1) + "%";
-            
+
             if (riskScore >= 70) {
               riskEl.style.color = "#ef4444";
             } else if (riskScore >= 40) {
@@ -3337,7 +3513,7 @@
 
             // Display detailed sensor analysis - filter to only enabled sensors
             const allSensorAnalyses = pred.sensor_analyses || [];
-            const sensorAnalyses = allSensorAnalyses.filter(analysis => 
+            const sensorAnalyses = allSensorAnalyses.filter(analysis =>
               isSensorEnabled(analysis.sensor)
             );
             const analysisContainer = document.getElementById("lstmSensorAnalysisContainer");
@@ -3449,38 +3625,35 @@
           .then((data) => {
             if (data.error) return;
 
-            // Filter anomalies to only count those involving enabled sensors for selected machine
-            fetch("/api/anomalies?limit=1000&only_anomalies=true")
-              .then((r) => r.json())
-              .then((anomaliesData) => {
-                const allAnomalies = anomaliesData.anomalies || [];
-                const machineAnomalies = allAnomalies.filter(anomaly => 
-                  anomalyInvolvesEnabledSensors(anomaly)
-                );
-                
-                // Calculate machine-specific stats
-                const totalAnomalies = machineAnomalies.length;
-                const enabledSensors = getEnabledSensors();
-                const enabledCount = enabledSensors.length;
-                const totalSensors = Object.keys(sensorsByCategory).flatMap(cat => sensorsByCategory[cat]).length;
-                
-                // Calculate rate based on enabled sensors (approximate)
-                const recentAnomalies = machineAnomalies.filter(a => {
-                  const age = Date.now() - new Date(a.created_at).getTime();
-                  return age < 3600000; // Last hour
-                }).length;
-                const recentRate = enabledCount > 0 ? (recentAnomalies / Math.max(1, enabledCount)) * 10 : 0; // Approximate rate
-                
-                document.getElementById("mlTotalAnomalies").textContent = totalAnomalies;
-                document.getElementById("mlAnomalyRate").textContent = recentRate.toFixed(1) + "%";
-                document.getElementById("mlReportsGenerated").textContent = data.completed_reports || 0;
-              })
-              .catch(() => {
-                // Fallback to original data if anomaly fetch fails
-                document.getElementById("mlTotalAnomalies").textContent = data.total_anomalies || 0;
-                document.getElementById("mlAnomalyRate").textContent = (data.recent_anomaly_rate || 0).toFixed(1) + "%";
-                document.getElementById("mlReportsGenerated").textContent = data.completed_reports || 0;
-              });
+            // ========== MACHINE DATA ISOLATION ==========
+            const currentMachine = machineData[selectedMachineId];
+
+            // Use machine-specific anomaly buffer for stats calculation
+            const machineAnomalies = currentMachine.anomalies || [];
+
+            // Calculate machine-specific stats from buffer
+            const totalAnomalies = machineAnomalies.length;
+
+            // Calculate rate based on machine anomalies
+            const recentAnomalies = machineAnomalies.filter(a => {
+              const age = Date.now() - new Date(a.created_at).getTime();
+              return age < 3600000; // Last hour
+            }).length;
+            const enabledSensors = getEnabledSensors();
+            const enabledCount = enabledSensors.length;
+            const recentRate = enabledCount > 0 ? (recentAnomalies / Math.max(1, enabledCount)) * 10 : 0;
+
+            // Store in machine-specific buffer
+            currentMachine.mlStats = {
+              totalAnomalies: totalAnomalies,
+              anomalyRate: recentRate,
+              reportsGenerated: data.completed_reports || 0
+            };
+
+            // Render from machine buffer
+            document.getElementById("mlTotalAnomalies").textContent = currentMachine.mlStats.totalAnomalies;
+            document.getElementById("mlAnomalyRate").textContent = currentMachine.mlStats.anomalyRate.toFixed(1) + "%";
+            document.getElementById("mlReportsGenerated").textContent = currentMachine.mlStats.reportsGenerated;
           })
           .catch(() => {});
       }
@@ -3492,12 +3665,28 @@
             const container = document.getElementById("anomalyList");
             if (!container) return;
 
+            // ========== MACHINE DATA ISOLATION ==========
+            const currentMachine = machineData[selectedMachineId];
+
             const allAnomalies = data.anomalies || [];
             // Filter to only show anomalies involving enabled sensors for selected machine
-            const anomalies = allAnomalies.filter(anomaly => 
+            const filteredAnomalies = allAnomalies.filter(anomaly =>
               anomalyInvolvesEnabledSensors(anomaly)
             );
-            
+
+            // Store anomalies in machine-specific buffer (accumulate unique by ID)
+            const existingIds = new Set(currentMachine.anomalies.map(a => a.id));
+            filteredAnomalies.forEach(anomaly => {
+              if (!existingIds.has(anomaly.id)) {
+                currentMachine.anomalies.unshift(anomaly);
+              }
+            });
+            // Keep only last 50 anomalies per machine
+            currentMachine.anomalies = currentMachine.anomalies.slice(0, 50);
+
+            // Render from machine-specific buffer
+            const anomalies = currentMachine.anomalies;
+
             if (anomalies.length === 0) {
               container.innerHTML = `
                             <div style="text-align: center; color: #94a3b8; padding: 40px;">

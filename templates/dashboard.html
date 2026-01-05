@@ -2543,62 +2543,54 @@
         updateLiveSensorReadings();
       }
 
+      // RENDER-ONLY function for Live Sensor Readings (no data fetching, no accumulation)
       function updateLiveSensorReadings() {
-        // Only update the Live Sensor Readings panel using machine-specific buffer
-        const currentMachine = machineData[selectedMachineId];
-        const machineReadings = currentMachine.recentReadings || [];
+        // STRICTLY render-only: use cached data, no API calls, no mutations
+        const machine = machineData[selectedMachineId];
+        const readingsContainer = document.getElementById("readingsHistory");
         
-        if (machineReadings.length > 0) {
-          const allSensors = sensorsByCategory[selectedHistoryCategory] || [];
-          const currentState = machineSensorState[selectedMachineId];
-          // Filter out hidden sensors AND disabled sensors for current machine
-          const sensors = allSensors.filter(sensor => {
-            return !hiddenSensors.has(sensor) && 
-                   (currentState[sensor]?.enabled !== false);
-          });
-          
-          // Get sensor units from current machine's stats data
-          const sensorUnits = currentMachine.statsData?.stats_by_category?.[selectedHistoryCategory]?.sensors || {};
-
-          const historyHTML = machineReadings
-            .map((reading) => {
-              const metricsHtml = sensors
-                .map((sensor) => {
-                  const displayName = sensor
-                    .replace(/_/g, " ")
-                    .toUpperCase();
-                  const value = reading[sensor];
-                  const unit = sensorUnits[sensor]?.unit || "";
-                  return `
-                                    <div class="history-metric">
-                                        <div class="metric-value">${formatNumber(
-                                          value
-                                        )}${
-                      unit
-                        ? '<span class="sensor-unit">' + unit + "</span>"
-                        : ""
-                    }</div>
-                                        <div class="metric-label">${displayName}</div>
-                                    </div>
-                                `;
-                })
-                .join("");
-
-              return `
-                            <div class="history-item">
-                                <div class="history-timestamp">${formatDateTime(
-                                  reading.created_at
-                                )}</div>
-                                <div class="history-grid">${metricsHtml}</div>
-                            </div>
-                        `;
-            })
-            .join("");
-          document.getElementById("readingsHistory").innerHTML = historyHTML;
-        } else {
-          document.getElementById("readingsHistory").innerHTML =
-            `<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet for Machine ${selectedMachineId}</div>`;
+        if (!readingsContainer) return;
+        
+        const machineReadings = machine.recentReadings || [];
+        
+        if (machineReadings.length === 0) {
+          readingsContainer.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet for Machine ${selectedMachineId}</div>`;
+          return;
         }
+        
+        // Get sensor units from cached stats data (no API call)
+        const sensorUnits = machine.statsData?.stats_by_category?.[selectedHistoryCategory]?.sensors || {};
+        const allSensors = sensorsByCategory[selectedHistoryCategory] || [];
+        const currentState = machineSensorState[selectedMachineId];
+        
+        // Filter out hidden sensors AND disabled sensors for current machine
+        const sensors = allSensors.filter(sensor => {
+          return !hiddenSensors.has(sensor) && 
+                 (currentState[sensor]?.enabled !== false);
+        });
+
+        const historyHTML = machineReadings.map((reading) => {
+          const metricsHtml = sensors.map((sensor) => {
+            const displayName = sensor.replace(/_/g, " ").toUpperCase();
+            const value = reading[sensor];
+            const unit = sensorUnits[sensor]?.unit || "";
+            return `
+              <div class="history-metric">
+                <div class="metric-value">${formatNumber(value)}${unit ? '<span class="sensor-unit">' + unit + "</span>" : ""}</div>
+                <div class="metric-label">${displayName}</div>
+              </div>
+            `;
+          }).join("");
+
+          return `
+            <div class="history-item">
+              <div class="history-timestamp">${formatDateTime(reading.created_at)}</div>
+              <div class="history-grid">${metricsHtml}</div>
+            </div>
+          `;
+        }).join("");
+        
+        readingsContainer.innerHTML = historyHTML;
       }
       // ========== End Display Refresh Rate Control ==========
 

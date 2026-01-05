@@ -58,6 +58,60 @@
         transform: translateY(-4px);
         box-shadow: 0 24px 70px rgba(96, 165, 250, 0.2);
       }
+      .btn-toggle {
+        background: rgba(30, 41, 59, 0.8);
+        color: #94a3b8;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+      }
+      .btn-toggle:hover {
+        background: rgba(30, 41, 59, 1);
+        color: #e2e8f0;
+        border-color: rgba(96, 165, 250, 0.4);
+      }
+      .btn-toggle.active {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border-color: #3b82f6;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
+      .btn-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+      }
+      .btn-success:hover:not(:disabled) {
+        background: linear-gradient(135deg, #059669, #047857);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+      .btn-success:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+      }
+      .btn-danger:hover:not(:disabled) {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      }
+      .btn-danger:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .dashboard-view {
+        /* Container for different dashboard views */
+      }
       .card h2 {
         font-size: 16px;
         margin-bottom: 20px;
@@ -1107,6 +1161,40 @@
       <h1>🚀 Sensor Data Pipeline</h1>
       <div class="subtitle">Real-Time IoT Monitoring Dashboard</div>
 
+      <!-- Phase 1: Machine Management & Two-Tier Dashboard -->
+      <div style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap;">
+        <!-- Dashboard Mode Switcher -->
+        <div style="display: flex; gap: 8px; background: rgba(30, 41, 59, 0.8); padding: 8px; border-radius: 12px; border: 1px solid rgba(96, 165, 250, 0.2);">
+          <button id="modeOperator" class="btn-toggle active" onclick="switchDashboardMode('operator')" style="padding: 10px 20px; font-size: 14px; font-weight: 600;">
+            👷 Operator View
+          </button>
+          <button id="modeAdmin" class="btn-toggle" onclick="switchDashboardMode('admin')" style="padding: 10px 20px; font-size: 14px; font-weight: 600;">
+            ⚙️ Admin View
+          </button>
+        </div>
+
+        <!-- Machine Selector -->
+        <div style="display: flex; gap: 8px; align-items: center; background: rgba(30, 41, 59, 0.8); padding: 8px 16px; border-radius: 12px; border: 1px solid rgba(96, 165, 250, 0.2);">
+          <span style="color: #94a3b8; font-size: 14px; font-weight: 600; margin-right: 8px;">Machine:</span>
+          <button id="machineA" class="btn-toggle active" onclick="selectMachine('A')" style="padding: 8px 16px; min-width: 50px;">A</button>
+          <button id="machineB" class="btn-toggle" onclick="selectMachine('B')" style="padding: 8px 16px; min-width: 50px;">B</button>
+          <button id="machineC" class="btn-toggle" onclick="selectMachine('C')" style="padding: 8px 16px; min-width: 50px;">C</button>
+        </div>
+      </div>
+
+      <!-- Operator Dashboard View -->
+      <div id="operatorDashboard" class="dashboard-view">
+        <!-- Operator content will be shown here -->
+      </div>
+
+      <!-- Admin Dashboard View -->
+      <div id="adminDashboard" class="dashboard-view" style="display: none;">
+        <!-- Admin content will be shown here -->
+      </div>
+
+      <!-- Original Dashboard (hidden by default, shown when in legacy mode) -->
+      <div id="legacyDashboard" class="dashboard-view">
+
       <details class="hero-info" id="onboardingDetails">
         <summary>
           <span>?? New to this dashboard? Click to learn how it works.</span>
@@ -1844,6 +1932,72 @@
           <option value="fluid">💧 Fluid Dynamics Sensors</option>
         </select>
         <div class="history-container" id="readingsHistory"></div>
+      </div>
+      </div>
+      <!-- End Legacy Dashboard -->
+
+      <!-- Operator Dashboard Content -->
+      <div id="operatorDashboardContent" style="display: none;">
+        <div class="grid">
+          <!-- Machine Status Card -->
+          <div class="card">
+            <h2>🏭 Machine Status</h2>
+            <p class="card-intro">Monitor and control machine operations. Start/stop machines independently.</p>
+            <div id="machineStatusContainer">
+              <!-- Machine status will be populated here -->
+            </div>
+          </div>
+
+          <!-- Live Sensor Values Card -->
+          <div class="card">
+            <h2>📊 Live Sensor Values</h2>
+            <p class="card-intro">Real-time sensor readings for the selected machine. Only enabled sensors are shown.</p>
+            <div class="big-stat">
+              <div class="big-stat-value" id="operatorTotalCount">0</div>
+              <div class="big-stat-label">Total Readings (Machine <span id="operatorMachineId">A</span>)</div>
+            </div>
+            <div class="tabs" id="operatorStatsCategoryTabs"></div>
+            <div id="operatorStatsCategoryContent"></div>
+          </div>
+
+          <!-- Alerts Card (Operator View) -->
+          <div class="card">
+            <h2>🚨 Alerts</h2>
+            <p class="card-intro">Real-time alerts and anomalies for the selected machine.</p>
+            <div class="alert-list" id="operatorAlertList">
+              <div style="text-align: center; color: #94a3b8; padding: 20px">Loading alerts...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Dashboard Content -->
+      <div id="adminDashboardContent" style="display: none;">
+        <div class="grid">
+          <!-- Sensor Configuration Card -->
+          <div class="card">
+            <h2>⚙️ Sensor Configuration</h2>
+            <p class="card-intro">Enable/disable sensors and set baseline values per machine. Changes take effect immediately.</p>
+            <label>Select Machine to Configure</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+              <button id="adminMachineA" class="btn-toggle active" onclick="selectAdminMachine('A')" style="padding: 10px 20px;">Machine A</button>
+              <button id="adminMachineB" class="btn-toggle" onclick="selectAdminMachine('B')" style="padding: 10px 20px;">Machine B</button>
+              <button id="adminMachineC" class="btn-toggle" onclick="selectAdminMachine('C')" style="padding: 10px 20px;">Machine C</button>
+            </div>
+            <div id="adminSensorConfigContainer">
+              <!-- Sensor configuration will be populated here -->
+            </div>
+          </div>
+
+          <!-- Machine Overview Card -->
+          <div class="card">
+            <h2>📋 Machine Overview</h2>
+            <p class="card-intro">View status and configuration summary for all machines.</p>
+            <div id="adminMachineOverview">
+              <!-- Machine overview will be populated here -->
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3782,18 +3936,495 @@ Report generated by Sensor Data Pipeline Dashboard
         return text;
       }
 
+      // ========== Phase 1: Machine Management & Two-Tier Dashboard ==========
+      
+      // Global state
+      let currentDashboardMode = 'operator'; // 'operator' or 'admin'
+      let currentMachineId = 'A'; // Default machine
+      let currentAdminMachineId = 'A'; // For admin view
+      let machineState = null;
+
+      // Dashboard mode switching
+      function switchDashboardMode(mode) {
+        currentDashboardMode = mode;
+        
+        // Update button states
+        document.getElementById('modeOperator').classList.toggle('active', mode === 'operator');
+        document.getElementById('modeAdmin').classList.toggle('active', mode === 'admin');
+        
+        // Show/hide views
+        document.getElementById('legacyDashboard').style.display = mode === 'legacy' ? 'block' : 'none';
+        document.getElementById('operatorDashboardContent').style.display = mode === 'operator' ? 'block' : 'none';
+        document.getElementById('adminDashboardContent').style.display = mode === 'admin' ? 'block' : 'none';
+        
+        // Load appropriate data
+        if (mode === 'operator') {
+          loadMachineState();
+          updateOperatorStats();
+          loadOperatorAlerts();
+        } else if (mode === 'admin') {
+          loadMachineState();
+          loadAdminSensorConfig();
+          loadAdminMachineOverview();
+        }
+      }
+
+      // Machine selection (Operator view)
+      function selectMachine(machineId) {
+        currentMachineId = machineId;
+        
+        // Update button states
+        ['A', 'B', 'C'].forEach(id => {
+          const btn = document.getElementById(`machine${id}`);
+          if (btn) btn.classList.toggle('active', id === machineId);
+        });
+        
+        // Update display
+        const machineIdEl = document.getElementById('operatorMachineId');
+        if (machineIdEl) machineIdEl.textContent = machineId;
+        
+        // Reload stats for selected machine
+        updateOperatorStats();
+        loadOperatorAlerts();
+      }
+
+      // Machine selection (Admin view)
+      function selectAdminMachine(machineId) {
+        currentAdminMachineId = machineId;
+        
+        // Update button states
+        ['A', 'B', 'C'].forEach(id => {
+          const btn = document.getElementById(`adminMachine${id}`);
+          if (btn) btn.classList.toggle('active', id === machineId);
+        });
+        
+        // Reload sensor config for selected machine
+        loadAdminSensorConfig();
+      }
+
+      // Load machine state from API
+      function loadMachineState() {
+        fetch('/api/machines')
+          .then(r => r.json())
+          .then(data => {
+            machineState = data.machines;
+            updateMachineStatusDisplay();
+          })
+          .catch(err => console.error('Failed to load machine state:', err));
+      }
+
+      // Update machine status display (Operator view)
+      function updateMachineStatusDisplay() {
+        if (!machineState) return;
+        
+        const container = document.getElementById('machineStatusContainer');
+        if (!container) return;
+        
+        const html = ['A', 'B', 'C'].map(machineId => {
+          const machine = machineState[machineId];
+          const isRunning = machine.running;
+          const enabledCount = Object.values(machine.sensors).filter(s => s.enabled).length;
+          const totalCount = Object.keys(machine.sensors).length;
+          
+          return `
+            <div style="padding: 16px; margin-bottom: 12px; background: rgba(15, 23, 59, 0.6); border-radius: 12px; border: 1px solid rgba(96, 165, 250, 0.2);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                  <h3 style="margin: 0; color: #60a5fa; font-size: 18px;">Machine ${machineId}</h3>
+                  <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
+                    ${enabledCount}/${totalCount} sensors enabled
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span class="status-indicator ${isRunning ? 'status-running' : 'status-stopped'}"></span>
+                  <span style="color: #cbd5e1; font-weight: 600;">${isRunning ? 'Running' : 'Stopped'}</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn-success" onclick="startMachine('${machineId}')" ${isRunning ? 'disabled' : ''} style="flex: 1; padding: 10px;">
+                  ▶ Start
+                </button>
+                <button class="btn-danger" onclick="stopMachine('${machineId}')" ${!isRunning ? 'disabled' : ''} style="flex: 1; padding: 10px;">
+                  ⏹ Stop
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+        container.innerHTML = html;
+      }
+
+      // Start machine
+      function startMachine(machineId) {
+        fetch(`/api/machines/${machineId}/start`, { method: 'POST' })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              loadMachineState();
+              updateMachineStatusDisplay();
+            } else {
+              alert(`Failed to start machine ${machineId}: ${data.error}`);
+            }
+          })
+          .catch(err => {
+            console.error('Failed to start machine:', err);
+            alert(`Error starting machine ${machineId}`);
+          });
+      }
+
+      // Stop machine
+      function stopMachine(machineId) {
+        fetch(`/api/machines/${machineId}/stop`, { method: 'POST' })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              loadMachineState();
+              updateMachineStatusDisplay();
+            } else {
+              alert(`Failed to stop machine ${machineId}: ${data.error}`);
+            }
+          })
+          .catch(err => {
+            console.error('Failed to stop machine:', err);
+            alert(`Error stopping machine ${machineId}`);
+          });
+      }
+
+      // Update operator stats (filtered by machine and enabled sensors)
+      function updateOperatorStats() {
+        fetch(`/api/machines/${currentMachineId}/stats`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.error) {
+              console.error('Failed to load machine stats:', data.error);
+              return;
+            }
+            
+            // Update total count
+            const totalCountEl = document.getElementById('operatorTotalCount');
+            if (totalCountEl) totalCountEl.textContent = data.total_count || 0;
+            
+            // Update stats by category (only enabled sensors)
+            if (data.stats_by_category) {
+              const tabsEl = document.getElementById('operatorStatsCategoryTabs');
+              const contentEl = document.getElementById('operatorStatsCategoryContent');
+              
+              if (tabsEl && contentEl) {
+                const categories = Object.keys(data.stats_by_category);
+                
+                // Build tabs
+                if (!tabsEl.hasChildNodes()) {
+                  tabsEl.innerHTML = categories.map(cat => {
+                    const catData = data.stats_by_category[cat];
+                    const icon = categoryIcons[cat] || '📊';
+                    return `<div class="tab active" data-category="${cat}" onclick="switchOperatorStatsCategory('${cat}')">${icon} ${catData.name}</div>`;
+                  }).join('');
+                }
+                
+                // Build content
+                contentEl.innerHTML = categories.map(cat => {
+                  const catData = data.stats_by_category[cat];
+                  const sensorsHtml = Object.entries(catData.sensors || {}).map(([name, info]) => {
+                    const displayName = name.replace(/_/g, ' ').toUpperCase();
+                    const value = info.value !== null && info.value !== undefined ? formatNumber(info.value) : '--';
+                    return `
+                      <div class="stat">
+                        <span class="stat-label">${displayName}</span>
+                        <span class="stat-value">${value}${info.unit ? ' ' + info.unit : ''}</span>
+                      </div>
+                    `;
+                  }).join('');
+                  
+                  return `
+                    <div class="tab-content active" data-category="${cat}">
+                      ${sensorsHtml || '<div class="stat"><span class="stat-label">No enabled sensors in this category</span></div>'}
+                    </div>
+                  `;
+                }).join('');
+              }
+            }
+          })
+          .catch(err => console.error('Failed to update operator stats:', err));
+      }
+
+      function switchOperatorStatsCategory(category) {
+        // Update tab states
+        document.querySelectorAll('#operatorStatsCategoryTabs .tab').forEach(tab => {
+          tab.classList.toggle('active', tab.dataset.category === category);
+        });
+        // Update content states
+        document.querySelectorAll('#operatorStatsCategoryContent .tab-content').forEach(content => {
+          content.classList.toggle('active', content.dataset.category === category);
+        });
+      }
+
+      // Load operator alerts
+      function loadOperatorAlerts() {
+        fetch('/api/alerts?limit=20')
+          .then(r => r.json())
+          .then(data => {
+            const container = document.getElementById('operatorAlertList');
+            if (!container) return;
+            
+            const alerts = data.alerts || [];
+            if (alerts.length === 0) {
+              container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 20px;">No alerts yet</div>';
+              return;
+            }
+            
+            container.innerHTML = alerts.map(alert => {
+              const severity = (alert.severity || 'info').toLowerCase();
+              return `
+                <div class="alert-item">
+                  <div>
+                    <div class="alert-type">${alert.alert_type}</div>
+                    <div class="alert-message">${alert.message}</div>
+                  </div>
+                  <div class="alert-meta">
+                    <span class="alert-badge ${severity}">${alert.severity}</span>
+                    <div class="alert-time">${formatDateTime(alert.created_at)}</div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          })
+          .catch(err => console.error('Failed to load alerts:', err));
+      }
+
+      // Load admin sensor configuration
+      function loadAdminSensorConfig() {
+        if (!machineState) {
+          loadMachineState().then(() => loadAdminSensorConfig());
+          return;
+        }
+        
+        const machine = machineState[currentAdminMachineId];
+        if (!machine) return;
+        
+        const container = document.getElementById('adminSensorConfigContainer');
+        if (!container) return;
+        
+        // Group sensors by category (using existing sensorsByCategory from script)
+        // categoryIcons is defined later in the script, so we define it here too
+        const categoryIcons = {
+          environmental: '🌍',
+          mechanical: '⚙️',
+          thermal: '🔥',
+          electrical: '⚡',
+          fluid: '💧'
+        };
+        
+        const sensorsByCategory = {
+          environmental: ['temperature', 'pressure', 'humidity', 'ambient_temp', 'dew_point', 'air_quality_index', 'co2_level', 'particle_count', 'noise_level', 'light_intensity'],
+          mechanical: ['vibration', 'rpm', 'torque', 'shaft_alignment', 'bearing_temp', 'motor_current', 'belt_tension', 'gear_wear', 'coupling_temp', 'lubrication_pressure'],
+          thermal: ['coolant_temp', 'exhaust_temp', 'oil_temp', 'radiator_temp', 'thermal_efficiency', 'heat_dissipation', 'inlet_temp', 'outlet_temp', 'core_temp', 'surface_temp'],
+          electrical: ['voltage', 'current', 'power_factor', 'frequency', 'resistance', 'capacitance', 'inductance', 'phase_angle', 'harmonic_distortion', 'ground_fault'],
+          fluid: ['flow_rate', 'fluid_pressure', 'viscosity', 'density', 'reynolds_number', 'pipe_pressure_drop', 'pump_efficiency', 'cavitation_index', 'turbulence', 'valve_position']
+        };
+        
+        const categoryIcons = {
+          environmental: '🌍',
+          mechanical: '⚙️',
+          thermal: '🔥',
+          electrical: '⚡',
+          fluid: '💧'
+        };
+        
+        let html = '';
+        for (const [category, sensors] of Object.entries(sensorsByCategory)) {
+          html += `
+            <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border-radius: 12px;">
+              <h3 style="color: #60a5fa; margin-bottom: 12px; font-size: 14px; text-transform: uppercase;">
+                ${categoryIcons[category]} ${category.charAt(0).toUpperCase() + category.slice(1)} Sensors
+              </h3>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
+          `;
+          
+          for (const sensorName of sensors) {
+            const sensorConfig = machine.sensors[sensorName] || { enabled: true, baseline: null };
+            const displayName = sensorName.replace(/_/g, ' ').toUpperCase();
+            
+            html += `
+              <div style="padding: 12px; background: rgba(30, 41, 59, 0.8); border-radius: 8px; border: 1px solid ${sensorConfig.enabled ? 'rgba(16, 185, 129, 0.3)' : 'rgba(148, 163, 184, 0.2)'};">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-weight: 600; color: #e2e8f0; font-size: 13px;">${displayName}</span>
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" ${sensorConfig.enabled ? 'checked' : ''} 
+                           onchange="toggleSensor('${currentAdminMachineId}', '${sensorName}', this.checked)"
+                           style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="color: ${sensorConfig.enabled ? '#10b981' : '#64748b'}; font-size: 12px; font-weight: 600;">
+                      ${sensorConfig.enabled ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </label>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="number" id="baseline-${currentAdminMachineId}-${sensorName}" 
+                         placeholder="Baseline value" 
+                         value="${sensorConfig.baseline !== null ? sensorConfig.baseline : ''}"
+                         step="any"
+                         style="flex: 1; padding: 8px; border-radius: 6px; background: rgba(15, 23, 42, 0.6); color: #e2e8f0; border: 1px solid rgba(148, 163, 184, 0.2); font-size: 12px;">
+                  <button onclick="setBaseline('${currentAdminMachineId}', '${sensorName}')" 
+                          style="padding: 8px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                    Set
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+          
+          html += `
+              </div>
+            </div>
+          `;
+        }
+        
+        container.innerHTML = html;
+      }
+
+      // Toggle sensor enabled/disabled
+      function toggleSensor(machineId, sensorName, enabled) {
+        // Optimistic update
+        if (machineState && machineState[machineId] && machineState[machineId].sensors[sensorName]) {
+          machineState[machineId].sensors[sensorName].enabled = enabled;
+        }
+        
+        fetch(`/api/machines/${machineId}/sensors/${sensorName}/toggle`, { method: 'POST' })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              loadMachineState(); // Reload to sync
+              if (currentDashboardMode === 'operator') {
+                updateOperatorStats(); // Refresh operator view if active
+              }
+            } else {
+              alert(`Failed to toggle sensor: ${data.error}`);
+              loadMachineState(); // Reload to revert
+            }
+          })
+          .catch(err => {
+            console.error('Failed to toggle sensor:', err);
+            loadMachineState(); // Reload to revert
+          });
+      }
+
+      // Set baseline value
+      function setBaseline(machineId, sensorName) {
+        const input = document.getElementById(`baseline-${machineId}-${sensorName}`);
+        if (!input) return;
+        
+        const baseline = input.value.trim() === '' ? null : parseFloat(input.value);
+        
+        if (baseline !== null && isNaN(baseline)) {
+          alert('Baseline must be a valid number');
+          return;
+        }
+        
+        fetch(`/api/machines/${machineId}/sensors/${sensorName}/baseline`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ baseline: baseline })
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              // Update local state
+              if (machineState && machineState[machineId] && machineState[machineId].sensors[sensorName]) {
+                machineState[machineId].sensors[sensorName].baseline = baseline;
+              }
+              // Show feedback
+              const btn = event?.target;
+              if (btn) {
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Set';
+                btn.style.background = '#059669';
+                setTimeout(() => {
+                  btn.textContent = originalText;
+                  btn.style.background = '#3b82f6';
+                }, 1500);
+              }
+            } else {
+              alert(`Failed to set baseline: ${data.error}`);
+            }
+          })
+          .catch(err => {
+            console.error('Failed to set baseline:', err);
+            alert('Error setting baseline');
+          });
+      }
+
+      // Load admin machine overview
+      function loadAdminMachineOverview() {
+        if (!machineState) {
+          loadMachineState().then(() => loadAdminMachineOverview());
+          return;
+        }
+        
+        const container = document.getElementById('adminMachineOverview');
+        if (!container) return;
+        
+        const html = ['A', 'B', 'C'].map(machineId => {
+          const machine = machineState[machineId];
+          const enabledCount = Object.values(machine.sensors).filter(s => s.enabled).length;
+          const totalCount = Object.keys(machine.sensors).length;
+          const baselineCount = Object.values(machine.sensors).filter(s => s.baseline !== null).length;
+          
+          return `
+            <div style="padding: 16px; margin-bottom: 12px; background: rgba(15, 23, 42, 0.6); border-radius: 12px; border: 1px solid rgba(96, 165, 250, 0.2);">
+              <h3 style="margin: 0 0 12px 0; color: #60a5fa; font-size: 16px;">Machine ${machineId}</h3>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 13px;">
+                <div>
+                  <div style="color: #94a3b8;">Status</div>
+                  <div style="color: #e2e8f0; font-weight: 600;">
+                    <span class="status-indicator ${machine.running ? 'status-running' : 'status-stopped'}" style="margin-right: 6px;"></span>
+                    ${machine.running ? 'Running' : 'Stopped'}
+                  </div>
+                </div>
+                <div>
+                  <div style="color: #94a3b8;">Sensors Enabled</div>
+                  <div style="color: #e2e8f0; font-weight: 600;">${enabledCount}/${totalCount}</div>
+                </div>
+                <div>
+                  <div style="color: #94a3b8;">Baselines Set</div>
+                  <div style="color: #e2e8f0; font-weight: 600;">${baselineCount}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+        container.innerHTML = html;
+      }
+
+      // ========== End Phase 1 Machine Management ==========
+
       // Auto-refresh every 2 seconds
       setInterval(() => {
-        updateStats();
-        updateStatus();
-        loadAlerts();
-        loadMLStats();
-        loadAnomalies();
-        loadLSTMPredictions();
+        if (currentDashboardMode === 'operator') {
+          updateOperatorStats();
+          loadOperatorAlerts();
+          loadMachineState();
+        } else if (currentDashboardMode === 'admin') {
+          loadAdminMachineOverview();
+        } else {
+          // Legacy mode - original behavior
+          updateStats();
+          updateStatus();
+          loadAlerts();
+          loadMLStats();
+          loadAnomalies();
+          loadLSTMPredictions();
+        }
       }, 2000);
 
       // Initial load
       loadHiddenSensors();
+      
+      // Initialize based on default mode
+      switchDashboardMode('operator'); // Start in operator mode by default
+      loadMachineState();
+      
+      // Legacy mode functions still available
       updateStats();
       updateStatus();
       loadConfig();

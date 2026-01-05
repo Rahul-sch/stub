@@ -41,6 +41,43 @@ processes = {
     'consumer': None
 }
 
+# ============================================================================
+# MACHINE STATE MANAGEMENT (Phase 1 - In-Memory Only)
+# ============================================================================
+
+# Machine state: {machineId: {'running': bool, 'sensors': {sensor_name: {'enabled': bool, 'baseline': float}}}}
+machine_state = {
+    'A': {
+        'running': False,
+        'sensors': {}
+    },
+    'B': {
+        'running': False,
+        'sensors': {}
+    },
+    'C': {
+        'running': False,
+        'sensors': {}
+    }
+}
+
+# Initialize all sensors as enabled with no baseline for each machine
+def initialize_machine_sensors():
+    """Initialize sensor state for all machines - all enabled by default, no baselines"""
+    import config
+    for machine_id in ['A', 'B', 'C']:
+        for sensor_name in config.SENSOR_RANGES.keys():
+            if sensor_name not in machine_state[machine_id]['sensors']:
+                machine_state[machine_id]['sensors'][sensor_name] = {
+                    'enabled': True,
+                    'baseline': None
+                }
+
+# Initialize on module load
+initialize_machine_sensors()
+
+machine_state_lock = threading.Lock()
+
 kafka_health = {
     'status': 'unknown',
     'checked_at': None,
@@ -1578,6 +1615,157 @@ def get_quality_message(quality_score):
         return 'Fair - Model needs more training data'
     else:
         return 'Poor - Collect more data for better predictions'
+
+
+# ============================================================================
+# MACHINE MANAGEMENT API ENDPOINTS (Phase 1)
+# ============================================================================
+
+@app.route('/api/machines', methods=['GET'])
+def api_machines():
+    """Get all machine states"""
+    with machine_state_lock:
+        return jsonify({
+            'machines': {
+                machine_id: {
+                    'running': state['running'],
+                    'sensors': {
+                        sensor_name: {
+                            'enabled': sensor_config['enabled'],
+                            'baseline': sensor_config['baseline']
+                        }
+                        for sensor_name, sensor_config in state['sensors'].items()
+                    }
+                }
+                for machine_id, state in machine_state.items()
+            }
+        })
+
+@app.route('/api/machines/<machine_id>/start', methods=['POST'])
+def api_start_machine(machine_id):
+    """Start a machine (set running state)"""
+    if machine_id not in ['A', 'B', 'C']:
+        return jsonify({'success': False, 'error': 'Invalid machine ID'}), 400
+    
+    with machine_state_lock:
+        machine_state[machine_id]['running'] = True
+    
+    return jsonify({'success': True, 'machine_id': machine_id, 'running': True})
+
+@app.route('/api/machines/<machine_id>/stop', methods=['POST'])
+def api_stop_machine(machine_id):
+    """Stop a machine (set running state)"""
+    if machine_id not in ['A', 'B', 'C']:
+        return jsonify({'success': False, 'error': 'Invalid machine ID'}), 400
+    
+    with machine_state_lock:
+        machine_state[machine_id]['running'] = False
+    
+    return jsonify({'success': True, 'machine_id': machine_id, 'running': False})
+
+@app.route('/api/machines/<machine_id>/sensors/<sensor_name>/toggle', methods=['POST'])
+def api_toggle_sensor(machine_id, sensor_name):
+    """Toggle sensor enabled/disabled state"""
+    if machine_id not in ['A', 'B', 'C']:
+        return jsonify({'success': False, 'error': 'Invalid machine ID'}), 400
+    
+    import config
+    if sensor_name not in config.SENSOR_RANGES:
+        return jsonify({'success': False, 'error': 'Invalid sensor name'}), 400
+    
+    with machine_state_lock:
+        if sensor_name in machine_state[machine_id]['sensors']:
+            current_state = machine_state[machine_id]['sensors'][sensor_name]['enabled']
+            machine_state[machine_id]['sensors'][sensor_name]['enabled'] = not current_state
+            return jsonify({
+                'success': True,
+                'machine_id': machine_id,
+                'sensor_name': sensor_name,
+                'enabled': not current_state
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Sensor not found'}), 404
+
+@app.route('/api/machines/<machine_id>/sensors/<sensor_name>/baseline', methods=['POST'])
+def api_set_baseline(machine_id, sensor_name):
+    """Set baseline value for a sensor (in-memory only)"""
+    if machine_id not in ['A', 'B', 'C']:
+        return jsonify({'success': False, 'error': 'Invalid machine ID'}), 400
+    
+    import config
+    if sensor_name not in config.SENSOR_RANGES:
+        return jsonify({'success': False, 'error': 'Invalid sensor name'}), 400
+    
+    data = request.json or {}
+    baseline = data.get('baseline')
+    
+    if baseline is not None:
+        try:
+            baseline = float(baseline)
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'error': 'Baseline must be a number'}), 400
+    
+    with machine_state_lock:
+        if sensor_name in machine_state[machine_id]['sensors']:
+            machine_state[machine_id]['sensors'][sensor_name]['baseline'] = baseline
+            return jsonify({
+                'success': True,
+                'machine_id': machine_id,
+                'sensor_name': sensor_name,
+                'baseline': baseline
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Sensor not found'}), 404
+
+@app.route('/api/machines/<machine_id>/stats', methods=['GET'])
+def api_machine_stats(machine_id):
+    """Get stats filtered by machine and enabled sensors only"""
+    if machine_id not in ['A', 'B', 'C']:
+        return jsonify({'error': 'Invalid machine ID'}), 400
+    
+    # Get enabled sensors for this machine
+    with machine_state_lock:
+        enabled_sensors = {
+            sensor_name
+            for sensor_name, sensor_config in machine_state[machine_id]['sensors'].items()
+            if sensor_config['enabled']
+        }
+    
+    # Get all stats (we'll filter in the response)
+    all_stats = get_stats()
+    if 'error' in all_stats:
+        return jsonify(all_stats), 500
+    
+    # Filter stats_by_category to only include enabled sensors
+    filtered_stats = all_stats.copy()
+    if 'stats_by_category' in filtered_stats:
+        for category_key, category_data in filtered_stats['stats_by_category'].items():
+            if 'sensors' in category_data:
+                category_data['sensors'] = {
+                    sensor_name: sensor_data
+                    for sensor_name, sensor_data in category_data['sensors'].items()
+                    if sensor_name in enabled_sensors
+                }
+    
+    # Filter recent_readings_full to only include enabled sensors
+    if 'recent_readings_full' in filtered_stats:
+        for reading in filtered_stats['recent_readings_full']:
+            # Keep only enabled sensor fields
+            reading_copy = {'timestamp': reading.get('timestamp'), 'created_at': reading.get('created_at')}
+            for sensor_name in enabled_sensors:
+                if sensor_name in reading:
+                    reading_copy[sensor_name] = reading[sensor_name]
+            # Replace original reading with filtered version
+            for key in list(reading.keys()):
+                if key not in reading_copy:
+                    del reading[key]
+            reading.update(reading_copy)
+    
+    filtered_stats['machine_id'] = machine_id
+    filtered_stats['enabled_sensors_count'] = len(enabled_sensors)
+    filtered_stats['total_sensors_count'] = len(machine_state[machine_id]['sensors'])
+    
+    return jsonify(filtered_stats)
 
 
 if __name__ == '__main__':

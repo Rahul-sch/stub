@@ -1287,6 +1287,14 @@
       input:checked + .toggle-slider:before {
         transform: translateX(20px);
       }
+      /* Refresh Rate Buttons */
+      .refresh-rate-btn {
+        transition: all 0.3s;
+      }
+      .refresh-rate-btn.active {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+      }
     </style>
   </head>
   <body>
@@ -1508,6 +1516,30 @@
             <button class="btn-warning" onclick="clearData()">
               🗑️ Clear All Data
             </button>
+          </div>
+
+          <!-- Display Refresh Rate Control -->
+          <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+            <label style="font-size: 13px; color: #94a3b8; display: block; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+              Display Refresh Rate
+            </label>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 12px; line-height: 1.4;">
+              Controls how often the Live Sensor Readings panel updates. Does not affect data collection.
+            </p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn-primary refresh-rate-btn active" data-interval="1000" onclick="setRefreshRate(1000)" style="font-size: 12px; padding: 8px 16px;">
+                1s
+              </button>
+              <button class="btn-primary refresh-rate-btn" data-interval="5000" onclick="setRefreshRate(5000)" style="font-size: 12px; padding: 8px 16px;">
+                5s
+              </button>
+              <button class="btn-primary refresh-rate-btn" data-interval="10000" onclick="setRefreshRate(10000)" style="font-size: 12px; padding: 8px 16px;">
+                10s
+              </button>
+              <button class="btn-primary refresh-rate-btn" data-interval="30000" onclick="setRefreshRate(30000)" style="font-size: 12px; padding: 8px 16px;">
+                30s
+              </button>
+            </div>
           </div>
         </div>
 
@@ -2480,6 +2512,96 @@
       }
       // ========== End Machine and Mode State Management ==========
 
+      // ========== Display Refresh Rate Control ==========
+      let uiRefreshIntervalMs = 10000; // Default 10 seconds
+      let liveReadingsTimer = null;
+
+      function setRefreshRate(intervalMs) {
+        // Guard: minimum 1000ms
+        if (intervalMs < 1000) {
+          intervalMs = 1000;
+        }
+        
+        uiRefreshIntervalMs = intervalMs;
+        
+        // Update button states
+        document.querySelectorAll('.refresh-rate-btn').forEach(btn => {
+          btn.classList.toggle('active', parseInt(btn.dataset.interval) === intervalMs);
+        });
+        
+        // Restart the live readings timer with new interval
+        if (liveReadingsTimer) {
+          clearInterval(liveReadingsTimer);
+        }
+        
+        // Start new timer for Live Sensor Readings only
+        liveReadingsTimer = setInterval(() => {
+          updateLiveSensorReadings();
+        }, uiRefreshIntervalMs);
+        
+        // Immediately update to show change
+        updateLiveSensorReadings();
+      }
+
+      function updateLiveSensorReadings() {
+        // Only update the Live Sensor Readings panel using machine-specific buffer
+        const currentMachine = machineData[selectedMachineId];
+        const machineReadings = currentMachine.recentReadings || [];
+        
+        if (machineReadings.length > 0) {
+          const allSensors = sensorsByCategory[selectedHistoryCategory] || [];
+          const currentState = machineSensorState[selectedMachineId];
+          // Filter out hidden sensors AND disabled sensors for current machine
+          const sensors = allSensors.filter(sensor => {
+            return !hiddenSensors.has(sensor) && 
+                   (currentState[sensor]?.enabled !== false);
+          });
+          
+          // Get sensor units from current machine's stats data
+          const sensorUnits = currentMachine.statsData?.stats_by_category?.[selectedHistoryCategory]?.sensors || {};
+
+          const historyHTML = machineReadings
+            .map((reading) => {
+              const metricsHtml = sensors
+                .map((sensor) => {
+                  const displayName = sensor
+                    .replace(/_/g, " ")
+                    .toUpperCase();
+                  const value = reading[sensor];
+                  const unit = sensorUnits[sensor]?.unit || "";
+                  return `
+                                    <div class="history-metric">
+                                        <div class="metric-value">${formatNumber(
+                                          value
+                                        )}${
+                      unit
+                        ? '<span class="sensor-unit">' + unit + "</span>"
+                        : ""
+                    }</div>
+                                        <div class="metric-label">${displayName}</div>
+                                    </div>
+                                `;
+                })
+                .join("");
+
+              return `
+                            <div class="history-item">
+                                <div class="history-timestamp">${formatDateTime(
+                                  reading.created_at
+                                )}</div>
+                                <div class="history-grid">${metricsHtml}</div>
+                            </div>
+                        `;
+            })
+            .join("");
+          document.getElementById("readingsHistory").innerHTML = historyHTML;
+        } else {
+          document.getElementById("readingsHistory").innerHTML =
+            `<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet for Machine ${selectedMachineId}</div>`;
+        }
+      }
+      // ========== End Display Refresh Rate Control ==========
+
       let selectedHistoryCategory = "environmental";
       let configLimits = null;
       let configDefaults = null;
@@ -2798,7 +2920,8 @@
       function changeHistoryCategory() {
         selectedHistoryCategory =
           document.getElementById("historyCategory").value;
-        updateStats();
+        // Update Live Sensor Readings immediately when category changes
+        updateLiveSensorReadings();
       }
 
       function formatNumber(value, decimals = 2) {
@@ -4614,7 +4737,7 @@ Report generated by Sensor Data Pipeline Dashboard
         return text;
       }
 
-      // Auto-refresh every 2 seconds
+      // Auto-refresh every 2 seconds (for stats, alerts, ML, etc. - NOT Live Sensor Readings)
       setInterval(() => {
         updateStats();
         updateStatus();
@@ -4626,6 +4749,7 @@ Report generated by Sensor Data Pipeline Dashboard
 
       // Initial load
       loadHiddenSensors();
+      initializeMachineState(); // Initialize machine sensor state (after sensorsByCategory is defined)
       updateStats();
       updateStatus();
       loadConfig();
@@ -4635,6 +4759,9 @@ Report generated by Sensor Data Pipeline Dashboard
       loadInjectionSettings();
       loadLSTMStatus();
       loadLSTMPredictions();
+      
+      // Initialize Live Sensor Readings timer with default 10s interval
+      setRefreshRate(10000);
     </script>
   </body>
 </html>

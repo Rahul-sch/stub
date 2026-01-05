@@ -15,6 +15,18 @@ from psycopg2 import sql, OperationalError
 
 import config
 
+# ML Detection imports - Combined Pipeline (Isolation Forest + LSTM)
+if config.ML_DETECTION_ENABLED:
+    try:
+        from combined_pipeline import get_combined_detector, LSTM_AVAILABLE
+        ML_AVAILABLE = True
+    except ImportError as e:
+        ML_AVAILABLE = False
+        logging.warning(f"ML detection not available: {e}")
+else:
+    ML_AVAILABLE = False
+    LSTM_AVAILABLE = False
+
 
 class SensorDataConsumer:
     """Consumes sensor data from Kafka and writes to PostgreSQL."""
@@ -167,7 +179,11 @@ class SensorDataConsumer:
                 conn.close()
 
     def insert_reading(self, reading):
-        """Insert sensor reading with all 50 parameters into database."""
+        """Insert sensor reading with all 50 parameters into database.
+        
+        Returns:
+            int or None: The inserted reading ID, or None on failure
+        """
         insert_query = """
             INSERT INTO sensor_readings (
                 timestamp,
@@ -195,6 +211,7 @@ class SensorDataConsumer:
                 %s, %s, %s, %s, %s,
                 %s, %s, %s, %s, %s
             )
+            RETURNING id
         """
 
         try:
@@ -226,14 +243,60 @@ class SensorDataConsumer:
                 reading.get('pipe_pressure_drop'), reading.get('pump_efficiency'),
                 reading.get('cavitation_index'), reading.get('turbulence'), reading.get('valve_position')
             ))
+            reading_id = self.db_cursor.fetchone()[0]
             self.db_conn.commit()
-            return True
+            return reading_id
 
         except Exception as e:
             self.logger.error(f"Failed to insert reading into database: {e}")
             self.record_alert('DB_WRITE_FAILURE', str(e), severity='ERROR')
             self.db_conn.rollback()
-            return False
+            return None
+
+    def run_ml_detection(self, reading, reading_id):
+        """Run ML-based anomaly detection using combined pipeline.
+        
+        Uses Isolation Forest and/or LSTM Autoencoder based on config.
+        Strategy is set via config.HYBRID_DETECTION_STRATEGY.
+        
+        Args:
+            reading: Dict with sensor values
+            reading_id: ID of the inserted reading
+        """
+        if not ML_AVAILABLE:
+            return
+        
+        try:
+            # Get combined detector (handles IF + LSTM)
+            detector = get_combined_detector()
+            
+            # Run detection with configured strategy
+            is_anomaly, score, contributing_sensors, method = detector.detect(reading, reading_id)
+            
+            # Record the detection result
+            detection_id = detector.record_detection(
+                reading_id=reading_id,
+                is_anomaly=is_anomaly,
+                score=score,
+                sensors=contributing_sensors,
+                method=method
+            )
+            
+            if is_anomaly:
+                sensors_str = ', '.join(contributing_sensors[:5]) if contributing_sensors else 'multiple parameters'
+                method_display = method.upper().replace('_', ' ')
+                self.logger.warning(
+                    f"{method_display} anomaly detected (score: {score:.4f}): {sensors_str}"
+                )
+                self.record_alert(
+                    'SENSOR_ANOMALY_ML',
+                    f"{method_display} detected anomaly (score: {score:.4f}) - "
+                    f"Contributing sensors: {sensors_str}",
+                    severity='HIGH'
+                )
+            
+        except Exception as e:
+            self.logger.error(f"ML detection failed: {e}")
 
     def process_message(self, message):
         """Process a single message from Kafka."""
@@ -247,11 +310,11 @@ class SensorDataConsumer:
                 self.consumer.commit()
                 return False
 
-            # Check for anomalies before inserting
+            # Check for rule-based anomalies before inserting
             anomalies = self.detect_anomalies(data)
             if anomalies:
                 for anomaly in anomalies:
-                    self.logger.warning(f"Anomaly detected: {anomaly}")
+                    self.logger.warning(f"Rule-based anomaly detected: {anomaly}")
                     self.record_alert('SENSOR_ANOMALY', anomaly, severity='CRITICAL')
 
                 # Skip inserting bad data but do not reprocess it
@@ -259,7 +322,8 @@ class SensorDataConsumer:
                 return False
 
             # Insert into database
-            if self.insert_reading(data):
+            reading_id = self.insert_reading(data)
+            if reading_id:
                 # Commit Kafka offset only after successful DB insert (exactly-once semantics)
                 self.consumer.commit()
 
@@ -271,6 +335,9 @@ class SensorDataConsumer:
                                f"rpm={data['rpm']}, "
                                f"temp={data['temperature']}°F, "
                                f"vibration={data['vibration']}mm/s")
+
+                # Run ML-based anomaly detection (non-blocking)
+                self.run_ml_detection(data, reading_id)
 
                 # Log progress every N messages
                 if self.message_count % config.LOG_PROGRESS_INTERVAL == 0:

@@ -7,6 +7,7 @@ from flask import Flask, render_template, jsonify, request, make_response
 import psycopg2
 import subprocess
 import os
+import sys
 import signal
 import json
 import threading
@@ -15,6 +16,19 @@ import csv
 import io
 from datetime import datetime
 from kafka import KafkaAdminClient
+
+# Import ML components
+try:
+    from report_generator import ReportGenerator, get_report, get_report_by_anomaly
+    from analysis_engine import ContextAnalyzer, get_anomaly_details
+    from lstm_predictor import get_predictor, predict_next_anomaly
+    from lstm_detector import get_lstm_detector, is_lstm_available
+    ML_REPORTS_AVAILABLE = True
+    LSTM_AVAILABLE = is_lstm_available()
+except ImportError as e:
+    ML_REPORTS_AVAILABLE = False
+    LSTM_AVAILABLE = False
+    print(f"ML report generation not available: {e}")
 
 app = Flask(__name__)
 
@@ -421,27 +435,47 @@ def reset_config():
     else:
         return jsonify({'success': False, 'error': message})
 
-@app.route('/api/start/<component>')
+@app.route('/api/start/<component>', methods=['POST'])
 def start_component(component):
     """Start producer or consumer"""
     if component not in ['producer', 'consumer']:
         return jsonify({'success': False, 'error': 'Invalid component'})
 
     try:
-        venv_python = os.path.join(os.path.dirname(__file__), 'venv', 'Scripts', 'python.exe')
+        # Determine Python executable path (cross-platform)
         script_path = os.path.join(os.path.dirname(__file__), f'{component}.py')
+        
+        # Check for venv first (Windows)
+        if os.name == 'nt':
+            venv_python = os.path.join(os.path.dirname(__file__), 'venv', 'Scripts', 'python.exe')
+            if os.path.exists(venv_python):
+                python_exe = venv_python
+            else:
+                python_exe = sys.executable  # Use current Python
+        else:
+            # macOS/Linux
+            venv_python = os.path.join(os.path.dirname(__file__), 'venv', 'bin', 'python')
+            if os.path.exists(venv_python):
+                python_exe = venv_python
+            else:
+                python_exe = sys.executable  # Use current Python
 
-        proc = subprocess.Popen(
-            [venv_python, script_path],
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-        )
+        # Prepare subprocess arguments
+        popen_args = [python_exe, script_path]
+        popen_kwargs = {}
+        
+        # Only use Windows-specific creationflags on Windows
+        if os.name == 'nt':
+            popen_kwargs['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP
+
+        proc = subprocess.Popen(popen_args, **popen_kwargs)
         processes[component] = proc  # Store the process object, not just PID
 
         return jsonify({'success': True, 'pid': proc.pid})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/api/stop/<component>')
+@app.route('/api/stop/<component>', methods=['POST'])
 def stop_component(component):
     """Stop producer or consumer"""
     if component not in ['producer', 'consumer']:
@@ -458,11 +492,21 @@ def stop_component(component):
                 subprocess.run(['taskkill', '/F', '/T', '/PID', str(pid)],
                              capture_output=True, timeout=5)
             else:
-                proc.kill()
+                # macOS/Linux: Try graceful shutdown first (SIGTERM), then force kill (SIGKILL)
+                try:
+                    proc.terminate()  # Send SIGTERM
+                    try:
+                        proc.wait(timeout=2)  # Wait up to 2 seconds
+                    except subprocess.TimeoutExpired:
+                        # Process didn't respond, force kill
+                        proc.kill()  # Send SIGKILL
+                        proc.wait(timeout=1)
+                except ProcessLookupError:
+                    pass  # Process already dead
 
             try:
-                proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:
+                proc.wait(timeout=1)
+            except (subprocess.TimeoutExpired, ProcessLookupError):
                 pass
 
             killed_pids.append(pid)
@@ -470,10 +514,11 @@ def stop_component(component):
 
         # Also search for any running processes with the component script name
         # This catches processes started outside the dashboard
+        script_name = f'{component}.py'
+        
         if os.name == 'nt':
+            # Windows: Use WMIC
             try:
-                # Use WMIC to find Python processes running the component script
-                script_name = f'{component}.py'
                 result = subprocess.run(
                     ['wmic', 'process', 'where', f"CommandLine like '%{script_name}%'", 'get', 'CommandLine,ProcessId'],
                     capture_output=True, text=True, timeout=2
@@ -496,6 +541,42 @@ def stop_component(component):
                         pass
             except:
                 pass
+        else:
+            # macOS/Linux: Use ps to find and kill processes
+            # Note: 'ps aux' works on macOS and most Linux distributions
+            try:
+                result = subprocess.run(
+                    ['ps', 'aux'],
+                    capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0:
+                    lines = result.stdout.strip().split('\n')
+                    for line in lines:
+                        if script_name in line and 'python' in line.lower() and 'grep' not in line:
+                            try:
+                                # Extract PID (second column in ps aux output)
+                                parts = line.split()
+                                if len(parts) >= 2 and parts[1].isdigit():
+                                    pid = int(parts[1])
+                                    # Only kill if not already killed
+                                    if pid not in killed_pids:
+                                        try:
+                                            os.kill(pid, signal.SIGTERM)
+                                            # Wait a bit, then force kill if still running
+                                            time.sleep(0.5)
+                                            try:
+                                                os.kill(pid, 0)  # Check if process exists
+                                                os.kill(pid, signal.SIGKILL)  # Force kill
+                                            except ProcessLookupError:
+                                                pass  # Process already dead
+                                            killed_pids.append(pid)
+                                        except ProcessLookupError:
+                                            pass  # Process doesn't exist
+                            except (ValueError, IndexError):
+                                pass
+            except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+                # ps command not available or failed - continue without error
+                pass
 
         if killed_pids:
             return jsonify({'success': True, 'pids': killed_pids})
@@ -508,18 +589,22 @@ def is_component_running(component):
     """Check if a component (producer or consumer) is running, even if not tracked by dashboard"""
     # First check tracked process
     proc = processes.get(component)
-    if proc and proc.poll() is None:
-        return True
-
-    # If tracked process is dead, clean it up
     if proc:
-        processes[component] = None
+        # Check if process is still alive
+        poll_result = proc.poll()
+        if poll_result is None:
+            # Process is still running
+            return True
+        else:
+            # Process has terminated, clean it up
+            processes[component] = None
 
-    # Search for any running process with the component script name on Windows
+    # Search for any running process with the component script name
+    script_name = f'{component}.py'
+    
     if os.name == 'nt':
+        # Windows: Use WMIC
         try:
-            script_name = f'{component}.py'
-            # Use WMIC to get both ProcessId and CommandLine
             result = subprocess.run(
                 ['wmic', 'process', 'where', f"CommandLine like '%{script_name}%'", 'get', 'CommandLine,ProcessId'],
                 capture_output=True, text=True, timeout=2
@@ -534,6 +619,23 @@ def is_component_running(component):
                     return True
         except Exception:
             # If WMIC fails, return False (assume not running)
+            pass
+    else:
+        # macOS/Linux: Use ps to find processes
+        # Note: 'ps aux' works on macOS and most Linux distributions
+        # For systems where 'ps aux' doesn't work, we fall back gracefully
+        try:
+            result = subprocess.run(
+                ['ps', 'aux'],
+                capture_output=True, text=True, timeout=2
+            )
+            if result.returncode == 0:
+                lines = result.stdout.strip().split('\n')
+                for line in lines:
+                    if script_name in line and 'python' in line.lower() and 'grep' not in line:
+                        return True
+        except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+            # ps command not available or failed - assume process not running
             pass
 
     return False
@@ -570,6 +672,678 @@ def clear_data():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/anomalies')
+def api_anomalies():
+    """Get ML-detected anomalies."""
+    limit = request.args.get('limit', default=50, type=int)
+    only_anomalies = request.args.get('only_anomalies', default='true', type=str).lower() == 'true'
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database not connected'}), 500
+    
+    try:
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT 
+                ad.id, ad.reading_id, ad.detection_method, ad.anomaly_score,
+                ad.is_anomaly, ad.detected_sensors, ad.created_at,
+                sr.timestamp, sr.temperature, sr.pressure, sr.rpm, sr.vibration,
+                ar.id as report_id, ar.status as report_status
+            FROM anomaly_detections ad
+            JOIN sensor_readings sr ON ad.reading_id = sr.id
+            LEFT JOIN analysis_reports ar ON ad.id = ar.anomaly_id
+        """
+        
+        if only_anomalies:
+            query += " WHERE ad.is_anomaly = TRUE"
+        
+        query += " ORDER BY ad.created_at DESC LIMIT %s"
+        
+        cursor.execute(query, (limit,))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        anomalies = []
+        for row in rows:
+            anomalies.append({
+                'id': row[0],
+                'reading_id': row[1],
+                'detection_method': row[2],
+                'anomaly_score': row[3],
+                'is_anomaly': row[4],
+                'detected_sensors': row[5] or [],
+                'created_at': str(row[6]),
+                'reading_timestamp': str(row[7]),
+                'temperature': row[8],
+                'pressure': row[9],
+                'rpm': row[10],
+                'vibration': row[11],
+                'report_id': row[12],
+                'report_status': row[13]
+            })
+        
+        return jsonify({'anomalies': anomalies})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/anomalies/<int:anomaly_id>')
+def api_anomaly_detail(anomaly_id):
+    """Get details of a specific anomaly."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    anomaly = get_anomaly_details(anomaly_id)
+    if not anomaly:
+        return jsonify({'error': 'Anomaly not found'}), 404
+    
+    return jsonify(anomaly)
+
+
+@app.route('/api/generate-report/<int:anomaly_id>', methods=['POST'])
+def api_generate_report(anomaly_id):
+    """Generate an analysis report for an anomaly."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    try:
+        generator = ReportGenerator()
+        report_id, report_data = generator.generate_and_save_report(anomaly_id)
+        
+        if report_id:
+            return jsonify({
+                'success': True,
+                'report_id': report_id,
+                'message': 'Report generated successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to generate report'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/reports/<int:report_id>')
+def api_get_report(report_id):
+    """Get a generated report."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    report = get_report(report_id)
+    if not report:
+        return jsonify({'error': 'Report not found'}), 404
+    
+    return jsonify(report)
+
+
+@app.route('/api/reports/by-anomaly/<int:anomaly_id>')
+def api_get_report_by_anomaly(anomaly_id):
+    """Get report for a specific anomaly."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    report = get_report_by_anomaly(anomaly_id)
+    if not report:
+        return jsonify({'error': 'Report not found'}), 404
+    
+    return jsonify(report)
+
+
+def generate_pdf_from_markdown(markdown_text, title="Report"):
+    """Generate PDF from markdown text.
+    
+    Args:
+        markdown_text: Markdown formatted text
+        title: PDF document title
+        
+    Returns:
+        BytesIO buffer containing the PDF
+    """
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER
+    from reportlab.lib import colors
+    import io
+    import re
+    
+    # Create PDF buffer
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, title=title)
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#1e40af'),
+        spaceAfter=12,
+        fontName='Helvetica-Bold'
+    )
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#059669'),
+        spaceAfter=8,
+        spaceBefore=12,
+        fontName='Helvetica-Bold'
+    )
+    body_style = ParagraphStyle(
+        'CustomBody',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=6,
+        alignment=TA_LEFT,
+        leftIndent=0
+    )
+    
+    # Build content
+    elements = []
+    
+    # Add title
+    elements.append(Paragraph(title, title_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Parse markdown - handle multi-line content better
+    lines = markdown_text.split('\n')
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        # Skip empty lines (but add spacing)
+        if not line:
+            elements.append(Spacer(1, 0.1*inch))
+            i += 1
+            continue
+        
+        # Check for headers (process in order: ###, ##, #)
+        if line.startswith('###'):
+            header_text = line.replace('###', '').strip()
+            # Remove emojis and clean up
+            header_text = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', header_text).strip()
+            if header_text:
+                elements.append(Paragraph(header_text, heading_style))
+        elif line.startswith('##'):
+            header_text = line.replace('##', '').strip()
+            # Remove emojis and clean up
+            header_text = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', header_text).strip()
+            if header_text:
+                elements.append(Paragraph(header_text, heading_style))
+        elif line.startswith('#'):
+            header_text = line.replace('#', '').strip()
+            # Remove duplicate title
+            if 'LSTM Future Anomaly Prediction Report' in header_text:
+                i += 1
+                continue  # Skip duplicate title
+            # Remove emojis and clean up
+            header_text = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', header_text).strip()
+            if header_text:
+                elements.append(Paragraph(header_text, heading_style))
+        # Check for horizontal rules
+        elif line.strip() in ['---', '***', '___']:
+            elements.append(Spacer(1, 0.2*inch))
+        # Check for list items
+        elif line.startswith('- ') or line.startswith('* '):
+            list_text = line[2:].strip()
+            # Convert markdown bold to reportlab bold
+            list_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', list_text)
+            list_text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', list_text)
+            # Remove emojis
+            list_text = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', list_text).strip()
+            if list_text:
+                elements.append(Paragraph(f"• {list_text}", body_style))
+        # Numbered list
+        elif re.match(r'^\d+\.', line):
+            list_text = re.sub(r'^\d+\.\s*', '', line)
+            # Convert markdown bold to reportlab bold
+            list_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', list_text)
+            list_text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', list_text)
+            # Remove emojis
+            list_text = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', list_text).strip()
+            if list_text:
+                elements.append(Paragraph(list_text, body_style))
+        # Regular paragraph
+        else:
+            # Clean up any escaped characters
+            line = line.replace('\\n', ' ').replace('\\t', ' ')
+            
+            # Convert markdown bold to reportlab bold
+            line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
+            line = re.sub(r'\*(.*?)\*', r'<i>\1</i>', line)
+            
+            # Remove emojis (they don't render well in PDF)
+            line = re.sub(r'[🔴🟠🟡🟢⚪⚠️📈📉➡️✅👀🛠️■]', '', line).strip()
+            
+            # Only add non-empty lines
+            if line:
+                elements.append(Paragraph(line, body_style))
+        
+        i += 1
+    
+    # Add footer
+    elements.append(Spacer(1, 0.5*inch))
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#64748b'),
+        alignment=TA_CENTER
+    )
+    elements.append(Paragraph("<i>Generated by Sensor Data Pipeline Dashboard</i>", footer_style))
+    elements.append(Paragraph(f"<i>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>", footer_style))
+    
+    # Build PDF
+    doc.build(elements)
+    
+    # Return buffer
+    buffer.seek(0)
+    return buffer
+
+
+@app.route('/api/reports/<int:report_id>/pdf')
+def api_get_report_pdf(report_id):
+    """Generate and download a PDF report."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+        from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
+        from reportlab.lib import colors
+        import markdown
+        import re
+        
+        # Get the report data
+        report = get_report(report_id)
+        if not report:
+            return jsonify({'error': 'Report not found'}), 404
+        
+        # Create PDF in memory
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, 
+                               rightMargin=72, leftMargin=72,
+                               topMargin=72, bottomMargin=18)
+        
+        # Container for PDF elements
+        elements = []
+        
+        # Define styles
+        styles = getSampleStyleSheet()
+        
+        # Custom title style
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#1e40af'),
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        # Custom heading style
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=16,
+            textColor=colors.HexColor('#059669'),
+            spaceAfter=12,
+            spaceBefore=12,
+            fontName='Helvetica-Bold',
+            borderWidth=1,
+            borderColor=colors.HexColor('#d1fae5'),
+            borderPadding=5
+        )
+        
+        # Body text style
+        body_style = ParagraphStyle(
+            'CustomBody',
+            parent=styles['BodyText'],
+            fontSize=11,
+            leading=16,
+            alignment=TA_JUSTIFY,
+            spaceAfter=12
+        )
+        
+        # Metadata style
+        meta_style = ParagraphStyle(
+            'MetaData',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.HexColor('#64748b'),
+            spaceAfter=6
+        )
+        
+        # Add title
+        elements.append(Paragraph("Anomaly Analysis Report", title_style))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Add metadata
+        elements.append(Paragraph(f"<b>Report ID:</b> #{report['id']}", meta_style))
+        elements.append(Paragraph(f"<b>Anomaly ID:</b> #{report['anomaly_id']}", meta_style))
+        
+        generated_time = report.get('completed_at') or report.get('created_at', 'N/A')
+        elements.append(Paragraph(f"<b>Generated:</b> {generated_time}", meta_style))
+        elements.append(Paragraph(f"<b>Status:</b> {report.get('status', 'N/A').upper()}", meta_style))
+        
+        elements.append(Spacer(1, 0.4*inch))
+        
+        # Process the analysis text
+        analysis = report.get('chatgpt_analysis', 'No analysis available')
+        
+        # Convert markdown to plain text with formatting
+        # Remove markdown code blocks
+        analysis = re.sub(r'```.*?```', '', analysis, flags=re.DOTALL)
+        
+        # Process markdown headers
+        lines = analysis.split('\n')
+        for line in lines:
+            line = line.strip()
+            if not line:
+                elements.append(Spacer(1, 0.1*inch))
+                continue
+            
+            # Check for headers
+            if line.startswith('###'):
+                header_text = line.replace('###', '').strip()
+                elements.append(Paragraph(header_text, heading_style))
+            elif line.startswith('##'):
+                header_text = line.replace('##', '').strip()
+                elements.append(Paragraph(header_text, heading_style))
+            elif line.startswith('#'):
+                header_text = line.replace('#', '').strip()
+                elements.append(Paragraph(header_text, heading_style))
+            # Check for list items
+            elif line.startswith('- ') or line.startswith('* '):
+                list_text = line[2:].strip()
+                # Convert markdown bold to reportlab bold
+                list_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', list_text)
+                list_text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', list_text)
+                elements.append(Paragraph(f"• {list_text}", body_style))
+            # Numbered list
+            elif re.match(r'^\d+\.', line):
+                list_text = re.sub(r'^\d+\.\s*', '', line)
+                # Convert markdown bold to reportlab bold
+                list_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', list_text)
+                list_text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', list_text)
+                elements.append(Paragraph(list_text, body_style))
+            # Regular paragraph
+            else:
+                # Convert markdown bold to reportlab bold
+                line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
+                line = re.sub(r'\*(.*?)\*', r'<i>\1</i>', line)
+                elements.append(Paragraph(line, body_style))
+        
+        # Add footer
+        elements.append(Spacer(1, 0.5*inch))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor('#64748b'),
+            alignment=TA_CENTER
+        )
+        elements.append(Paragraph("<i>Generated by Sensor Data Pipeline Dashboard</i>", footer_style))
+        elements.append(Paragraph(f"<i>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>", footer_style))
+        
+        # Build PDF
+        doc.build(elements)
+        
+        # Get PDF data
+        pdf_data = buffer.getvalue()
+        buffer.close()
+        
+        # Create response
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=anomaly_report_{report_id}_{datetime.now().strftime("%Y-%m-%d")}.pdf'
+        
+        return response
+        
+    except Exception as e:
+        import traceback
+        print(f"PDF generation error: {e}")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Failed to generate PDF: {str(e)}'}), 500
+
+
+@app.route('/api/generate-full-report', methods=['POST'])
+def api_generate_full_session_report():
+    """Generate a comprehensive report for the entire monitoring session."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML components not available'}), 500
+    
+    try:
+        from report_generator import generate_full_session_report
+        result = generate_full_session_report()
+        return jsonify(result)
+    except Exception as e:
+        logging.error(f"Full session report generation failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/ml-stats')
+def api_ml_stats():
+    """Get ML detection statistics."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database not connected'}), 500
+    
+    try:
+        cursor = conn.cursor()
+        
+        # Total detections and anomalies
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_detections,
+                COUNT(*) FILTER (WHERE is_anomaly = TRUE) as total_anomalies,
+                AVG(anomaly_score) as avg_score,
+                MIN(anomaly_score) as min_score,
+                MAX(anomaly_score) as max_score
+            FROM anomaly_detections
+        """)
+        stats = cursor.fetchone()
+        
+        # Recent anomaly rate (last 100 readings)
+        cursor.execute("""
+            SELECT 
+                COUNT(*) FILTER (WHERE is_anomaly = TRUE)::FLOAT / 
+                NULLIF(COUNT(*), 0) * 100 as recent_anomaly_rate
+            FROM (
+                SELECT is_anomaly FROM anomaly_detections 
+                ORDER BY created_at DESC LIMIT 100
+            ) recent
+        """)
+        recent_rate = cursor.fetchone()[0] or 0
+        
+        # Reports generated
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_reports,
+                COUNT(*) FILTER (WHERE status = 'completed') as completed_reports
+            FROM analysis_reports
+        """)
+        report_stats = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'total_detections': stats[0] or 0,
+            'total_anomalies': stats[1] or 0,
+            'avg_score': round(stats[2], 4) if stats[2] else 0,
+            'min_score': round(stats[3], 4) if stats[3] else 0,
+            'max_score': round(stats[4], 4) if stats[4] else 0,
+            'recent_anomaly_rate': round(recent_rate, 2),
+            'total_reports': report_stats[0] or 0,
+            'completed_reports': report_stats[1] or 0,
+            'ml_available': ML_REPORTS_AVAILABLE
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# THRESHOLD AND ANOMALY INJECTION APIs
+# ============================================================================
+
+# Store custom thresholds in memory (session-based)
+custom_thresholds = {}
+
+# Anomaly injection settings
+injection_settings = {
+    'enabled': False,
+    'interval_minutes': 30,
+    'next_injection_time': None,
+    'inject_now': False
+}
+
+
+@app.route('/api/thresholds', methods=['GET'])
+def api_get_thresholds():
+    """Get all custom thresholds and default safe operating limits."""
+    import config
+    
+    # Build defaults from SENSOR_THRESHOLDS (safe operating limits)
+    # Fall back to SENSOR_RANGES if threshold not defined
+    defaults = {}
+    for name, info in config.SENSOR_RANGES.items():
+        threshold = config.SENSOR_THRESHOLDS.get(name, {})
+        defaults[name] = {
+            'low': threshold.get('low', info['min']),
+            'high': threshold.get('high', info['max']),
+            'unit': info.get('unit', ''),
+            # Also include ranges for reference
+            'range_min': info['min'],
+            'range_max': info['max']
+        }
+    
+    return jsonify({
+        'thresholds': custom_thresholds,
+        'defaults': defaults
+    })
+
+
+@app.route('/api/thresholds', methods=['POST'])
+def api_set_threshold():
+    """Set custom threshold for a sensor."""
+    data = request.get_json()
+    if not data or 'sensor' not in data:
+        return jsonify({'error': 'Missing sensor name'}), 400
+    
+    sensor = data['sensor']
+    
+    # Validate sensor exists
+    if sensor not in config.SENSOR_RANGES:
+        return jsonify({'error': f'Unknown sensor: {sensor}'}), 400
+    
+    # Handle reset
+    if data.get('reset'):
+        if sensor in custom_thresholds:
+            del custom_thresholds[sensor]
+        return jsonify({'success': True, 'message': f'Threshold for {sensor} reset to default'})
+    
+    # Set custom threshold
+    min_val = data.get('min')
+    max_val = data.get('max')
+    
+    if min_val is None or max_val is None:
+        return jsonify({'error': 'Missing min or max value'}), 400
+    
+    try:
+        min_val = float(min_val)
+        max_val = float(max_val)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid min or max value'}), 400
+    
+    if min_val >= max_val:
+        return jsonify({'error': 'Min must be less than max'}), 400
+    
+    custom_thresholds[sensor] = {'min': min_val, 'max': max_val}
+    
+    return jsonify({
+        'success': True,
+        'sensor': sensor,
+        'min': min_val,
+        'max': max_val
+    })
+
+
+@app.route('/api/injection-settings', methods=['GET'])
+def api_get_injection_settings():
+    """Get anomaly injection settings for producer."""
+    # Return inject_now flag and clear it immediately (one-time trigger)
+    inject_now = injection_settings.get('inject_now', False)
+    if inject_now:
+        injection_settings['inject_now'] = False
+    
+    return jsonify({
+        'enabled': injection_settings['enabled'],
+        'interval_minutes': injection_settings['interval_minutes'],
+        'next_injection_time': injection_settings['next_injection_time'],
+        'inject_now': inject_now,
+        'thresholds': custom_thresholds
+    })
+
+
+@app.route('/api/injection-settings', methods=['POST'])
+def api_set_injection_settings():
+    """Update anomaly injection settings."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Missing data'}), 400
+    
+    if 'enabled' in data:
+        injection_settings['enabled'] = bool(data['enabled'])
+    
+    if 'interval_minutes' in data:
+        try:
+            interval = int(data['interval_minutes'])
+            if interval < 1:
+                return jsonify({'error': 'Interval must be at least 1 minute'}), 400
+            injection_settings['interval_minutes'] = interval
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Invalid interval'}), 400
+    
+    # Calculate next injection time
+    if injection_settings['enabled']:
+        from datetime import datetime, timedelta
+        injection_settings['next_injection_time'] = (
+            datetime.utcnow() + timedelta(minutes=injection_settings['interval_minutes'])
+        ).isoformat()
+    else:
+        injection_settings['next_injection_time'] = None
+    
+    return jsonify({
+        'success': True,
+        'settings': injection_settings
+    })
+
+
+@app.route('/api/inject-anomaly', methods=['POST'])
+def api_inject_anomaly_now():
+    """Trigger immediate anomaly injection."""
+    injection_settings['inject_now'] = True
+    return jsonify({
+        'success': True,
+        'message': 'Anomaly injection triggered for next reading'
+    })
+
 
 @app.route('/api/export')
 def export_data():
@@ -635,5 +1409,173 @@ def export_data():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/generate-future-report', methods=['POST'])
+def api_generate_future_report():
+    """Generate and download LSTM future anomaly prediction report as PDF."""
+    if not ML_REPORTS_AVAILABLE:
+        return jsonify({'error': 'ML reports not available'}), 503
+    
+    if not LSTM_AVAILABLE:
+        return jsonify({'error': 'LSTM not available'}), 503
+    
+    try:
+        # Get report generator
+        report_gen = ReportGenerator()
+        
+        # Generate the future anomaly report
+        report_text = report_gen.generate_future_anomaly_report()
+        
+        # Generate PDF
+        pdf_buffer = generate_pdf_from_markdown(
+            report_text,
+            f"LSTM Future Anomaly Prediction Report - {datetime.now().strftime('%Y-%m-%d')}"
+        )
+        
+        # Return PDF
+        response = make_response(pdf_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=future_anomaly_report_{datetime.now().strftime("%Y-%m-%d")}.pdf'
+        return response
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/lstm-predictions')
+def api_lstm_predictions():
+    """Get LSTM future anomaly predictions with detailed sensor analysis."""
+    if not LSTM_AVAILABLE:
+        return jsonify({
+            'available': False,
+            'error': 'LSTM not available'
+        })
+    
+    try:
+        predictor = get_predictor()
+        
+        # Get current prediction (now includes sensor_analyses and sensor_details)
+        current_prediction = predict_next_anomaly()
+        
+        # Get LSTM detector info
+        lstm_detector = get_lstm_detector()
+        
+        return jsonify({
+            'available': True,
+            'trained': lstm_detector.is_trained if lstm_detector else False,
+            'current_prediction': current_prediction,
+            'model_info': {
+                'threshold': float(lstm_detector.threshold) if lstm_detector and lstm_detector.is_trained else 0,
+                'sequence_length': lstm_detector.sequence_length if lstm_detector else 0
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'available': True,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/lstm-status')
+def api_lstm_status():
+    """Get LSTM model training status and quality metrics."""
+    if not LSTM_AVAILABLE:
+        return jsonify({
+            'available': False,
+            'trained': False,
+            'quality_score': 0,
+            'message': 'LSTM not available - TensorFlow not installed'
+        })
+    
+    try:
+        lstm_detector = get_lstm_detector()
+        
+        if not lstm_detector or not lstm_detector.is_trained:
+            return jsonify({
+                'available': True,
+                'trained': False,
+                'quality_score': 0,
+                'message': 'LSTM model not trained yet'
+            })
+        
+        # Get reading count
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM sensor_readings')
+        reading_count = cursor.fetchone()[0]
+        cursor.close()
+        conn.close()
+        
+        # Calculate quality score (0-100)
+        quality_score = calculate_lstm_quality_score(lstm_detector, reading_count)
+        
+        return jsonify({
+            'available': True,
+            'trained': True,
+            'quality_score': quality_score,
+            'threshold': float(lstm_detector.threshold),
+            'sequence_length': lstm_detector.sequence_length,
+            'reading_count': reading_count,
+            'message': get_quality_message(quality_score)
+        })
+    except Exception as e:
+        return jsonify({
+            'available': True,
+            'error': str(e)
+        }), 500
+
+
+def calculate_lstm_quality_score(lstm_detector, reading_count):
+    """Calculate LSTM training quality score (0-100)."""
+    score = 0
+    
+    # Data amount score (0-40 points)
+    if reading_count >= 1000:
+        data_score = 40
+    elif reading_count >= 500:
+        data_score = 30 + (reading_count - 500) / 500 * 10
+    elif reading_count >= 100:
+        data_score = 10 + (reading_count - 100) / 400 * 20
+    else:
+        data_score = reading_count / 100 * 10
+    score += data_score
+    
+    # Model performance score (0-30 points)
+    # Based on threshold - lower threshold means model is more sensitive
+    threshold = lstm_detector.threshold
+    if threshold < 0.5:
+        perf_score = 30
+    elif threshold < 1.0:
+        perf_score = 20 + (1.0 - threshold) / 0.5 * 10
+    elif threshold < 2.0:
+        perf_score = 10 + (2.0 - threshold) / 1.0 * 10
+    else:
+        perf_score = max(0, 10 - (threshold - 2.0) * 2)
+    score += perf_score
+    
+    # Sequence coverage score (0-30 points)
+    # More data = better coverage
+    if reading_count >= 1000:
+        coverage_score = 30
+    elif reading_count >= 500:
+        coverage_score = 20 + (reading_count - 500) / 500 * 10
+    else:
+        coverage_score = reading_count / 500 * 20
+    score += coverage_score
+    
+    return min(100, max(0, score))
+
+
+def get_quality_message(quality_score):
+    """Get quality message based on score."""
+    if quality_score >= 80:
+        return 'Excellent - Model is well-trained and reliable'
+    elif quality_score >= 60:
+        return 'Good - Model is adequately trained'
+    elif quality_score >= 40:
+        return 'Fair - Model needs more training data'
+    else:
+        return 'Poor - Collect more data for better predictions'
+
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)

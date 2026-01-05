@@ -1,1303 +1,3808 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Sensor Data Pipeline Dashboard</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: #e2e8f0;
-            padding: 20px;
-            min-height: 100vh;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
+          sans-serif;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #e2e8f0;
+        padding: 20px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 42px;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center;
+        font-weight: 800;
+        letter-spacing: -1px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #94a3b8;
+        margin-bottom: 30px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+      .card {
+        background: rgba(30, 41, 59, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 28px;
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s, box-shadow 0.3s;
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 24px 70px rgba(96, 165, 250, 0.2);
+      }
+      .card h2 {
+        font-size: 16px;
+        margin-bottom: 20px;
+        color: #60a5fa;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .stat {
+        display: flex;
+        justify-content: space-between;
+        padding: 14px 0;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      }
+      .stat:last-child {
+        border-bottom: none;
+      }
+      .stat-label {
+        color: #94a3b8;
+        font-size: 14px;
+      }
+      .stat-value {
+        color: #60a5fa;
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .big-stat {
+        text-align: center;
+        padding: 30px 0;
+        background: linear-gradient(
+          135deg,
+          rgba(96, 165, 250, 0.1) 0%,
+          rgba(167, 139, 250, 0.1) 100%
+        );
+        border-radius: 16px;
+        margin-bottom: 20px;
+      }
+      .big-stat-value {
+        font-size: 56px;
+        font-weight: 900;
+        background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 8px;
+      }
+      .big-stat-label {
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      button {
+        padding: 14px 28px;
+        border: none;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin: 4px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+      }
+      .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+      }
+      .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+      }
+      .btn-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      }
+      .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+      }
+      .btn-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+      }
+      .btn-warning:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+      }
+      .btn-secondary {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        color: #1e293b;
+        box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+      }
+      .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
+      }
+      .btn-toggle {
+        background: rgba(71, 85, 105, 0.5);
+        color: white;
+        padding: 10px 20px;
+        font-size: 13px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      .btn-toggle.active {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-color: #3b82f6;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+      input[type="number"] {
+        padding: 14px 16px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.6);
+        color: #e2e8f0;
+        font-size: 15px;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s;
+      }
+      input[type="number"]:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+      }
+      .input-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .input-wrapper {
+        position: relative;
+      }
+      .input-label {
+        position: absolute;
+        top: -8px;
+        left: 12px;
+        background: rgba(30, 41, 59, 0.9);
+        padding: 0 8px;
+        color: #60a5fa;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      label {
+        display: block;
+        margin-bottom: 12px;
+        color: #60a5fa;
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 10px;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
         }
-        .container { max-width: 1600px; margin: 0 auto; }
-        h1 {
-            font-size: 42px;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-align: center;
-            font-weight: 800;
-            letter-spacing: -1px;
+        50% {
+          opacity: 0.5;
         }
-        .subtitle {
-            text-align: center;
-            color: #94a3b8;
-            margin-bottom: 30px;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+      }
+      .status-running {
+        background: #10b981;
+        box-shadow: 0 0 10px #10b981;
+      }
+      .status-stopped {
+        background: #ef4444;
+        box-shadow: 0 0 10px #ef4444;
+      }
+      .status-pending {
+        background: #f59e0b;
+        box-shadow: 0 0 10px #f59e0b;
+      }
+      .status-unknown {
+        background: #64748b;
+        box-shadow: 0 0 10px #64748b;
+      }
+      .history-container {
+        max-height: 600px;
+        overflow-y: auto;
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 16px;
+        padding: 16px;
+      }
+      .history-container::-webkit-scrollbar {
+        width: 8px;
+      }
+      .history-container::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.4);
+        border-radius: 4px;
+      }
+      .history-container::-webkit-scrollbar-thumb {
+        background: rgba(96, 165, 250, 0.5);
+        border-radius: 4px;
+      }
+      .history-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(96, 165, 250, 0.7);
+      }
+      .history-item {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        border-left: 4px solid #60a5fa;
+        transition: all 0.3s;
+      }
+      .history-item:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 20px rgba(96, 165, 250, 0.2);
+      }
+      .history-timestamp {
+        color: #94a3b8;
+        font-size: 11px;
+        margin-bottom: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+      }
+      .history-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 14px;
+      }
+      .history-metric {
+        text-align: center;
+        padding: 12px;
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 10px;
+        border: 1px solid rgba(96, 165, 250, 0.1);
+      }
+      .history-metric.hidden {
+        display: none;
+      }
+      .alert-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 360px;
+        overflow-y: auto;
+      }
+      .alert-item {
+        background: rgba(148, 163, 184, 0.08);
+        border-radius: 12px;
+        padding: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .alert-type {
+        font-weight: 700;
+        color: #f8fafc;
+        font-size: 14px;
+      }
+      .alert-message {
+        color: #cbd5f5;
+        font-size: 13px;
+        margin-top: 4px;
+      }
+      .alert-meta {
+        text-align: right;
+        font-size: 12px;
+        color: #94a3b8;
+      }
+      .alert-badge {
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-weight: 700;
+        display: inline-block;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+      }
+      .alert-badge.info {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+      }
+      .alert-badge.warning {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+      }
+      .alert-badge.error {
+        background: rgba(248, 113, 113, 0.15);
+        color: #f87171;
+      }
+      .alert-badge.critical {
+        background: rgba(248, 113, 113, 0.25);
+        color: #fecaca;
+      }
+      .config-meta {
+        margin-top: 12px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #94a3b8;
+        min-height: 16px;
+      }
+      .metric-value {
+        font-size: 20px;
+        font-weight: 900;
+        background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .metric-label {
+        font-size: 10px;
+        color: #94a3b8;
+        margin-top: 6px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+      }
+      .toggles {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+      .preset-container {
+        margin-top: 20px;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 16px;
+        border: 1px solid rgba(96, 165, 250, 0.2);
+      }
+      .preset-title {
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .preset-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .tab {
+        padding: 10px 20px;
+        background: rgba(71, 85, 105, 0.3);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        color: #94a3b8;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .tab:hover {
+        background: rgba(71, 85, 105, 0.5);
+        border-color: rgba(96, 165, 250, 0.3);
+      }
+      .tab.active {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-color: #3b82f6;
+        color: white;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .sensor-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+      }
+      .sensor-item {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid rgba(96, 165, 250, 0.1);
+        transition: all 0.3s;
+      }
+      .sensor-item:hover {
+        border-color: rgba(96, 165, 250, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(96, 165, 250, 0.1);
+      }
+      .sensor-name {
+        color: #94a3b8;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+      .sensor-value {
+        font-size: 24px;
+        font-weight: 900;
+        background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .sensor-unit {
+        color: #94a3b8;
+        font-size: 12px;
+        margin-left: 4px;
+      }
+      .sensor-toggle {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        opacity: 0.5;
+        transition: opacity 0.3s;
+      }
+      .sensor-toggle:hover {
+        opacity: 1;
+      }
+      .sensor-item.hidden-sensor {
+        opacity: 0.3;
+        filter: grayscale(100%);
+      }
+      .sensor-item {
+        position: relative;
+      }
+      /* Threshold Controls */
+      .threshold-toggle {
+        color: #60a5fa;
+        font-size: 12px;
+        cursor: pointer;
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        background: rgba(96, 165, 250, 0.1);
+        border-radius: 6px;
+        transition: all 0.2s;
+      }
+      .threshold-toggle:hover {
+        color: #93c5fd;
+        background: rgba(96, 165, 250, 0.2);
+      }
+      .threshold-controls {
+        display: none;
+        margin-top: 14px;
+        padding: 16px;
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      .threshold-controls.expanded {
+        display: block;
+        animation: slideDown 0.2s ease-out;
+      }
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
         }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 24px;
-            margin-bottom: 24px;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .card {
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 28px;
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s, box-shadow 0.3s;
+      }
+      .threshold-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .threshold-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .threshold-input {
+        width: 100px;
+        padding: 10px 12px;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 8px;
+        color: #e2e8f0;
+        font-size: 14px;
+        text-align: center;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .threshold-input:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+      }
+      .threshold-input:hover {
+        border-color: rgba(148, 163, 184, 0.5);
+      }
+      .threshold-label {
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .threshold-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .threshold-save-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .threshold-save-btn:hover {
+        background: #059669;
+        transform: translateY(-1px);
+      }
+      .threshold-reset-btn {
+        background: #475569;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .threshold-reset-btn:hover {
+        background: #64748b;
+      }
+      .threshold-default {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 8px;
+        padding: 8px 12px;
+        background: rgba(100, 116, 139, 0.1);
+        border-radius: 6px;
+        display: inline-block;
+      }
+      .threshold-active {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.3);
+      }
+      .threshold-active .threshold-toggle {
+        color: #10b981;
+        background: rgba(16, 185, 129, 0.15);
+      }
+      .card-intro {
+        font-size: 14px;
+        color: #cbd5f5;
+        margin-bottom: 16px;
+        line-height: 1.5;
+      }
+      .hero-info {
+        margin-bottom: 24px;
+        border-radius: 18px;
+        border: 1px solid rgba(96, 165, 250, 0.3);
+        background: rgba(15, 23, 42, 0.4);
+        overflow: hidden;
+      }
+      .hero-info summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 18px 24px;
+        font-size: 16px;
+        font-weight: 700;
+        text-align: center;
+        color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: rgba(30, 41, 59, 0.7);
+      }
+      .hero-info summary::-webkit-details-marker {
+        display: none;
+      }
+      .hero-info .chevron {
+        transition: transform 0.3s;
+        font-size: 18px;
+      }
+      .hero-info[open] .chevron {
+        transform: rotate(180deg);
+      }
+      .hero-wrapper {
+        padding: 20px;
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(96, 165, 250, 0.2);
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 32px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      .hero h3 {
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #f8fafc;
+      }
+      .hero p {
+        color: #cbd5f5;
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+      .step-list {
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+      .step-list li {
+        display: flex;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(96, 165, 250, 0.1);
+        align-items: center;
+      }
+      .step-number {
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 14px;
+      }
+      .pipeline-flow {
+        display: flex;
+        gap: 12px;
+        align-items: stretch;
+        flex-wrap: wrap;
+      }
+      .flow-node {
+        flex: 1;
+        min-width: 140px;
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(96, 165, 250, 0.1);
+      }
+      .flow-title {
+        font-weight: 700;
+        color: #f8fafc;
+        margin-bottom: 6px;
+      }
+      .flow-text {
+        font-size: 13px;
+        color: #cbd5f5;
+        line-height: 1.4;
+      }
+      .flow-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        font-weight: 700;
+        font-size: 18px;
+        min-width: 24px;
+      }
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(96, 165, 250, 0.1);
+        font-size: 13px;
+        color: #cbd5f5;
+      }
+      .info-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(96, 165, 250, 0.2);
+        font-size: 13px;
+        background: rgba(96, 165, 250, 0.08);
+        color: #cbd5f5;
+        margin-top: 12px;
+      }
+      .hero-note {
+        font-size: 13px;
+        color: #94a3b8;
+        line-height: 1.6;
+      }
+
+      /* ML Anomaly Detection Styles */
+      .anomaly-item {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        border-left: 4px solid #ef4444;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        transition: all 0.3s;
+      }
+      .anomaly-item:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
+      }
+      .anomaly-info {
+        flex: 1;
+      }
+      .anomaly-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .anomaly-score {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .anomaly-method {
+        color: #94a3b8;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .anomaly-timestamp {
+        color: #60a5fa;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .anomaly-sensors {
+        color: #cbd5e1;
+        font-size: 13px;
+        margin-top: 8px;
+      }
+      .anomaly-sensors span {
+        display: inline-block;
+        background: rgba(96, 165, 250, 0.15);
+        color: #60a5fa;
+        padding: 2px 8px;
+        border-radius: 6px;
+        margin-right: 6px;
+        margin-top: 4px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .anomaly-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .btn-report {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+        white-space: nowrap;
+      }
+      .btn-report:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+      }
+      .btn-report:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .btn-view-report {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+      .btn-view-report:hover {
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+      }
+      .report-status {
+        font-size: 11px;
+        color: #94a3b8;
+        text-align: center;
+      }
+
+      /* Modal Styles */
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-content {
+        background: #1e293b;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 900px;
+        max-height: 90vh;
+        overflow: hidden;
+        border: 1px solid rgba(96, 165, 250, 0.2);
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        background: rgba(15, 23, 42, 0.6);
+      }
+      .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        color: #f8fafc;
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 28px;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        transition: color 0.3s;
+      }
+      .modal-close:hover {
+        color: #ef4444;
+      }
+      .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        max-height: calc(90vh - 80px);
+        color: #e2e8f0;
+        line-height: 1.7;
+      }
+      .modal-body h3 {
+        color: #60a5fa;
+        margin-top: 24px;
+        margin-bottom: 12px;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .modal-body h3:first-child {
+        margin-top: 0;
+      }
+      .modal-body ul {
+        margin-left: 20px;
+        margin-bottom: 16px;
+      }
+      .modal-body li {
+        margin-bottom: 8px;
+      }
+      .modal-body p {
+        margin-bottom: 12px;
+      }
+      .report-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+        padding: 16px;
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 12px;
+      }
+      .report-meta-item {
+        text-align: center;
+      }
+      .report-meta-label {
+        color: #94a3b8;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+      }
+      .report-meta-value {
+        color: #60a5fa;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .report-analysis {
+        background: rgba(15, 23, 42, 0.4);
+        padding: 24px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        line-height: 1.8;
+        color: #e2e8f0;
+      }
+      .report-analysis h3 {
+        color: #10b981;
+        border-bottom: 2px solid rgba(16, 185, 129, 0.3);
+        padding-bottom: 12px;
+        margin-top: 32px;
+        margin-bottom: 16px;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .report-analysis h3:first-child {
+        margin-top: 0;
+      }
+      .report-analysis p {
+        margin-bottom: 16px;
+        line-height: 1.8;
+      }
+      .report-analysis ul {
+        margin-left: 24px;
+        margin-bottom: 16px;
+      }
+      .report-analysis li {
+        margin-bottom: 10px;
+        line-height: 1.7;
+      }
+      .report-analysis strong {
+        color: #60a5fa;
+        font-weight: 700;
+      }
+      .report-analysis em {
+        color: #fbbf24;
+        font-style: italic;
+      }
+      .report-analysis code {
+        background: rgba(30, 41, 59, 0.8);
+        color: #10b981;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+      }
+      .report-analysis pre {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(100, 116, 139, 0.3);
+        border-radius: 8px;
+        padding: 16px;
+        overflow-x: auto;
+        margin: 16px 0;
+      }
+      .report-analysis pre code {
+        background: none;
+        padding: 0;
+      }
+      .btn-download-report {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+      }
+      .btn-download-report:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+      }
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 24px 70px rgba(96, 165, 250, 0.2);
-        }
-        .card h2 {
-            font-size: 16px;
-            margin-bottom: 20px;
-            color: #60a5fa;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 Sensor Data Pipeline</h1>
+      <div class="subtitle">Real-Time IoT Monitoring Dashboard</div>
+
+      <details class="hero-info" id="onboardingDetails">
+        <summary>
+          <span>?? New to this dashboard? Click to learn how it works.</span>
+          <span class="chevron">▼</span>
+        </summary>
+        <div class="hero-wrapper">
+          <div class="hero">
+            <div>
+              <h3>Quick start steps</h3>
+              <p>
+                This panel lets you start, stop, and watch an entire demo
+                factory pipeline. Follow the three quick steps below and the
+                rest of the cards will begin to fill themselves in.
+              </p>
+              <ul class="step-list">
+                <li>
+                  <span class="step-number">1</span>
+                  <div>
+                    <strong>Start the Consumer (Waiter)</strong>
+                    <div class="hero-note">
+                      It listens for new readings and writes them into
+                      PostgreSQL. Start this before anything else.
+                    </div>
+                  </div>
+                </li>
+                <li>
+                  <span class="step-number">2</span>
+                  <div>
+                    <strong>Start the Producer (Data maker)</strong>
+                    <div class="hero-note">
+                      This generates pretend sensor readings and hands them to
+                      Kafka so the consumer has something to save.
+                    </div>
+                  </div>
+                </li>
+                <li>
+                  <span class="step-number">3</span>
+                  <div>
+                    <strong>Watch the Status, Alerts, and Live Readings</strong>
+                    <div class="hero-note">
+                      Green dots mean the pieces are healthy. Any alert shows up
+                      in plain English so you know what needs attention.
+                    </div>
+                  </div>
+                </li>
+              </ul>
+              <div class="info-pill">
+                ✳ Need a shortcut? Use the presets in the Configuration card and
+                keep this page open to see everything update in real time.
+              </div>
+            </div>
+            <div>
+              <h3>What is happening end-to-end?</h3>
+              <div class="pipeline-flow" aria-label="Pipeline overview">
+                <div class="flow-node">
+                  <div class="flow-title">Producer</div>
+                  <div class="flow-text">
+                    Creates fake machine readings based on the ranges in
+                    <code>config.py</code>.
+                  </div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node">
+                  <div class="flow-title">Kafka</div>
+                  <div class="flow-text">
+                    Acts like a conveyor belt. Messages queue here until the
+                    consumer grabs them.
+                  </div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node">
+                  <div class="flow-title">Consumer</div>
+                  <div class="flow-text">
+                    Validates each reading, flags anomalies, and writes
+                    everything to the database.
+                  </div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node">
+                  <div class="flow-title">Database</div>
+                  <div class="flow-text">
+                    Stores the official record shown in the stats, alerts, and
+                    history sections.
+                  </div>
+                </div>
+              </div>
+              <h3 style="margin-top: 20px">What the colors mean</h3>
+              <div class="legend">
+                <div class="legend-item">
+                  <span class="status-indicator status-running"></span>
+                  Running and healthy
+                </div>
+                <div class="legend-item">
+                  <span class="status-indicator status-stopped"></span>
+                  Stopped or not reachable
+                </div>
+                <div class="legend-item">
+                  <span class="status-indicator status-pending"></span>
+                  Starting up / waiting on a reply
+                </div>
+                <div class="legend-item">
+                  <span class="status-indicator status-unknown"></span>
+                  Not checked yet (refreshing soon)
+                </div>
+              </div>
+              <div class="hero-note" style="margin-top: 16px">
+                Tip: If you forget what a section is for, read the short
+                description right under each card heading.
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <div class="grid">
+        <!-- Stats Card -->
+        <div class="card">
+          <h2>📊 Statistics</h2>
+          <p class="card-intro">
+            Shows how many readings have been saved and highlights the latest
+            sensor values. If you just started the pipeline, this number will
+            ramp up as messages flow through.
+          </p>
+          <div class="big-stat">
+            <div class="big-stat-value" id="totalCount">0</div>
+            <div class="big-stat-label">Total Messages</div>
+          </div>
+          <div class="tabs" id="statsCategoryTabs"></div>
+          <div id="statsCategoryContent"></div>
+        </div>
+
+        <!-- Control Card -->
+        <div class="card">
+          <h2>⚙️ Controls</h2>
+          <p class="card-intro">
+            Think of this as the on/off switchboard. Start the consumer first,
+            then the producer. Stop buttons immediately send a shutdown signal
+            to each Python process.
+          </p>
+          <div class="stat">
+            <span class="stat-label">
+              <span class="status-indicator" id="producerStatus"></span>
+              Producer
+            </span>
+          </div>
+          <div class="controls">
+            <button class="btn-success" onclick="startComponent('producer')">
+              ▶ Start
+            </button>
+            <button class="btn-danger" onclick="stopComponent('producer')">
+              ⏹ Stop
+            </button>
+          </div>
+
+          <div class="stat" style="margin-top: 20px">
+            <span class="stat-label">
+              <span class="status-indicator" id="consumerStatus"></span>
+              Consumer
+            </span>
+          </div>
+          <div class="controls">
+            <button class="btn-success" onclick="startComponent('consumer')">
+              ▶ Start
+            </button>
+            <button class="btn-danger" onclick="stopComponent('consumer')">
+              ⏹ Stop
+            </button>
+          </div>
+
+          <div class="stat" style="margin-top: 20px">
+            <span class="stat-label">
+              <span class="status-indicator" id="kafkaStatus"></span>
+              Kafka Broker
+            </span>
+            <span class="stat-value" id="kafkaStatusDetails">Checking...</span>
+          </div>
+
+          <div class="controls" style="margin-top: 20px">
+            <button class="btn-secondary" onclick="exportData()">
+              🗂️ Export CSV
+            </button>
+            <button class="btn-warning" onclick="clearData()">
+              🗑️ Clear All Data
+            </button>
+          </div>
+        </div>
+
+        <!-- Configuration Card -->
+        <div class="card">
+          <h2>🔧 Configuration</h2>
+
+          <p class="card-intro">
+            Tell the producer how long to run and how often to send readings.
+            The dashboard calculates the total messages for you and keeps the
+            last update visible below.
+          </p>
+          <label>Duration</label>
+          <div class="input-group">
+            <div class="input-wrapper">
+              <span class="input-label">Hours</span>
+              <input type="number" id="durationHours" min="0" value="0" />
+            </div>
+            <div class="input-wrapper">
+              <span class="input-label">Minutes</span>
+              <input
+                type="number"
+                id="durationMinutes"
+                min="0"
+                max="59"
+                value="0"
+              />
+            </div>
+          </div>
+
+          <label>Interval</label>
+          <div class="input-wrapper">
+            <span class="input-label">Seconds</span>
+            <input type="number" id="intervalSeconds" value="30" />
+          </div>
+
+          <div class="controls">
+            <button class="btn-primary" onclick="updateConfig()">
+              💾 Update Config
+            </button>
+            <button class="btn-secondary" onclick="resetConfig()">
+              🔄 Reset Defaults
+            </button>
+          </div>
+          <div class="config-meta" id="configMessage">Ready for updates.</div>
+
+          <div class="preset-container">
+            <div class="preset-title">⚡ Quick Presets</div>
+            <div class="preset-buttons">
+              <button class="btn-primary" onclick="setQuickTest()">
+                Quick Test
+              </button>
+              <button class="btn-primary" onclick="setOneMin()">
+                1 Minute
+              </button>
+              <button class="btn-primary" onclick="setOneHour()">1 Hour</button>
+              <button class="btn-primary" onclick="setProduction()">
+                24 Hours
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerts Card -->
+        <div class="card">
+          <h2>🚨 Alerts</h2>
+          <p class="card-intro">
+            Every anomaly, failure, or manual action is stored here in plain
+            English. Use it as the event log when something looks off.
+          </p>
+          <div class="alert-list" id="alertList">
+            <div style="text-align: center; color: #94a3b8; padding: 20px">
+              No alerts yet
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LSTM Future Prediction Card -->
+      <div class="card" style="margin-bottom: 24px">
+        <h2>🔮 LSTM Future Anomaly Prediction</h2>
+        <p class="card-intro">
+          LSTM Autoencoder analyzes temporal patterns to predict potential future anomalies.
+        </p>
+        
+        <!-- LSTM Status -->
+        <div id="lstmStatusContainer" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 600; color: #cbd5e1;">Training Quality</span>
+            <span id="lstmQualityPercent" style="font-weight: 600; color: #10b981;">--</span>
+          </div>
+          <div style="background: #1e293b; border-radius: 8px; height: 24px; overflow: hidden; position: relative;">
+            <div id="lstmQualityBar" style="
+              height: 100%;
+              width: 0%;
+              background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+              transition: width 0.5s ease, background 0.5s ease;
+              border-radius: 8px;
+            "></div>
+            <div style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12px;
+              font-weight: 600;
+              color: white;
+              text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            " id="lstmQualityText">Loading...</div>
+          </div>
+          <div id="lstmStatusMessage" style="margin-top: 8px; font-size: 13px; color: #94a3b8; text-align: center;">
+            Checking LSTM status...
+          </div>
+        </div>
+
+        <!-- Current Prediction -->
+        <div id="lstmPredictionContainer" style="
+          background: linear-gradient(135deg, #1e293b, #0f172a);
+          border: 1px solid #334155;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 16px;
+        ">
+          <h3 style="margin: 0 0 16px 0; color: #e2e8f0; font-size: 16px;">Current Risk Assessment</h3>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Risk Score</div>
+              <div id="lstmRiskScore" style="font-size: 24px; font-weight: 700; color: #10b981;">--</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Confidence</div>
+              <div id="lstmConfidence" style="font-size: 24px; font-weight: 700; color: #3b82f6;">--</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Predicted Window</div>
+            <div id="lstmPredictedWindow" style="font-size: 14px; color: #e2e8f0; font-weight: 500;">--</div>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Trend</div>
+            <div id="lstmTrend" style="font-size: 14px; color: #e2e8f0; font-weight: 500;">--</div>
+          </div>
+
+          <div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Contributing Sensors</div>
+            <div id="lstmSensors" style="font-size: 13px; color: #cbd5e1;">--</div>
+          </div>
+        </div>
+
+        <!-- Problematic Sensors Analysis -->
+        <div id="lstmSensorAnalysisContainer" style="
+          background: linear-gradient(135deg, #1e293b, #0f172a);
+          border: 1px solid #334155;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 16px;
+          display: none;
+        ">
+          <h3 style="margin: 0 0 16px 0; color: #e2e8f0; font-size: 16px;">🔍 Problematic Sensors Analysis</h3>
+          <p style="margin: 0 0 16px 0; font-size: 13px; color: #94a3b8;">
+            Sensors that are trending toward problems and why:
+          </p>
+          <div id="lstmSensorAnalysisList" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Sensor analysis items will be inserted here -->
+          </div>
+        </div>
+
+        <!-- Generate Future Report Button -->
+        <button
+          id="generateFutureReportBtn"
+          onclick="generateFutureReport(this)"
+          style="
+            width: 100%;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-        .stat {
+            justify-content: center;
+            gap: 8px;
+            font-size: 15px;
+          "
+        >
+          <span>📊</span>
+          <span>Generate Future Anomaly Report (PDF)</span>
+        </button>
+      </div>
+
+      <!-- ML Anomaly Detection Card -->
+      <div class="card" style="margin-bottom: 24px">
+        <div
+          style="
             display: flex;
             justify-content: space-between;
-            padding: 14px 0;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-        }
-        .stat:last-child { border-bottom: none; }
-        .stat-label {
-            color: #94a3b8;
-            font-size: 14px;
-        }
-        .stat-value {
-            color: #60a5fa;
-            font-weight: 700;
-            font-size: 18px;
-        }
-        .big-stat {
-            text-align: center;
-            padding: 30px 0;
-            background: linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
-            border-radius: 16px;
+            align-items: center;
+            margin-bottom: 16px;
+          "
+        >
+          <h2 style="margin: 0">🤖 ML Anomaly Detection</h2>
+          <button
+            id="fullReportBtn"
+            onclick="generateFullSessionReport(this)"
+            style="
+              background: linear-gradient(135deg, #10b981, #059669);
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+              transition: all 0.3s ease;
+            "
+          >
+            📊 Generate Full Session Report
+          </button>
+        </div>
+        <p class="card-intro">
+          Isolation Forest model detects unusual patterns across all 50 sensor
+          parameters. Click "Generate Report" for individual analysis, or "Full
+          Session Report" for comprehensive analysis of ALL anomalies.
+        </p>
+
+        <!-- ML Stats -->
+        <div
+          style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
             margin-bottom: 20px;
-        }
-        .big-stat-value {
-            font-size: 56px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 8px;
-        }
-        .big-stat-label {
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        button {
-            padding: 14px 28px;
-            border: none;
+          "
+        >
+          <div class="big-stat" style="padding: 20px">
+            <div
+              class="big-stat-value"
+              id="mlTotalAnomalies"
+              style="font-size: 36px"
+            >
+              0
+            </div>
+            <div class="big-stat-label">Anomalies Detected</div>
+          </div>
+          <div class="big-stat" style="padding: 20px">
+            <div
+              class="big-stat-value"
+              id="mlAnomalyRate"
+              style="font-size: 36px"
+            >
+              0%
+            </div>
+            <div class="big-stat-label">Recent Rate</div>
+          </div>
+          <div class="big-stat" style="padding: 20px">
+            <div
+              class="big-stat-value"
+              id="mlReportsGenerated"
+              style="font-size: 36px"
+            >
+              0
+            </div>
+            <div class="big-stat-label">Reports Generated</div>
+          </div>
+        </div>
+
+        <!-- Anomaly List -->
+        <div
+          class="anomaly-list"
+          id="anomalyList"
+          style="max-height: 400px; overflow-y: auto"
+        >
+          <div style="text-align: center; color: #94a3b8; padding: 40px">
+            No ML anomalies detected yet. Start the pipeline to begin
+            monitoring.
+          </div>
+        </div>
+
+        <!-- Anomaly Injection Controls -->
+        <div
+          style="
+            margin-top: 24px;
+            padding: 20px;
+            background: rgba(239, 68, 68, 0.1);
             border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin: 4px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-        }
-        .btn-success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-        }
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-        }
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-        }
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-        }
-        .btn-warning {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-        }
-        .btn-warning:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-        }
-        .btn-secondary {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #1e293b;
-            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
-        }
-        .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
-        }
-        .btn-toggle {
-            background: rgba(71, 85, 105, 0.5);
-            color: white;
-            padding: 10px 20px;
-            font-size: 13px;
-            border: 1px solid rgba(148, 163, 184, 0.2);
-        }
-        .btn-toggle.active {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            border-color: #3b82f6;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-        .controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 16px;
-        }
-        input[type="number"] {
-            padding: 14px 16px;
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+          "
+        >
+          <h3 style="margin: 0 0 16px 0; color: #f87171; font-size: 16px">
+            🎯 Anomaly Injection Controls
+          </h3>
+          <p style="font-size: 13px; color: #94a3b8; margin-bottom: 16px">
+            Control when anomalies are injected into the sensor data stream. Set
+            custom thresholds above, then schedule anomaly injections here.
+          </p>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 16px;
+            "
+          >
+            <!-- Enable/Disable -->
+            <div
+              style="
+                background: rgba(15, 23, 42, 0.6);
+                padding: 16px;
+                border-radius: 8px;
+              "
+            >
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  cursor: pointer;
+                "
+              >
+                <input
+                  type="checkbox"
+                  id="injectionEnabled"
+                  onchange="toggleInjection()"
+                  style="width: 20px; height: 20px; cursor: pointer"
+                />
+                <span style="font-size: 14px; color: #e2e8f0"
+                  >Enable Scheduled Anomalies</span
+                >
+              </label>
+            </div>
+
+            <!-- Interval Setting -->
+            <div
+              style="
+                background: rgba(15, 23, 42, 0.6);
+                padding: 16px;
+                border-radius: 8px;
+              "
+            >
+              <label
+                style="
+                  font-size: 12px;
+                  color: #94a3b8;
+                  display: block;
+                  margin-bottom: 8px;
+                "
+                >Inject Anomaly Every</label
+              >
+              <div style="display: flex; align-items: center; gap: 8px">
+                <input
+                  type="number"
+                  id="injectionInterval"
+                  value="30"
+                  min="1"
+                  max="1440"
+                  style="
+                    width: 80px;
+                    padding: 8px;
+                    background: rgba(15, 23, 42, 0.8);
+                    border: 1px solid rgba(148, 163, 184, 0.3);
+                    border-radius: 6px;
+                    color: #e2e8f0;
+                    font-size: 14px;
+                    text-align: center;
+                  "
+                />
+                <span style="color: #94a3b8">minutes</span>
+                <button
+                  onclick="updateInjectionInterval()"
+                  style="
+                    background: #3b82f6;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    cursor: pointer;
+                  "
+                >
+                  Set
+                </button>
+              </div>
+            </div>
+
+            <!-- Inject Now Button -->
+            <div
+              style="
+                background: rgba(15, 23, 42, 0.6);
+                padding: 16px;
+                border-radius: 8px;
+              "
+            >
+              <label
+                style="
+                  font-size: 12px;
+                  color: #94a3b8;
+                  display: block;
+                  margin-bottom: 8px;
+                "
+                >Manual Trigger</label
+              >
+              <button
+                id="injectNowBtn"
+                onclick="injectAnomalyNow(this)"
+                style="
+                  background: linear-gradient(135deg, #ef4444, #dc2626);
+                  color: white;
+                  border: none;
+                  padding: 12px 24px;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  width: 100%;
+                  font-size: 14px;
+                "
+              >
+                ⚡ Inject Anomaly NOW
+              </button>
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div
+            id="injectionStatus"
+            style="
+              margin-top: 16px;
+              padding: 12px;
+              background: rgba(15, 23, 42, 0.4);
+              border-radius: 8px;
+              font-size: 13px;
+              color: #64748b;
+            "
+          >
+            Injection disabled. Enable to schedule automatic anomalies.
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Modal (Individual Anomaly) -->
+      <div id="reportModal" class="modal" style="display: none">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>📋 Anomaly Analysis Report</h2>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <button 
+                id="downloadReportBtn" 
+                class="btn-download-report" 
+                onclick="downloadCurrentReport()"
+                style="display: none;"
+              >
+                📥 Download
+              </button>
+              <button class="modal-close" onclick="closeReportModal()">
+                &times;
+              </button>
+            </div>
+          </div>
+          <div class="modal-body" id="reportContent">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Full Session Report Modal -->
+      <div id="fullReportModal" class="modal" style="display: none">
+        <div class="modal-content" style="max-width: 1000px; max-height: 90vh">
+          <div
+            class="modal-header"
+            style="background: linear-gradient(135deg, #10b981, #059669)"
+          >
+            <h2 style="color: white">📊 Full Session Analysis Report</h2>
+            <button
+              class="modal-close"
+              onclick="closeFullReportModal()"
+              style="color: white"
+            >
+              &times;
+            </button>
+          </div>
+          <div
+            class="modal-body"
+            id="fullReportContent"
+            style="overflow-y: auto; max-height: calc(90vh - 80px)"
+          >
+            <div style="text-align: center; padding: 60px">
+              <div
+                class="loading-spinner"
+                style="width: 48px; height: 48px; margin: 0 auto 20px"
+              ></div>
+              <p style="color: #94a3b8; font-size: 16px">
+                Analyzing all anomalies with AI...
+              </p>
+              <p style="color: #64748b; font-size: 14px">
+                This may take a minute for comprehensive analysis.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 50 Parameters by Category -->
+      <div class="card">
+        <h2>🎯 All Sensor Parameters (50)</h2>
+        <p class="card-intro">
+          Grouped by category so you can see how the 50 different readings are
+          trending without memorizing names. Toggle categories to focus on the
+          ones you care about.
+        </p>
+        <div class="tabs" id="categoryTabs"></div>
+        <div id="categoryContent"></div>
+      </div>
+
+      <!-- Readings History Card -->
+      <div class="card">
+        <h2>📡 Live Sensor Readings</h2>
+        <p class="card-intro">
+          A rolling timeline of raw values pulled straight from the database.
+          Pick a category and skim the cards to spot jumps or dips.
+        </p>
+        <label>Select Category to Monitor</label>
+        <select
+          id="historyCategory"
+          onchange="changeHistoryCategory()"
+          style="
+            width: 100%;
+            padding: 14px;
             border-radius: 12px;
             background: rgba(15, 23, 42, 0.6);
             color: #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.2);
             font-size: 15px;
             font-weight: 600;
-            width: 100%;
-            transition: all 0.3s;
-        }
-        input[type="number"]:focus {
-            outline: none;
-            border-color: #60a5fa;
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
-        }
-        .input-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .input-wrapper {
-            position: relative;
-        }
-        .input-label {
-            position: absolute;
-            top: -8px;
-            left: 12px;
-            background: rgba(30, 41, 59, 0.9);
-            padding: 0 8px;
-            color: #60a5fa;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        label {
-            display: block;
-            margin-bottom: 12px;
-            color: #60a5fa;
-            font-weight: 700;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 10px;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .status-running {
-            background: #10b981;
-            box-shadow: 0 0 10px #10b981;
-        }
-        .status-stopped {
-            background: #ef4444;
-            box-shadow: 0 0 10px #ef4444;
-        }
-        .status-pending {
-            background: #f59e0b;
-            box-shadow: 0 0 10px #f59e0b;
-        }
-        .status-unknown {
-            background: #64748b;
-            box-shadow: 0 0 10px #64748b;
-        }
-        .history-container {
-            max-height: 600px;
-            overflow-y: auto;
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: 16px;
-            padding: 16px;
-        }
-        .history-container::-webkit-scrollbar {
-            width: 8px;
-        }
-        .history-container::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.4);
-            border-radius: 4px;
-        }
-        .history-container::-webkit-scrollbar-thumb {
-            background: rgba(96, 165, 250, 0.5);
-            border-radius: 4px;
-        }
-        .history-container::-webkit-scrollbar-thumb:hover {
-            background: rgba(96, 165, 250, 0.7);
-        }
-        .history-item {
-            background: rgba(30, 41, 59, 0.8);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
-            border-left: 4px solid #60a5fa;
-            transition: all 0.3s;
-        }
-        .history-item:hover {
-            transform: translateX(4px);
-            box-shadow: 0 4px 20px rgba(96, 165, 250, 0.2);
-        }
-        .history-timestamp {
-            color: #94a3b8;
-            font-size: 11px;
-            margin-bottom: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
-        .history-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-            gap: 14px;
-        }
-        .history-metric {
-            text-align: center;
-            padding: 12px;
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: 10px;
-            border: 1px solid rgba(96, 165, 250, 0.1);
-        }
-        .history-metric.hidden {
-            display: none;
-        }
-        .alert-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: 360px;
-            overflow-y: auto;
-        }
-        .alert-item {
-            background: rgba(148, 163, 184, 0.08);
-            border-radius: 12px;
-            padding: 14px;
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-        }
-        .alert-type {
-            font-weight: 700;
-            color: #f8fafc;
-            font-size: 14px;
-        }
-        .alert-message {
-            color: #cbd5f5;
-            font-size: 13px;
-            margin-top: 4px;
-        }
-        .alert-meta {
-            text-align: right;
-            font-size: 12px;
-            color: #94a3b8;
-        }
-        .alert-badge {
-            padding: 4px 12px;
-            border-radius: 999px;
-            font-weight: 700;
-            display: inline-block;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-        }
-        .alert-badge.info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-        .alert-badge.warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-        .alert-badge.error { background: rgba(248, 113, 113, 0.15); color: #f87171; }
-        .alert-badge.critical { background: rgba(248, 113, 113, 0.25); color: #fecaca; }
-        .config-meta {
-            margin-top: 12px;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #94a3b8;
-            min-height: 16px;
-        }
-        .metric-value {
-            font-size: 20px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .metric-label {
-            font-size: 10px;
-            color: #94a3b8;
-            margin-top: 6px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
-        .toggles {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
             margin-bottom: 20px;
-        }
-        .preset-container {
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: 16px;
-            border: 1px solid rgba(96, 165, 250, 0.2);
-        }
-        .preset-title {
-            color: #94a3b8;
-            font-size: 12px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .preset-buttons {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .tab {
-            padding: 10px 20px;
-            background: rgba(71, 85, 105, 0.3);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 10px;
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            color: #94a3b8;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .tab:hover {
-            background: rgba(71, 85, 105, 0.5);
-            border-color: rgba(96, 165, 250, 0.3);
-        }
-        .tab.active {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            border-color: #3b82f6;
-            color: white;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .sensor-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 16px;
-        }
-        .sensor-item {
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: 12px;
-            padding: 16px;
-            border: 1px solid rgba(96, 165, 250, 0.1);
-            transition: all 0.3s;
-        }
-        .sensor-item:hover {
-            border-color: rgba(96, 165, 250, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(96, 165, 250, 0.1);
-        }
-        .sensor-name {
-            color: #94a3b8;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        .sensor-value {
-            font-size: 24px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .sensor-unit {
-            color: #94a3b8;
-            font-size: 12px;
-            margin-left: 4px;
-        }
-        .sensor-toggle {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-            opacity: 0.5;
-            transition: opacity 0.3s;
-        }
-        .sensor-toggle:hover {
-            opacity: 1;
-        }
-        .sensor-item.hidden-sensor {
-            opacity: 0.3;
-            filter: grayscale(100%);
-        }
-        .sensor-item {
-            position: relative;
-        }
-        .card-intro {
-            font-size: 14px;
-            color: #cbd5f5;
-            margin-bottom: 16px;
-            line-height: 1.5;
-        }
-        .hero-info {
-            margin-bottom: 24px;
-            border-radius: 18px;
-            border: 1px solid rgba(96, 165, 250, 0.3);
-            background: rgba(15, 23, 42, 0.4);
-            overflow: hidden;
-        }
-        .hero-info summary {
-            list-style: none;
-            cursor: pointer;
-            padding: 18px 24px;
-            font-size: 16px;
-            font-weight: 700;
-            text-align: center;
-            color: #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            background: rgba(30, 41, 59, 0.7);
-        }
-        .hero-info summary::-webkit-details-marker {
-            display: none;
-        }
-        .hero-info .chevron {
-            transition: transform 0.3s;
-            font-size: 18px;
-        }
-        .hero-info[open] .chevron {
-            transform: rotate(180deg);
-        }
-        .hero-wrapper {
-            padding: 20px;
-        }
-        .hero {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid rgba(96, 165, 250, 0.2);
-            border-radius: 20px;
-            padding: 28px;
-            margin-bottom: 32px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-        .hero h3 {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: #f8fafc;
-        }
-        .hero p {
-            color: #cbd5f5;
-            line-height: 1.6;
-            margin-bottom: 16px;
-        }
-        .step-list {
-            list-style: none;
-            display: grid;
-            gap: 10px;
-        }
-        .step-list li {
-            display: flex;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 12px;
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(96, 165, 250, 0.1);
-            align-items: center;
-        }
-        .step-number {
-            width: 32px;
-            height: 32px;
-            border-radius: 999px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 14px;
-        }
-        .pipeline-flow {
-            display: flex;
-            gap: 12px;
-            align-items: stretch;
-            flex-wrap: wrap;
-        }
-        .flow-node {
-            flex: 1;
-            min-width: 140px;
-            padding: 12px;
-            border-radius: 14px;
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(96, 165, 250, 0.1);
-        }
-        .flow-title {
-            font-weight: 700;
-            color: #f8fafc;
-            margin-bottom: 6px;
-        }
-        .flow-text {
-            font-size: 13px;
-            color: #cbd5f5;
-            line-height: 1.4;
-        }
-        .flow-arrow {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #94a3b8;
-            font-weight: 700;
-            font-size: 18px;
-            min-width: 24px;
-        }
-        .legend {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 12px;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px;
-            border-radius: 12px;
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(96, 165, 250, 0.1);
-            font-size: 13px;
-            color: #cbd5f5;
-        }
-        .info-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            border-radius: 999px;
-            border: 1px solid rgba(96, 165, 250, 0.2);
-            font-size: 13px;
-            background: rgba(96, 165, 250, 0.08);
-            color: #cbd5f5;
-            margin-top: 12px;
-        }
-        .hero-note {
-            font-size: 13px;
-            color: #94a3b8;
-            line-height: 1.6;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🚀 Sensor Data Pipeline</h1>
-        <div class="subtitle">Real-Time IoT Monitoring Dashboard</div>
-
-        <details class="hero-info" id="onboardingDetails">
-            <summary>
-                <span>?? New to this dashboard? Click to learn how it works.</span>
-                <span class="chevron">▼</span>
-            </summary>
-            <div class="hero-wrapper">
-                <div class="hero">
-                    <div>
-                        <h3>Quick start steps</h3>
-                        <p>This panel lets you start, stop, and watch an entire demo factory pipeline. Follow the three quick steps below and the rest of the cards will begin to fill themselves in.</p>
-                        <ul class="step-list">
-                            <li>
-                                <span class="step-number">1</span>
-                                <div>
-                                    <strong>Start the Consumer (Waiter)</strong>
-                                    <div class="hero-note">It listens for new readings and writes them into PostgreSQL. Start this before anything else.</div>
-                                </div>
-                            </li>
-                            <li>
-                                <span class="step-number">2</span>
-                                <div>
-                                    <strong>Start the Producer (Data maker)</strong>
-                                    <div class="hero-note">This generates pretend sensor readings and hands them to Kafka so the consumer has something to save.</div>
-                                </div>
-                            </li>
-                            <li>
-                                <span class="step-number">3</span>
-                                <div>
-                                    <strong>Watch the Status, Alerts, and Live Readings</strong>
-                                    <div class="hero-note">Green dots mean the pieces are healthy. Any alert shows up in plain English so you know what needs attention.</div>
-                                </div>
-                            </li>
-                        </ul>
-                        <div class="info-pill">✳ Need a shortcut? Use the presets in the Configuration card and keep this page open to see everything update in real time.</div>
-                    </div>
-                    <div>
-                        <h3>What is happening end-to-end?</h3>
-                        <div class="pipeline-flow" aria-label="Pipeline overview">
-                            <div class="flow-node">
-                                <div class="flow-title">Producer</div>
-                                <div class="flow-text">Creates fake machine readings based on the ranges in <code>config.py</code>.</div>
-                            </div>
-                            <div class="flow-arrow">→</div>
-                            <div class="flow-node">
-                                <div class="flow-title">Kafka</div>
-                                <div class="flow-text">Acts like a conveyor belt. Messages queue here until the consumer grabs them.</div>
-                            </div>
-                            <div class="flow-arrow">→</div>
-                            <div class="flow-node">
-                                <div class="flow-title">Consumer</div>
-                                <div class="flow-text">Validates each reading, flags anomalies, and writes everything to the database.</div>
-                            </div>
-                            <div class="flow-arrow">→</div>
-                            <div class="flow-node">
-                                <div class="flow-title">Database</div>
-                                <div class="flow-text">Stores the official record shown in the stats, alerts, and history sections.</div>
-                            </div>
-                        </div>
-                        <h3 style="margin-top: 20px;">What the colors mean</h3>
-                        <div class="legend">
-                            <div class="legend-item">
-                                <span class="status-indicator status-running"></span>
-                                Running and healthy
-                            </div>
-                            <div class="legend-item">
-                                <span class="status-indicator status-stopped"></span>
-                                Stopped or not reachable
-                            </div>
-                            <div class="legend-item">
-                                <span class="status-indicator status-pending"></span>
-                                Starting up / waiting on a reply
-                            </div>
-                            <div class="legend-item">
-                                <span class="status-indicator status-unknown"></span>
-                                Not checked yet (refreshing soon)
-                            </div>
-                        </div>
-                        <div class="hero-note" style="margin-top: 16px;">Tip: If you forget what a section is for, read the short description right under each card heading.</div>
-                    </div>
-                </div>
-            </div>
-        </details>
-
-        <div class="grid">
-            <!-- Stats Card -->
-            <div class="card">
-                <h2>📊 Statistics</h2>
-                <p class="card-intro">Shows how many readings have been saved and highlights the latest sensor values. If you just started the pipeline, this number will ramp up as messages flow through.</p>
-                <div class="big-stat">
-                    <div class="big-stat-value" id="totalCount">0</div>
-                    <div class="big-stat-label">Total Messages</div>
-                </div>
-                <div class="tabs" id="statsCategoryTabs"></div>
-                <div id="statsCategoryContent"></div>
-            </div>
-
-            <!-- Control Card -->
-            <div class="card">
-                <h2>⚙️ Controls</h2>
-                <p class="card-intro">Think of this as the on/off switchboard. Start the consumer first, then the producer. Stop buttons immediately send a shutdown signal to each Python process.</p>
-                <div class="stat">
-                    <span class="stat-label">
-                        <span class="status-indicator" id="producerStatus"></span>
-                        Producer
-                    </span>
-                </div>
-                <div class="controls">
-                    <button class="btn-success" onclick="startComponent('producer')">▶ Start</button>
-                    <button class="btn-danger" onclick="stopComponent('producer')">⏹ Stop</button>
-                </div>
-
-                <div class="stat" style="margin-top: 20px;">
-                    <span class="stat-label">
-                        <span class="status-indicator" id="consumerStatus"></span>
-                        Consumer
-                    </span>
-                </div>
-                <div class="controls">
-                    <button class="btn-success" onclick="startComponent('consumer')">▶ Start</button>
-                    <button class="btn-danger" onclick="stopComponent('consumer')">⏹ Stop</button>
-                </div>
-
-                <div class="stat" style="margin-top: 20px;">
-                    <span class="stat-label">
-                        <span class="status-indicator" id="kafkaStatus"></span>
-                        Kafka Broker
-                    </span>
-                    <span class="stat-value" id="kafkaStatusDetails">Checking...</span>
-                </div>
-
-                <div class="controls" style="margin-top: 20px;">
-                    <button class="btn-secondary" onclick="exportData()">🗂️ Export CSV</button>
-                    <button class="btn-warning" onclick="clearData()">🗑️ Clear All Data</button>
-                </div>
-            </div>
-
-            <!-- Configuration Card -->
-            <div class="card">
-                <h2>🔧 Configuration</h2>
-
-                <p class="card-intro">Tell the producer how long to run and how often to send readings. The dashboard calculates the total messages for you and keeps the last update visible below.</p>
-                <label>Duration</label>
-                <div class="input-group">
-                    <div class="input-wrapper">
-                        <span class="input-label">Hours</span>
-                        <input type="number" id="durationHours" min="0" value="0">
-                    </div>
-                    <div class="input-wrapper">
-                        <span class="input-label">Minutes</span>
-                        <input type="number" id="durationMinutes" min="0" max="59" value="0">
-                    </div>
-                </div>
-
-                <label>Interval</label>
-                <div class="input-wrapper">
-                    <span class="input-label">Seconds</span>
-                    <input type="number" id="intervalSeconds" value="30">
-                </div>
-
-                <div class="controls">
-                    <button class="btn-primary" onclick="updateConfig()">💾 Update Config</button>
-                    <button class="btn-secondary" onclick="resetConfig()">🔄 Reset Defaults</button>
-                </div>
-                <div class="config-meta" id="configMessage">Ready for updates.</div>
-
-                <div class="preset-container">
-                    <div class="preset-title">⚡ Quick Presets</div>
-                    <div class="preset-buttons">
-                        <button class="btn-primary" onclick="setQuickTest()">Quick Test</button>
-                        <button class="btn-primary" onclick="setOneMin()">1 Minute</button>
-                        <button class="btn-primary" onclick="setOneHour()">1 Hour</button>
-                        <button class="btn-primary" onclick="setProduction()">24 Hours</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alerts Card -->
-            <div class="card">
-                <h2>🚨 Alerts</h2>
-                <p class="card-intro">Every anomaly, failure, or manual action is stored here in plain English. Use it as the event log when something looks off.</p>
-                <div class="alert-list" id="alertList">
-                    <div style="text-align: center; color: #94a3b8; padding: 20px;">
-                        No alerts yet
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 50 Parameters by Category -->
-        <div class="card">
-            <h2>🎯 All Sensor Parameters (50)</h2>
-            <p class="card-intro">Grouped by category so you can see how the 50 different readings are trending without memorizing names. Toggle categories to focus on the ones you care about.</p>
-            <div class="tabs" id="categoryTabs"></div>
-            <div id="categoryContent"></div>
-        </div>
-
-        <!-- Readings History Card -->
-        <div class="card">
-            <h2>📡 Live Sensor Readings</h2>
-            <p class="card-intro">A rolling timeline of raw values pulled straight from the database. Pick a category and skim the cards to spot jumps or dips.</p>
-            <label>Select Category to Monitor</label>
-            <select id="historyCategory" onchange="changeHistoryCategory()" style="width: 100%; padding: 14px; border-radius: 12px; background: rgba(15, 23, 42, 0.6); color: #e2e8f0; border: 1px solid rgba(148, 163, 184, 0.2); font-size: 15px; font-weight: 600; margin-bottom: 20px; cursor: pointer;">
-                <option value="environmental">🌍 Environmental Sensors</option>
-                <option value="mechanical">⚙️ Mechanical Sensors</option>
-                <option value="thermal">🔥 Thermal Sensors</option>
-                <option value="electrical">⚡ Electrical Sensors</option>
-                <option value="fluid">💧 Fluid Dynamics Sensors</option>
-            </select>
-            <div class="history-container" id="readingsHistory"></div>
-        </div>
+          "
+        >
+          <option value="environmental">🌍 Environmental Sensors</option>
+          <option value="mechanical">⚙️ Mechanical Sensors</option>
+          <option value="thermal">🔥 Thermal Sensors</option>
+          <option value="electrical">⚡ Electrical Sensors</option>
+          <option value="fluid">💧 Fluid Dynamics Sensors</option>
+        </select>
+        <div class="history-container" id="readingsHistory"></div>
+      </div>
     </div>
 
     <script>
-        let selectedHistoryCategory = 'environmental';
-        let configLimits = null;
-        let configDefaults = null;
+      let selectedHistoryCategory = "environmental";
+      let configLimits = null;
+      let configDefaults = null;
 
-        // Map of sensors by category from config
-        const sensorsByCategory = {
-            'environmental': ['temperature', 'pressure', 'humidity', 'ambient_temp', 'dew_point', 'air_quality_index', 'co2_level', 'particle_count', 'noise_level', 'light_intensity'],
-            'mechanical': ['vibration', 'rpm', 'torque', 'shaft_alignment', 'bearing_temp', 'motor_current', 'belt_tension', 'gear_wear', 'coupling_temp', 'lubrication_pressure'],
-            'thermal': ['coolant_temp', 'exhaust_temp', 'oil_temp', 'radiator_temp', 'thermal_efficiency', 'heat_dissipation', 'inlet_temp', 'outlet_temp', 'core_temp', 'surface_temp'],
-            'electrical': ['voltage', 'current', 'power_factor', 'frequency', 'resistance', 'capacitance', 'inductance', 'phase_angle', 'harmonic_distortion', 'ground_fault'],
-            'fluid': ['flow_rate', 'fluid_pressure', 'viscosity', 'density', 'reynolds_number', 'pipe_pressure_drop', 'pump_efficiency', 'cavitation_index', 'turbulence', 'valve_position']
-        };
+      // Map of sensors by category from config
+      const sensorsByCategory = {
+        environmental: [
+          "temperature",
+          "pressure",
+          "humidity",
+          "ambient_temp",
+          "dew_point",
+          "air_quality_index",
+          "co2_level",
+          "particle_count",
+          "noise_level",
+          "light_intensity",
+        ],
+        mechanical: [
+          "vibration",
+          "rpm",
+          "torque",
+          "shaft_alignment",
+          "bearing_temp",
+          "motor_current",
+          "belt_tension",
+          "gear_wear",
+          "coupling_temp",
+          "lubrication_pressure",
+        ],
+        thermal: [
+          "coolant_temp",
+          "exhaust_temp",
+          "oil_temp",
+          "radiator_temp",
+          "thermal_efficiency",
+          "heat_dissipation",
+          "inlet_temp",
+          "outlet_temp",
+          "core_temp",
+          "surface_temp",
+        ],
+        electrical: [
+          "voltage",
+          "current",
+          "power_factor",
+          "frequency",
+          "resistance",
+          "capacitance",
+          "inductance",
+          "phase_angle",
+          "harmonic_distortion",
+          "ground_fault",
+        ],
+        fluid: [
+          "flow_rate",
+          "fluid_pressure",
+          "viscosity",
+          "density",
+          "reynolds_number",
+          "pipe_pressure_drop",
+          "pump_efficiency",
+          "cavitation_index",
+          "turbulence",
+          "valve_position",
+        ],
+      };
 
-        // Hidden sensors state tracking
-        let hiddenSensors = new Set();
+      // Hidden sensors state tracking
+      let hiddenSensors = new Set();
 
-        // Load hidden sensors from localStorage on page load
-        function loadHiddenSensors() {
-            try {
-                const stored = localStorage.getItem('hiddenSensors');
-                if (stored) {
-                    hiddenSensors = new Set(JSON.parse(stored));
+      // Load hidden sensors from localStorage on page load
+      function loadHiddenSensors() {
+        try {
+          const stored = localStorage.getItem("hiddenSensors");
+          if (stored) {
+            hiddenSensors = new Set(JSON.parse(stored));
+          }
+        } catch (e) {
+          console.error("Failed to load hidden sensors:", e);
+        }
+      }
+
+      // Save hidden sensors to localStorage
+      function saveHiddenSensors() {
+        try {
+          localStorage.setItem(
+            "hiddenSensors",
+            JSON.stringify([...hiddenSensors])
+          );
+        } catch (e) {
+          console.error("Failed to save hidden sensors:", e);
+        }
+      }
+
+      // Toggle sensor visibility
+      function toggleSensor(sensorName) {
+        if (hiddenSensors.has(sensorName)) {
+          hiddenSensors.delete(sensorName);
+        } else {
+          hiddenSensors.add(sensorName);
+        }
+        saveHiddenSensors();
+        updateStats();
+      }
+
+      // =============================================
+      // THRESHOLD MANAGEMENT
+      // =============================================
+
+      // Store custom thresholds in sessionStorage
+      let customThresholds = {};
+
+      // Track expanded threshold controls (survives re-renders)
+      let expandedThresholds = new Set();
+
+      // Store default thresholds from backend (SENSOR_THRESHOLDS)
+      let defaultThresholds = {};
+
+      // Load thresholds from sessionStorage on page load
+      function loadThresholds() {
+        try {
+          const stored = sessionStorage.getItem("customThresholds");
+          if (stored) {
+            customThresholds = JSON.parse(stored);
+          }
+        } catch (e) {
+          console.error("Failed to load thresholds:", e);
+        }
+      }
+
+      // Load default thresholds from backend API
+      function loadDefaultThresholds() {
+        fetch("/api/thresholds")
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.defaults) {
+              defaultThresholds = data.defaults;
+            }
+          })
+          .catch(console.error);
+      }
+
+      // Save thresholds to sessionStorage
+      function saveThresholdsToStorage() {
+        try {
+          sessionStorage.setItem(
+            "customThresholds",
+            JSON.stringify(customThresholds)
+          );
+        } catch (e) {
+          console.error("Failed to save thresholds:", e);
+        }
+      }
+
+      // Get threshold for a sensor (custom or default from SENSOR_THRESHOLDS)
+      function getThreshold(sensorName) {
+        if (customThresholds[sensorName]) {
+          return customThresholds[sensorName];
+        }
+        // Return default from SENSOR_THRESHOLDS (loaded from backend)
+        const defaults = defaultThresholds[sensorName];
+        if (defaults) {
+          return { min: defaults.low, max: defaults.high };
+        }
+        return { min: 0, max: 100 }; // Fallback
+      }
+
+      // Get default threshold values for a sensor
+      function getDefaultThreshold(sensorName) {
+        const defaults = defaultThresholds[sensorName];
+        if (defaults) {
+          return {
+            low: defaults.low,
+            high: defaults.high,
+            unit: defaults.unit,
+          };
+        }
+        return { low: 0, high: 100, unit: "" };
+      }
+
+      // Toggle threshold controls visibility
+      function toggleThreshold(sensorName, event) {
+        if (event) {
+          event.stopPropagation();
+        }
+        const controls = document.getElementById(`threshold-${sensorName}`);
+        if (controls) {
+          const isExpanded = controls.classList.toggle("expanded");
+          if (isExpanded) {
+            expandedThresholds.add(sensorName);
+          } else {
+            expandedThresholds.delete(sensorName);
+          }
+        }
+      }
+
+      // Restore expanded state after re-render
+      function restoreExpandedThresholds() {
+        expandedThresholds.forEach((sensorName) => {
+          const controls = document.getElementById(`threshold-${sensorName}`);
+          if (controls) {
+            controls.classList.add("expanded");
+          }
+        });
+      }
+
+      // Save custom threshold
+      function saveThreshold(sensorName, event) {
+        if (event) {
+          event.stopPropagation();
+        }
+        const minInput = document.getElementById(`min-${sensorName}`);
+        const maxInput = document.getElementById(`max-${sensorName}`);
+        const defaults = getDefaultThreshold(sensorName);
+
+        if (minInput && maxInput) {
+          const minVal = parseFloat(minInput.value);
+          const maxVal = parseFloat(maxInput.value);
+
+          if (isNaN(minVal) || isNaN(maxVal)) {
+            alert("Please enter valid numbers");
+            return;
+          }
+
+          if (minVal >= maxVal) {
+            alert("Low limit must be less than High limit");
+            return;
+          }
+
+          customThresholds[sensorName] = { min: minVal, max: maxVal };
+          saveThresholdsToStorage();
+
+          // Send to backend
+          fetch("/api/thresholds", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sensor: sensorName,
+              min: minVal,
+              max: maxVal,
+            }),
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              if (data.success) {
+                // Update UI to show threshold is active
+                const sensorItem = document.querySelector(
+                  `[data-sensor="${sensorName}"]`
+                );
+                if (sensorItem) {
+                  sensorItem.classList.add("threshold-active");
                 }
-            } catch (e) {
-                console.error('Failed to load hidden sensors:', e);
-            }
+                // Show success feedback
+                const btn = event?.target;
+                if (btn) {
+                  const originalText = btn.textContent;
+                  btn.textContent = "✓ Saved";
+                  btn.style.background = "#059669";
+                  setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = "";
+                  }, 1500);
+                }
+              }
+            })
+            .catch(console.error);
         }
+      }
 
-        // Save hidden sensors to localStorage
-        function saveHiddenSensors() {
-            try {
-                localStorage.setItem('hiddenSensors', JSON.stringify([...hiddenSensors]));
-            } catch (e) {
-                console.error('Failed to save hidden sensors:', e);
-            }
+      // Reset threshold to default
+      function resetThreshold(sensorName, event) {
+        if (event) {
+          event.stopPropagation();
         }
+        delete customThresholds[sensorName];
+        saveThresholdsToStorage();
 
-        // Toggle sensor visibility
-        function toggleSensor(sensorName) {
-            if (hiddenSensors.has(sensorName)) {
-                hiddenSensors.delete(sensorName);
-            } else {
-                hiddenSensors.add(sensorName);
-            }
-            saveHiddenSensors();
-            updateStats();
+        // Get actual defaults from SENSOR_THRESHOLDS
+        const defaults = getDefaultThreshold(sensorName);
+
+        // Update inputs
+        const minInput = document.getElementById(`min-${sensorName}`);
+        const maxInput = document.getElementById(`max-${sensorName}`);
+        if (minInput) minInput.value = defaults.low;
+        if (maxInput) maxInput.value = defaults.high;
+
+        // Send to backend
+        fetch("/api/thresholds", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sensor: sensorName,
+            min: defaults.low,
+            max: defaults.high,
+            reset: true,
+          }),
+        }).catch(console.error);
+
+        // Update UI
+        const sensorItem = document.querySelector(
+          `[data-sensor="${sensorName}"]`
+        );
+        if (sensorItem) {
+          sensorItem.classList.remove("threshold-active");
         }
+      }
 
-        function changeHistoryCategory() {
-            selectedHistoryCategory = document.getElementById('historyCategory').value;
-            updateStats();
+      // Initialize thresholds on load
+      loadThresholds();
+      loadDefaultThresholds();
+
+      function changeHistoryCategory() {
+        selectedHistoryCategory =
+          document.getElementById("historyCategory").value;
+        updateStats();
+      }
+
+      function formatNumber(value, decimals = 2) {
+        if (value === null || value === undefined || isNaN(value)) {
+          return "--";
         }
+        return Number(value).toFixed(decimals);
+      }
 
-        function formatNumber(value, decimals = 2) {
-            if (value === null || value === undefined || isNaN(value)) {
-                return '--';
-            }
-            return Number(value).toFixed(decimals);
-        }
+      function formatDateTime(value) {
+        if (!value) return "";
+        const date = new Date(value);
+        return isNaN(date.getTime()) ? value : date.toLocaleString();
+      }
 
-        function formatDateTime(value) {
-            if (!value) return '';
-            const date = new Date(value);
-            return isNaN(date.getTime()) ? value : date.toLocaleString();
-        }
+      let activeCategory = "environmental";
+      let activeStatsCategory = "environmental";
+      const categoryIcons = {
+        environmental: "🌍",
+        mechanical: "⚙️",
+        thermal: "🔥",
+        electrical: "⚡",
+        fluid: "💧",
+      };
 
-        let activeCategory = 'environmental';
-        let activeStatsCategory = 'environmental';
-        const categoryIcons = {
-            'environmental': '🌍',
-            'mechanical': '⚙️',
-            'thermal': '🔥',
-            'electrical': '⚡',
-            'fluid': '💧'
-        };
+      function switchCategory(category) {
+        activeCategory = category;
+        // Update tab UI for All Sensor Parameters
+        document.querySelectorAll("#categoryTabs .tab").forEach((tab) => {
+          tab.classList.toggle("active", tab.dataset.category === category);
+        });
+        // Update content UI for All Sensor Parameters
+        document
+          .querySelectorAll("#categoryContent .tab-content")
+          .forEach((content) => {
+            content.classList.toggle(
+              "active",
+              content.dataset.category === category
+            );
+          });
+      }
 
-        function switchCategory(category) {
-            activeCategory = category;
-            // Update tab UI for All Sensor Parameters
-            document.querySelectorAll('#categoryTabs .tab').forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.category === category);
-            });
-            // Update content UI for All Sensor Parameters
-            document.querySelectorAll('#categoryContent .tab-content').forEach(content => {
-                content.classList.toggle('active', content.dataset.category === category);
-            });
-        }
+      function switchStatsCategory(category) {
+        activeStatsCategory = category;
+        // Update tab UI for Statistics
+        document.querySelectorAll("#statsCategoryTabs .tab").forEach((tab) => {
+          tab.classList.toggle("active", tab.dataset.category === category);
+        });
+        // Update content UI for Statistics
+        document
+          .querySelectorAll("#statsCategoryContent .tab-content")
+          .forEach((content) => {
+            content.classList.toggle(
+              "active",
+              content.dataset.category === category
+            );
+          });
+      }
 
-        function switchStatsCategory(category) {
-            activeStatsCategory = category;
-            // Update tab UI for Statistics
-            document.querySelectorAll('#statsCategoryTabs .tab').forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.category === category);
-            });
-            // Update content UI for Statistics
-            document.querySelectorAll('#statsCategoryContent .tab-content').forEach(content => {
-                content.classList.toggle('active', content.dataset.category === category);
-            });
-        }
+      function updateStats() {
+        fetch("/api/stats")
+          .then((r) => r.json())
+          .then((data) => {
+            document.getElementById("totalCount").textContent =
+              data.total_count || 0;
 
-        function updateStats() {
-            fetch('/api/stats')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('totalCount').textContent = data.total_count || 0;
+            // Update Statistics section with category tabs
+            if (data.stats_by_category) {
+              const statsTabsEl = document.getElementById("statsCategoryTabs");
+              const statsContentEl = document.getElementById(
+                "statsCategoryContent"
+              );
 
-                    // Update Statistics section with category tabs
-                    if (data.stats_by_category) {
-                        const statsTabsEl = document.getElementById('statsCategoryTabs');
-                        const statsContentEl = document.getElementById('statsCategoryContent');
+              if (statsTabsEl && !statsTabsEl.hasChildNodes()) {
+                // Build tabs for Statistics (only once)
+                const categories = Object.keys(data.stats_by_category);
+                statsTabsEl.innerHTML = categories
+                  .map((cat) => {
+                    const catData = data.stats_by_category[cat];
+                    const icon = categoryIcons[cat] || "📊";
+                    const isActive =
+                      cat === activeStatsCategory ? "active" : "";
+                    return `<div class="tab ${isActive}" data-category="${cat}" onclick="switchStatsCategory('${cat}')">${icon} ${catData.name}</div>`;
+                  })
+                  .join("");
+              }
 
-                        if (statsTabsEl && !statsTabsEl.hasChildNodes()) {
-                            // Build tabs for Statistics (only once)
-                            const categories = Object.keys(data.stats_by_category);
-                            statsTabsEl.innerHTML = categories.map(cat => {
-                                const catData = data.stats_by_category[cat];
-                                const icon = categoryIcons[cat] || '📊';
-                                const isActive = cat === activeStatsCategory ? 'active' : '';
-                                return `<div class="tab ${isActive}" data-category="${cat}" onclick="switchStatsCategory('${cat}')">${icon} ${catData.name}</div>`;
-                            }).join('');
-                        }
+              if (statsContentEl) {
+                // Build content for Statistics categories
+                const categories = Object.keys(data.stats_by_category);
+                statsContentEl.innerHTML = categories
+                  .map((cat) => {
+                    const catData = data.stats_by_category[cat];
+                    const isActive =
+                      cat === activeStatsCategory ? "active" : "";
 
-                        if (statsContentEl) {
-                            // Build content for Statistics categories
-                            const categories = Object.keys(data.stats_by_category);
-                            statsContentEl.innerHTML = categories.map(cat => {
-                                const catData = data.stats_by_category[cat];
-                                const isActive = cat === activeStatsCategory ? 'active' : '';
+                    // Filter out hidden sensors
+                    const visibleSensors = Object.entries(
+                      catData.sensors
+                    ).filter(([name, info]) => !hiddenSensors.has(name));
 
-                                // Filter out hidden sensors
-                                const visibleSensors = Object.entries(catData.sensors)
-                                    .filter(([name, info]) => !hiddenSensors.has(name));
-
-                                const statsHtml = visibleSensors.map(([name, info]) => {
-                                    const displayName = name.replace(/_/g, ' ').toUpperCase();
-                                    const value = info.value !== null && info.value !== undefined ? formatNumber(info.value) : '--';
-                                    return `
+                    const statsHtml = visibleSensors
+                      .map(([name, info]) => {
+                        const displayName = name
+                          .replace(/_/g, " ")
+                          .toUpperCase();
+                        const value =
+                          info.value !== null && info.value !== undefined
+                            ? formatNumber(info.value)
+                            : "--";
+                        return `
                                         <div class="stat">
                                             <span class="stat-label">${displayName}</span>
-                                            <span class="stat-value">${value}${info.unit ? ' ' + info.unit : ''}</span>
+                                            <span class="stat-value">${value}${
+                          info.unit ? " " + info.unit : ""
+                        }</span>
                                         </div>
                                     `;
-                                }).join('');
+                      })
+                      .join("");
 
-                                return `
+                    return `
                                     <div class="tab-content ${isActive}" data-category="${cat}">
-                                        ${statsHtml || '<div class="stat"><span class="stat-label">No visible sensors</span></div>'}
+                                        ${
+                                          statsHtml ||
+                                          '<div class="stat"><span class="stat-label">No visible sensors</span></div>'
+                                        }
                                     </div>
                                 `;
-                            }).join('');
-                        }
-                    }
+                  })
+                  .join("");
+              }
+            }
 
-                    // Update categorized sensor data for All Sensor Parameters section
-                    if (data.stats_by_category) {
-                        const tabsEl = document.getElementById('categoryTabs');
-                        const contentEl = document.getElementById('categoryContent');
+            // Update categorized sensor data for All Sensor Parameters section
+            if (data.stats_by_category) {
+              const tabsEl = document.getElementById("categoryTabs");
+              const contentEl = document.getElementById("categoryContent");
 
-                        if (tabsEl && !tabsEl.hasChildNodes()) {
-                            // Build tabs (only once)
-                            const categories = Object.keys(data.stats_by_category);
-                            tabsEl.innerHTML = categories.map(cat => {
-                                const catData = data.stats_by_category[cat];
-                                const icon = categoryIcons[cat] || '📊';
-                                const isActive = cat === activeCategory ? 'active' : '';
-                                return `<div class="tab ${isActive}" data-category="${cat}" onclick="switchCategory('${cat}')">${icon} ${catData.name}</div>`;
-                            }).join('');
-                        }
+              if (tabsEl && !tabsEl.hasChildNodes()) {
+                // Build tabs (only once)
+                const categories = Object.keys(data.stats_by_category);
+                tabsEl.innerHTML = categories
+                  .map((cat) => {
+                    const catData = data.stats_by_category[cat];
+                    const icon = categoryIcons[cat] || "📊";
+                    const isActive = cat === activeCategory ? "active" : "";
+                    return `<div class="tab ${isActive}" data-category="${cat}" onclick="switchCategory('${cat}')">${icon} ${catData.name}</div>`;
+                  })
+                  .join("");
+              }
 
-                        if (contentEl) {
-                            // Build content for all categories
-                            const categories = Object.keys(data.stats_by_category);
-                            contentEl.innerHTML = categories.map(cat => {
-                                const catData = data.stats_by_category[cat];
-                                const isActive = cat === activeCategory ? 'active' : '';
-                                const sensorsHtml = Object.entries(catData.sensors).map(([name, info]) => {
-                                    const displayName = name.replace(/_/g, ' ').toUpperCase();
-                                    const value = info.value !== null && info.value !== undefined ? formatNumber(info.value) : '--';
-                                    const isHidden = hiddenSensors.has(name);
-                                    const hiddenClass = isHidden ? 'hidden-sensor' : '';
-                                    const checkedAttr = isHidden ? '' : 'checked';
-                                    return `
-                                        <div class="sensor-item ${hiddenClass}" data-sensor="${name}">
+              if (contentEl) {
+                // Build content for all categories
+                const categories = Object.keys(data.stats_by_category);
+                contentEl.innerHTML = categories
+                  .map((cat) => {
+                    const catData = data.stats_by_category[cat];
+                    const isActive = cat === activeCategory ? "active" : "";
+                    const sensorsHtml = Object.entries(catData.sensors)
+                      .map(([name, info]) => {
+                        const displayName = name
+                          .replace(/_/g, " ")
+                          .toUpperCase();
+                        const value =
+                          info.value !== null && info.value !== undefined
+                            ? formatNumber(info.value)
+                            : "--";
+                        const isHidden = hiddenSensors.has(name);
+                        const hiddenClass = isHidden ? "hidden-sensor" : "";
+                        const checkedAttr = isHidden ? "" : "checked";
+                        const threshold = getThreshold(name);
+                        const defaults = getDefaultThreshold(name);
+                        const hasCustomThreshold =
+                          customThresholds[name] !== undefined;
+                        const thresholdActiveClass = hasCustomThreshold
+                          ? "threshold-active"
+                          : "";
+                        return `
+                                        <div class="sensor-item ${hiddenClass} ${thresholdActiveClass}" data-sensor="${name}">
                                             <input type="checkbox" class="sensor-toggle" ${checkedAttr} onchange="toggleSensor('${name}')" title="Toggle visibility">
                                             <div class="sensor-name">${displayName}</div>
-                                            <div class="sensor-value">${value}<span class="sensor-unit">${info.unit}</span></div>
+                                            <div class="sensor-value">${value}<span class="sensor-unit">${
+                          info.unit
+                        }</span></div>
+                                            <div class="threshold-toggle" onclick="toggleThreshold('${name}', event)">
+                                                ⚙️ Set Limits ${
+                                                  hasCustomThreshold ? "✓" : ""
+                                                }
+                                            </div>
+                                            <div class="threshold-controls" id="threshold-${name}" onclick="event.stopPropagation()">
+                                                <div class="threshold-row">
+                                                    <div class="threshold-field">
+                                                        <span class="threshold-label">Low Limit</span>
+                                                        <input type="number" class="threshold-input" id="min-${name}" 
+                                                               value="${
+                                                                 threshold.min
+                                                               }" step="any" 
+                                                               placeholder="${
+                                                                 defaults.low
+                                                               }">
+                                                    </div>
+                                                    <div class="threshold-field">
+                                                        <span class="threshold-label">High Limit</span>
+                                                        <input type="number" class="threshold-input" id="max-${name}" 
+                                                               value="${
+                                                                 threshold.max
+                                                               }" step="any"
+                                                               placeholder="${
+                                                                 defaults.high
+                                                               }">
+                                                    </div>
+                                                </div>
+                                                <div class="threshold-buttons">
+                                                    <button class="threshold-save-btn" onclick="saveThreshold('${name}', event)">💾 Save</button>
+                                                    <button class="threshold-reset-btn" onclick="resetThreshold('${name}', event)">↩️ Reset</button>
+                                                </div>
+                                                <div class="threshold-default">📊 Safe range: ${
+                                                  defaults.low
+                                                } – ${defaults.high} ${
+                          defaults.unit
+                        }</div>
+                                            </div>
                                         </div>
                                     `;
-                                }).join('');
+                      })
+                      .join("");
 
-                                return `
+                    return `
                                     <div class="tab-content ${isActive}" data-category="${cat}">
                                         <div class="sensor-grid">${sensorsHtml}</div>
                                     </div>
                                 `;
-                            }).join('');
-                        }
-                    }
+                  })
+                  .join("");
 
-                    // Render history for selected category
-                    if (data.recent_readings_full && data.recent_readings_full.length > 0) {
-                        const sensors = sensorsByCategory[selectedHistoryCategory] || [];
-                        const sensorUnits = data.stats_by_category?.[selectedHistoryCategory]?.sensors || {};
+                // Restore any expanded threshold controls after re-render
+                restoreExpandedThresholds();
+              }
+            }
 
-                        const historyHTML = data.recent_readings_full.map(reading => {
-                            const metricsHtml = sensors
-                                .filter(sensor => !hiddenSensors.has(sensor)) // Filter out hidden sensors
-                                .map(sensor => {
-                                    const displayName = sensor.replace(/_/g, ' ').toUpperCase();
-                                    const value = reading[sensor];
-                                    const unit = sensorUnits[sensor]?.unit || '';
-                                    return `
+            // Render history for selected category
+            if (
+              data.recent_readings_full &&
+              data.recent_readings_full.length > 0
+            ) {
+              const sensors = sensorsByCategory[selectedHistoryCategory] || [];
+              const sensorUnits =
+                data.stats_by_category?.[selectedHistoryCategory]?.sensors ||
+                {};
+
+              const historyHTML = data.recent_readings_full
+                .map((reading) => {
+                  const metricsHtml = sensors
+                    .filter((sensor) => !hiddenSensors.has(sensor)) // Filter out hidden sensors
+                    .map((sensor) => {
+                      const displayName = sensor
+                        .replace(/_/g, " ")
+                        .toUpperCase();
+                      const value = reading[sensor];
+                      const unit = sensorUnits[sensor]?.unit || "";
+                      return `
                                         <div class="history-metric">
-                                            <div class="metric-value">${formatNumber(value)}${unit ? '<span class="sensor-unit">' + unit + '</span>' : ''}</div>
+                                            <div class="metric-value">${formatNumber(
+                                              value
+                                            )}${
+                        unit
+                          ? '<span class="sensor-unit">' + unit + "</span>"
+                          : ""
+                      }</div>
                                             <div class="metric-label">${displayName}</div>
                                         </div>
                                     `;
-                                }).join('');
+                    })
+                    .join("");
 
-                            return `
+                  return `
                                 <div class="history-item">
-                                    <div class="history-timestamp">${formatDateTime(reading.created_at)}</div>
+                                    <div class="history-timestamp">${formatDateTime(
+                                      reading.created_at
+                                    )}</div>
                                     <div class="history-grid">${metricsHtml}</div>
                                 </div>
                             `;
-                        }).join('');
-                        document.getElementById('readingsHistory').innerHTML = historyHTML;
-                    } else {
-                        document.getElementById('readingsHistory').innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet</div>';
-                    }
-                });
-        }
-
-        function updateStatus() {
-            fetch('/api/status')
-                .then(r => r.json())
-                .then(data => {
-                    const producerEl = document.getElementById('producerStatus');
-                    const consumerEl = document.getElementById('consumerStatus');
-                    if (producerEl) {
-                        producerEl.className = 'status-indicator ' + (data.producer_running ? 'status-running' : 'status-stopped');
-                    }
-                    if (consumerEl) {
-                        consumerEl.className = 'status-indicator ' + (data.consumer_running ? 'status-running' : 'status-stopped');
-                    }
-
-                    if (data.kafka) {
-                        const kafkaIndicator = document.getElementById('kafkaStatus');
-                        const kafkaDetails = document.getElementById('kafkaStatusDetails');
-                        if (kafkaIndicator) {
-                            let className = 'status-indicator ';
-                            if (data.kafka.status === 'healthy') {
-                                className += 'status-running';
-                            } else if (data.kafka.status === 'unhealthy') {
-                                className += 'status-stopped';
-                            }
-                            kafkaIndicator.className = className;
-                        }
-                        if (kafkaDetails) {
-                            if (data.kafka.status === 'healthy') {
-                                kafkaDetails.textContent = data.kafka.latency_ms ? `OK (${data.kafka.latency_ms} ms)` : 'OK';
-                            } else if (data.kafka.status === 'unhealthy') {
-                                kafkaDetails.textContent = data.kafka.error || 'Unreachable';
-                            } else {
-                                kafkaDetails.textContent = 'Checking...';
-                            }
-                        }
-                    }
-                });
-        }
-
-        function loadConfig() {
-            fetch('/api/config')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('durationHours').value = data.duration_hours ?? 0;
-                    document.getElementById('durationMinutes').value = data.duration_minutes ?? 0;
-                    document.getElementById('intervalSeconds').value = data.interval_seconds ?? 5;
-                    configLimits = data.limits || null;
-                    configDefaults = data.defaults || null;
-                    if (configLimits) {
-                        const intervalInput = document.getElementById('intervalSeconds');
-                        intervalInput.min = configLimits.interval_seconds?.min ?? 1;
-                        intervalInput.max = configLimits.interval_seconds?.max ?? 3600;
-                    }
-                    displayConfigMessage('Ready for updates.');
-                });
-        }
-
-        function displayConfigMessage(message, isError = false) {
-            const el = document.getElementById('configMessage');
-            if (!el) return;
-            el.textContent = message;
-            el.style.color = isError ? '#f87171' : '#34d399';
-        }
-
-        function updateConfig() {
-            const payload = {
-                duration_hours: parseInt(document.getElementById('durationHours').value, 10),
-                duration_minutes: parseInt(document.getElementById('durationMinutes').value, 10),
-                interval_seconds: parseInt(document.getElementById('intervalSeconds').value, 10)
-            };
-
-            fetch('/api/config', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            })
-            .then(r => r.json())
-            .then(result => {
-                if (result.success) {
-                    displayConfigMessage('Configuration updated!', false);
-                    loadConfig();
-                } else {
-                    displayConfigMessage(result.error || 'Failed to update config', true);
-                }
-            })
-            .catch(() => displayConfigMessage('Failed to update config', true));
-        }
-
-        function resetConfig() {
-            fetch('/api/config/reset', { method: 'POST' })
-                .then(r => r.json())
-                .then(result => {
-                    if (result.success) {
-                        displayConfigMessage('Reset to defaults.', false);
-                        loadConfig();
-                    } else {
-                        displayConfigMessage(result.error || 'Failed to reset config', true);
-                    }
                 })
-                .catch(() => displayConfigMessage('Failed to reset config', true));
-        }
-
-        function exportData(limit = 500) {
-            window.open(`/api/export?limit=${limit}`, '_blank');
-        }
-
-        function startComponent(component) {
-            fetch(`/api/start/${component}`)
-                .then(r => r.json())
-                .then(result => {
-                    alert(result.success ? `✅ ${component} started!` : `❌ Failed: ${result.error}`);
-                    updateStatus();
-                });
-        }
-
-        function stopComponent(component) {
-            fetch(`/api/stop/${component}`)
-                .then(r => r.json())
-                .then(result => {
-                    alert(result.success ? `✅ ${component} stopped!` : `❌ Failed: ${result.error}`);
-                    updateStatus();
-                });
-        }
-
-        function clearData() {
-            if (confirm('🗑️ Clear all sensor data from database?')) {
-                fetch('/api/clear_data')
-                    .then(r => r.json())
-                    .then(result => {
-                        alert(result.success ? '✅ Data cleared!' : '❌ Failed to clear data');
-                        updateStats();
-                    });
+                .join("");
+              document.getElementById("readingsHistory").innerHTML =
+                historyHTML;
+            } else {
+              document.getElementById("readingsHistory").innerHTML =
+                '<div style="text-align: center; color: #94a3b8; padding: 40px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">No data yet</div>';
             }
+          });
+      }
+
+      function updateStatus() {
+        fetch("/api/status")
+          .then((r) => r.json())
+          .then((data) => {
+            const producerEl = document.getElementById("producerStatus");
+            const consumerEl = document.getElementById("consumerStatus");
+            if (producerEl) {
+              producerEl.className =
+                "status-indicator " +
+                (data.producer_running ? "status-running" : "status-stopped");
+            }
+            if (consumerEl) {
+              consumerEl.className =
+                "status-indicator " +
+                (data.consumer_running ? "status-running" : "status-stopped");
+            }
+
+            if (data.kafka) {
+              const kafkaIndicator = document.getElementById("kafkaStatus");
+              const kafkaDetails =
+                document.getElementById("kafkaStatusDetails");
+              if (kafkaIndicator) {
+                let className = "status-indicator ";
+                if (data.kafka.status === "healthy") {
+                  className += "status-running";
+                } else if (data.kafka.status === "unhealthy") {
+                  className += "status-stopped";
+                }
+                kafkaIndicator.className = className;
+              }
+              if (kafkaDetails) {
+                if (data.kafka.status === "healthy") {
+                  kafkaDetails.textContent = data.kafka.latency_ms
+                    ? `OK (${data.kafka.latency_ms} ms)`
+                    : "OK";
+                } else if (data.kafka.status === "unhealthy") {
+                  kafkaDetails.textContent = data.kafka.error || "Unreachable";
+                } else {
+                  kafkaDetails.textContent = "Checking...";
+                }
+              }
+            }
+          });
+      }
+
+      function loadConfig() {
+        fetch("/api/config")
+          .then((r) => r.json())
+          .then((data) => {
+            document.getElementById("durationHours").value =
+              data.duration_hours ?? 0;
+            document.getElementById("durationMinutes").value =
+              data.duration_minutes ?? 0;
+            document.getElementById("intervalSeconds").value =
+              data.interval_seconds ?? 5;
+            configLimits = data.limits || null;
+            configDefaults = data.defaults || null;
+            if (configLimits) {
+              const intervalInput = document.getElementById("intervalSeconds");
+              intervalInput.min = configLimits.interval_seconds?.min ?? 1;
+              intervalInput.max = configLimits.interval_seconds?.max ?? 3600;
+            }
+            displayConfigMessage("Ready for updates.");
+          });
+      }
+
+      function displayConfigMessage(message, isError = false) {
+        const el = document.getElementById("configMessage");
+        if (!el) return;
+        el.textContent = message;
+        el.style.color = isError ? "#f87171" : "#34d399";
+      }
+
+      function updateConfig() {
+        const payload = {
+          duration_hours: parseInt(
+            document.getElementById("durationHours").value,
+            10
+          ),
+          duration_minutes: parseInt(
+            document.getElementById("durationMinutes").value,
+            10
+          ),
+          interval_seconds: parseInt(
+            document.getElementById("intervalSeconds").value,
+            10
+          ),
+        };
+
+        fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then((r) => r.json())
+          .then((result) => {
+            if (result.success) {
+              displayConfigMessage("Configuration updated!", false);
+              loadConfig();
+            } else {
+              displayConfigMessage(
+                result.error || "Failed to update config",
+                true
+              );
+            }
+          })
+          .catch(() => displayConfigMessage("Failed to update config", true));
+      }
+
+      function resetConfig() {
+        fetch("/api/config/reset", { method: "POST" })
+          .then((r) => r.json())
+          .then((result) => {
+            if (result.success) {
+              displayConfigMessage("Reset to defaults.", false);
+              loadConfig();
+            } else {
+              displayConfigMessage(
+                result.error || "Failed to reset config",
+                true
+              );
+            }
+          })
+          .catch(() => displayConfigMessage("Failed to reset config", true));
+      }
+
+      function exportData(limit = 500) {
+        window.open(`/api/export?limit=${limit}`, "_blank");
+      }
+
+      function startComponent(component) {
+        fetch(`/api/start/${component}`, {
+          method: 'POST'
+        })
+          .then((r) => r.json())
+          .then((result) => {
+            alert(
+              result.success
+                ? `✅ ${component} started!`
+                : `❌ Failed: ${result.error}`
+            );
+            updateStatus();
+          })
+          .catch((error) => {
+            alert(`❌ Failed to start ${component}: ${error.message}`);
+          });
+      }
+
+      function stopComponent(component) {
+        fetch(`/api/stop/${component}`, {
+          method: 'POST'
+        })
+          .then((r) => r.json())
+          .then((result) => {
+            alert(
+              result.success
+                ? `✅ ${component} stopped!`
+                : `❌ Failed: ${result.error}`
+            );
+            updateStatus();
+          })
+          .catch((error) => {
+            alert(`❌ Failed to stop ${component}: ${error.message}`);
+          });
+      }
+
+      function clearData() {
+        if (confirm("🗑️ Clear all sensor data from database?")) {
+          fetch("/api/clear_data")
+            .then((r) => r.json())
+            .then((result) => {
+              alert(
+                result.success ? "✅ Data cleared!" : "❌ Failed to clear data"
+              );
+              updateStats();
+            });
         }
+      }
 
-        function loadAlerts() {
-            fetch('/api/alerts?limit=20')
-                .then(r => r.json())
-                .then(data => {
-                    const container = document.getElementById('alertList');
-                    if (!container) return;
+      function loadAlerts() {
+        fetch("/api/alerts?limit=20")
+          .then((r) => r.json())
+          .then((data) => {
+            const container = document.getElementById("alertList");
+            if (!container) return;
 
-                    const alerts = data.alerts || [];
-                    if (alerts.length === 0) {
-                        container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 20px;">No alerts yet</div>';
-                        return;
-                    }
+            const alerts = data.alerts || [];
+            if (alerts.length === 0) {
+              container.innerHTML =
+                '<div style="text-align: center; color: #94a3b8; padding: 20px;">No alerts yet</div>';
+              return;
+            }
 
-                    container.innerHTML = alerts.map(alert => {
-                        const severity = (alert.severity || 'info').toLowerCase();
-                        return `
+            container.innerHTML = alerts
+              .map((alert) => {
+                const severity = (alert.severity || "info").toLowerCase();
+                return `
                             <div class="alert-item">
                                 <div>
-                                    <div class="alert-type">${alert.alert_type}</div>
-                                    <div class="alert-message">${alert.message}</div>
+                                    <div class="alert-type">${
+                                      alert.alert_type
+                                    }</div>
+                                    <div class="alert-message">${
+                                      alert.message
+                                    }</div>
                                 </div>
                                 <div class="alert-meta">
-                                    <span class="alert-badge ${severity}">${alert.severity}</span>
-                                    <div class="alert-time">${formatDateTime(alert.created_at)}</div>
+                                    <span class="alert-badge ${severity}">${
+                  alert.severity
+                }</span>
+                                    <div class="alert-time">${formatDateTime(
+                                      alert.created_at
+                                    )}</div>
                                 </div>
                             </div>
                         `;
-                    }).join('');
-                });
+              })
+              .join("");
+          });
+      }
+
+      function setQuickTest() {
+        document.getElementById("durationHours").value = 0;
+        document.getElementById("durationMinutes").value = 2;
+        document.getElementById("intervalSeconds").value = 10;
+      }
+
+      function setOneMin() {
+        document.getElementById("durationHours").value = 0;
+        document.getElementById("durationMinutes").value = 1;
+        document.getElementById("intervalSeconds").value = 5;
+      }
+
+      function setOneHour() {
+        document.getElementById("durationHours").value = 1;
+        document.getElementById("durationMinutes").value = 0;
+        document.getElementById("intervalSeconds").value = 30;
+      }
+
+      function setProduction() {
+        document.getElementById("durationHours").value = 24;
+        document.getElementById("durationMinutes").value = 0;
+        document.getElementById("intervalSeconds").value = 30;
+      }
+
+      // ========== Anomaly Injection Functions ==========
+
+      function toggleInjection() {
+        const enabled = document.getElementById("injectionEnabled").checked;
+        const interval =
+          parseInt(document.getElementById("injectionInterval").value) || 30;
+
+        fetch("/api/injection-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled, interval_minutes: interval }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            updateInjectionStatus(data.settings);
+          })
+          .catch(console.error);
+      }
+
+      function updateInjectionInterval() {
+        const interval =
+          parseInt(document.getElementById("injectionInterval").value) || 30;
+        const enabled = document.getElementById("injectionEnabled").checked;
+
+        fetch("/api/injection-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled, interval_minutes: interval }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            updateInjectionStatus(data.settings);
+          })
+          .catch(console.error);
+      }
+
+      function injectAnomalyNow(button) {
+        button.disabled = true;
+        button.innerHTML =
+          '<span class="loading-spinner" style="width: 14px; height: 14px;"></span> Injecting...';
+
+        fetch("/api/inject-anomaly", { method: "POST" })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.success) {
+              button.innerHTML = "✓ Injection Triggered!";
+              button.style.background = "#10b981";
+              setTimeout(() => {
+                button.innerHTML = "⚡ Inject Anomaly NOW";
+                button.style.background =
+                  "linear-gradient(135deg, #ef4444, #dc2626)";
+                button.disabled = false;
+              }, 2000);
+            }
+          })
+          .catch((err) => {
+            button.innerHTML = "✗ Failed";
+            button.disabled = false;
+            setTimeout(() => {
+              button.innerHTML = "⚡ Inject Anomaly NOW";
+            }, 2000);
+          });
+      }
+
+      function updateInjectionStatus(settings) {
+        const statusEl = document.getElementById("injectionStatus");
+        if (!statusEl) return;
+
+        if (settings && settings.enabled) {
+          const nextTime = settings.next_injection_time
+            ? new Date(settings.next_injection_time).toLocaleTimeString()
+            : "calculating...";
+          statusEl.innerHTML = `<span style="color: #f87171;">●</span> Injection ENABLED - Every ${settings.interval_minutes} min. Next: ${nextTime}`;
+          statusEl.style.borderColor = "rgba(239, 68, 68, 0.5)";
+        } else {
+          statusEl.innerHTML =
+            "Injection disabled. Enable to schedule automatic anomalies.";
+          statusEl.style.borderColor = "transparent";
+        }
+      }
+
+      function loadInjectionSettings() {
+        fetch("/api/injection-settings")
+          .then((r) => r.json())
+          .then((data) => {
+            document.getElementById("injectionEnabled").checked = data.enabled;
+            document.getElementById("injectionInterval").value =
+              data.interval_minutes || 30;
+            updateInjectionStatus(data);
+          })
+          .catch(console.error);
+      }
+
+      // ========== LSTM Prediction Functions ==========
+
+      function loadLSTMStatus() {
+        fetch("/api/lstm-status")
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.available) {
+              document.getElementById("lstmQualityText").textContent = "Not Available";
+              document.getElementById("lstmStatusMessage").textContent = data.message || "LSTM not available";
+              document.getElementById("lstmQualityBar").style.width = "0%";
+              return;
+            }
+
+            if (!data.trained) {
+              document.getElementById("lstmQualityText").textContent = "Not Trained";
+              document.getElementById("lstmStatusMessage").textContent = data.message || "Model not trained";
+              document.getElementById("lstmQualityBar").style.width = "0%";
+              return;
+            }
+
+            // Update quality bar
+            const quality = data.quality_score || 0;
+            document.getElementById("lstmQualityPercent").textContent = quality.toFixed(0) + "%";
+            document.getElementById("lstmQualityBar").style.width = quality + "%";
+            document.getElementById("lstmQualityText").textContent = quality.toFixed(0) + "%";
+            document.getElementById("lstmStatusMessage").textContent = data.message || "Model trained";
+
+            // Color based on quality
+            const bar = document.getElementById("lstmQualityBar");
+            if (quality >= 80) {
+              bar.style.background = "linear-gradient(90deg, #10b981, #059669)";
+            } else if (quality >= 60) {
+              bar.style.background = "linear-gradient(90deg, #f59e0b, #10b981)";
+            } else {
+              bar.style.background = "linear-gradient(90deg, #ef4444, #f59e0b)";
+            }
+          })
+          .catch(console.error);
+      }
+
+      function loadLSTMPredictions() {
+        fetch("/api/lstm-predictions")
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.available || !data.trained) {
+              document.getElementById("lstmRiskScore").textContent = "N/A";
+              document.getElementById("lstmConfidence").textContent = "N/A";
+              document.getElementById("lstmPredictedWindow").textContent = "LSTM not trained";
+              document.getElementById("lstmTrend").textContent = "N/A";
+              document.getElementById("lstmSensors").textContent = "N/A";
+              return;
+            }
+
+            const pred = data.current_prediction;
+            
+            // Risk score with color
+            const riskScore = pred.risk_score || 0;
+            const riskEl = document.getElementById("lstmRiskScore");
+            riskEl.textContent = riskScore.toFixed(1) + "%";
+            
+            if (riskScore >= 70) {
+              riskEl.style.color = "#ef4444";
+            } else if (riskScore >= 40) {
+              riskEl.style.color = "#f59e0b";
+            } else {
+              riskEl.style.color = "#10b981";
+            }
+
+            // Confidence
+            const confidence = pred.confidence || 0;
+            document.getElementById("lstmConfidence").textContent = (confidence * 100).toFixed(0) + "%";
+
+            // Predicted window
+            document.getElementById("lstmPredictedWindow").textContent = pred.predicted_window || "N/A";
+
+            // Trend with emoji
+            const trend = pred.trend || "unknown";
+            let trendText = trend;
+            if (trend === "increasing") {
+              trendText = "📈 Increasing (Risk Rising)";
+            } else if (trend === "decreasing") {
+              trendText = "📉 Decreasing (Risk Falling)";
+            } else if (trend === "stable") {
+              trendText = "➡️ Stable";
+            }
+            document.getElementById("lstmTrend").textContent = trendText;
+
+            // Contributing sensors
+            const sensors = pred.contributing_sensors || [];
+            if (sensors.length > 0) {
+              document.getElementById("lstmSensors").textContent = sensors.slice(0, 5).join(", ");
+            } else {
+              document.getElementById("lstmSensors").textContent = "None identified";
+            }
+
+            // Display detailed sensor analysis
+            const sensorAnalyses = pred.sensor_analyses || [];
+            const analysisContainer = document.getElementById("lstmSensorAnalysisContainer");
+            const analysisList = document.getElementById("lstmSensorAnalysisList");
+
+            if (sensorAnalyses.length > 0) {
+              analysisContainer.style.display = "block";
+              analysisList.innerHTML = "";
+
+              // Show top 5 most problematic sensors
+              sensorAnalyses.slice(0, 5).forEach((sensor) => {
+                const severityColors = {
+                  'critical': '#ef4444',
+                  'high': '#f59e0b',
+                  'medium': '#eab308',
+                  'low': '#10b981'
+                };
+                const severityEmojis = {
+                  'critical': '🔴',
+                  'high': '🟠',
+                  'medium': '🟡',
+                  'low': '🟢'
+                };
+
+                const item = document.createElement("div");
+                item.style.cssText = `
+                  background: rgba(30, 41, 59, 0.5);
+                  border-left: 3px solid ${severityColors[sensor.severity] || '#64748b'};
+                  padding: 12px;
+                  border-radius: 6px;
+                `;
+
+                const sensorName = document.createElement("div");
+                sensorName.style.cssText = "font-weight: 600; color: #e2e8f0; margin-bottom: 6px; font-size: 14px;";
+                sensorName.textContent = `${severityEmojis[sensor.severity] || '⚪'} ${sensor.sensor} (${sensor.severity.toUpperCase()})`;
+                item.appendChild(sensorName);
+
+                const reason = document.createElement("div");
+                reason.style.cssText = "font-size: 12px; color: #cbd5e1; margin-bottom: 4px; line-height: 1.4;";
+                reason.textContent = sensor.reason;
+                item.appendChild(reason);
+
+                if (sensor.predicted_failure_reading) {
+                  const failure = document.createElement("div");
+                  failure.style.cssText = "font-size: 11px; color: #f59e0b; margin-top: 4px;";
+                  failure.textContent = `⚠️ Predicted failure at reading: ${sensor.predicted_failure_reading}`;
+                  item.appendChild(failure);
+                }
+
+                const trendInfo = document.createElement("div");
+                trendInfo.style.cssText = "font-size: 11px; color: #94a3b8; margin-top: 4px;";
+                const trendEmoji = sensor.trend === 'increasing' ? '📈' : sensor.trend === 'decreasing' ? '📉' : '➡️';
+                trendInfo.textContent = `${trendEmoji} Trend: ${sensor.trend} (${sensor.trend_rate > 0 ? '+' : ''}${sensor.trend_rate.toFixed(2)} per reading) | Current: ${sensor.current_value.toFixed(2)}`;
+                item.appendChild(trendInfo);
+
+                analysisList.appendChild(item);
+              });
+            } else {
+              analysisContainer.style.display = "none";
+            }
+          })
+          .catch(console.error);
+      }
+
+      function generateFutureReport(button) {
+        button.disabled = true;
+        button.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Generating...';
+
+        fetch("/api/generate-future-report", { method: "POST" })
+          .then((r) => {
+            if (!r.ok) throw new Error("Failed to generate report");
+            return r.blob();
+          })
+          .then((blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `future_anomaly_report_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            button.innerHTML = '<span>✓</span><span>Report Downloaded!</span>';
+            button.style.background = "linear-gradient(135deg, #10b981, #059669)";
+            setTimeout(() => {
+              button.innerHTML = '<span>📊</span><span>Generate Future Anomaly Report (PDF)</span>';
+              button.style.background = "linear-gradient(135deg, #8b5cf6, #7c3aed)";
+              button.disabled = false;
+            }, 3000);
+          })
+          .catch((err) => {
+            console.error(err);
+            button.innerHTML = '<span>✗</span><span>Failed</span>';
+            button.style.background = "linear-gradient(135deg, #ef4444, #dc2626)";
+            setTimeout(() => {
+              button.innerHTML = '<span>📊</span><span>Generate Future Anomaly Report (PDF)</span>';
+              button.style.background = "linear-gradient(135deg, #8b5cf6, #7c3aed)";
+              button.disabled = false;
+            }, 3000);
+          });
+      }
+
+      // ========== ML Anomaly Detection Functions ==========
+
+      function loadMLStats() {
+        fetch("/api/ml-stats")
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.error) return;
+
+            document.getElementById("mlTotalAnomalies").textContent =
+              data.total_anomalies || 0;
+            document.getElementById("mlAnomalyRate").textContent =
+              (data.recent_anomaly_rate || 0).toFixed(1) + "%";
+            document.getElementById("mlReportsGenerated").textContent =
+              data.completed_reports || 0;
+          })
+          .catch(() => {});
+      }
+
+      function loadAnomalies() {
+        fetch("/api/anomalies?limit=20&only_anomalies=true")
+          .then((r) => r.json())
+          .then((data) => {
+            const container = document.getElementById("anomalyList");
+            if (!container) return;
+
+            const anomalies = data.anomalies || [];
+            if (anomalies.length === 0) {
+              container.innerHTML = `
+                            <div style="text-align: center; color: #94a3b8; padding: 40px;">
+                                No ML anomalies detected yet. Start the pipeline to begin monitoring.
+                            </div>
+                        `;
+              return;
+            }
+
+            container.innerHTML = anomalies
+              .map((anomaly) => {
+                const sensors = anomaly.detected_sensors || [];
+                const sensorTags = sensors
+                  .slice(0, 5)
+                  .map((s) => `<span>${s.replace(/_/g, " ")}</span>`)
+                  .join("");
+                const moreSensors =
+                  sensors.length > 5
+                    ? `<span>+${sensors.length - 5} more</span>`
+                    : "";
+
+                let actionBtn = "";
+                if (
+                  anomaly.report_id &&
+                  anomaly.report_status === "completed"
+                ) {
+                  actionBtn = `
+                                <button class="btn-report btn-view-report" onclick="viewReport(${anomaly.report_id})">
+                                    📄 View Report
+                                </button>
+                            `;
+                } else if (anomaly.report_status === "generating") {
+                  actionBtn = `
+                                <button class="btn-report" disabled>
+                                    <span class="loading-spinner"></span> Generating...
+                                </button>
+                            `;
+                } else {
+                  actionBtn = `
+                                <button class="btn-report" onclick="generateReport(${anomaly.id}, this)">
+                                    🤖 Generate Report
+                                </button>
+                            `;
+                }
+
+                return `
+                            <div class="anomaly-item">
+                                <div class="anomaly-info">
+                                    <div class="anomaly-header">
+                                        <span class="anomaly-score">Score: ${anomaly.anomaly_score.toFixed(
+                                          4
+                                        )}</span>
+                                        <span class="anomaly-method">${
+                                          anomaly.detection_method
+                                        }</span>
+                                    </div>
+                                    <div class="anomaly-timestamp">${formatDateTime(
+                                      anomaly.created_at
+                                    )}</div>
+                                    <div class="anomaly-sensors">
+                                        <strong>Contributing sensors:</strong><br>
+                                        ${sensorTags}${moreSensors}
+                                    </div>
+                                </div>
+                                <div class="anomaly-actions">
+                                    ${actionBtn}
+                                </div>
+                            </div>
+                        `;
+              })
+              .join("");
+          })
+          .catch(() => {});
+      }
+
+      function generateReport(anomalyId, button) {
+        if (button) {
+          button.disabled = true;
+          button.innerHTML =
+            '<span class="loading-spinner"></span> Generating...';
         }
 
-        function setQuickTest() {
-            document.getElementById('durationHours').value = 0;
-            document.getElementById('durationMinutes').value = 2;
-            document.getElementById('intervalSeconds').value = 10;
+        fetch(`/api/generate-report/${anomalyId}`, { method: "POST" })
+          .then((r) => r.json())
+          .then((result) => {
+            if (result.success) {
+              alert("✅ Report generated successfully!");
+              loadAnomalies();
+              loadMLStats();
+              viewReport(result.report_id);
+            } else {
+              alert(
+                "❌ Failed to generate report: " +
+                  (result.error || "Unknown error")
+              );
+              if (button) {
+                button.disabled = false;
+                button.innerHTML = "🤖 Generate Report";
+              }
+            }
+          })
+          .catch((err) => {
+            alert("❌ Error generating report");
+            if (button) {
+              button.disabled = false;
+              button.innerHTML = "🤖 Generate Report";
+            }
+          });
+      }
+
+      // Store current report for download
+      let currentReport = null;
+
+      function viewReport(reportId) {
+        const modal = document.getElementById("reportModal");
+        const content = document.getElementById("reportContent");
+        const downloadBtn = document.getElementById("downloadReportBtn");
+
+        modal.style.display = "flex";
+        downloadBtn.style.display = "none"; // Hide until loaded
+        content.innerHTML =
+          '<div style="text-align: center; padding: 40px;"><span class="loading-spinner" style="width: 40px; height: 40px; border-width: 3px;"></span><p style="margin-top: 16px;">Loading report...</p></div>';
+
+        fetch(`/api/reports/${reportId}`)
+          .then((r) => r.json())
+          .then((report) => {
+            if (report.error) {
+              content.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 40px;">${report.error}</div>`;
+              return;
+            }
+
+            // Store report for download
+            currentReport = report;
+            downloadBtn.style.display = "inline-flex"; // Show download button
+
+            // Format the report
+            const analysis = report.chatgpt_analysis || "No analysis available";
+
+            content.innerHTML = `
+                        <div class="report-meta">
+                            <div class="report-meta-item">
+                                <div class="report-meta-label">Report ID</div>
+                                <div class="report-meta-value">#${
+                                  report.id
+                                }</div>
+                            </div>
+                            <div class="report-meta-item">
+                                <div class="report-meta-label">Anomaly ID</div>
+                                <div class="report-meta-value">#${
+                                  report.anomaly_id
+                                }</div>
+                            </div>
+                            <div class="report-meta-item">
+                                <div class="report-meta-label">Generated</div>
+                                <div class="report-meta-value">${formatDateTime(
+                                  report.completed_at || report.created_at
+                                )}</div>
+                            </div>
+                            <div class="report-meta-item">
+                                <div class="report-meta-label">Status</div>
+                                <div class="report-meta-value" style="color: ${
+                                  report.status === "completed"
+                                    ? "#10b981"
+                                    : "#f59e0b"
+                                }">${report.status.toUpperCase()}</div>
+                            </div>
+                        </div>
+                        <div class="report-analysis">
+                            ${formatMarkdown(analysis)}
+                        </div>
+                    `;
+          })
+          .catch((err) => {
+            content.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 40px;">Failed to load report</div>`;
+          });
+      }
+
+      function downloadCurrentReport() {
+        if (!currentReport) {
+          alert("No report loaded to download");
+          return;
         }
 
-        function setOneMin() {
-            document.getElementById('durationHours').value = 0;
-            document.getElementById('durationMinutes').value = 1;
-            document.getElementById('intervalSeconds').value = 5;
+        const report = currentReport;
+        
+        // Show loading indicator
+        const downloadBtn = document.getElementById("downloadReportBtn");
+        const originalText = downloadBtn.innerHTML;
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = "⏳ Generating PDF...";
+        
+        // Call the server-side PDF generation endpoint
+        fetch(`/api/reports/${report.id}/pdf`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.blob();
+          })
+          .then(blob => {
+            // Create a download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `anomaly_report_${report.id}_${new Date().toISOString().slice(0, 10)}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = originalText;
+          })
+          .catch(err => {
+            console.error('PDF download error:', err);
+            alert('Error downloading PDF: ' + err.message);
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = originalText;
+          });
+      }
+
+      function closeReportModal() {
+        document.getElementById("reportModal").style.display = "none";
+      }
+
+      function closeFullReportModal() {
+        document.getElementById("fullReportModal").style.display = "none";
+      }
+
+      function generateFullSessionReport(button) {
+        // Show modal immediately with loading state
+        document.getElementById("fullReportModal").style.display = "flex";
+        const content = document.getElementById("fullReportContent");
+        content.innerHTML = `
+                <div style="text-align: center; padding: 60px;">
+                    <div class="loading-spinner" style="width: 48px; height: 48px; margin: 0 auto 20px;"></div>
+                    <p style="color: #94a3b8; font-size: 16px;">Analyzing all anomalies with AI...</p>
+                    <p style="color: #64748b; font-size: 14px;">This may take 30-60 seconds for comprehensive analysis.</p>
+                </div>
+            `;
+
+        // Disable button
+        if (button) {
+          button.disabled = true;
+          button.innerHTML =
+            '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Generating...';
         }
 
-        function setOneHour() {
-            document.getElementById('durationHours').value = 1;
-            document.getElementById('durationMinutes').value = 0;
-            document.getElementById('intervalSeconds').value = 30;
+        fetch("/api/generate-full-report", { method: "POST" })
+          .then((r) => r.json())
+          .then((result) => {
+            if (result.success) {
+              displayFullSessionReport(result);
+            } else {
+              content.innerHTML = `
+                            <div style="text-align: center; padding: 40px; color: #ef4444;">
+                                <h3>Failed to Generate Report</h3>
+                                <p>${
+                                  result.error || "Unknown error occurred"
+                                }</p>
+                            </div>
+                        `;
+            }
+          })
+          .catch((err) => {
+            content.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #ef4444;">
+                            <h3>Connection Error</h3>
+                            <p>${err.message}</p>
+                        </div>
+                    `;
+          })
+          .finally(() => {
+            if (button) {
+              button.disabled = false;
+              button.innerHTML = "📊 Generate Full Session Report";
+            }
+          });
+      }
+
+      function displayFullSessionReport(result) {
+        const content = document.getElementById("fullReportContent");
+        const stats = result.stats || {};
+        const corrs = result.correlations || {};
+
+        let html = `
+                <style>
+                    .report-stats-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                        gap: 12px;
+                        margin-bottom: 24px;
+                    }
+                    .report-stat-box {
+                        background: rgba(15, 23, 42, 0.6);
+                        padding: 16px;
+                        border-radius: 8px;
+                        text-align: center;
+                        border: 1px solid rgba(148, 163, 184, 0.2);
+                    }
+                    .report-stat-value {
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: #10b981;
+                    }
+                    .report-stat-label {
+                        font-size: 12px;
+                        color: #94a3b8;
+                        margin-top: 4px;
+                    }
+                    .severity-critical { color: #ef4444; }
+                    .severity-high { color: #f97316; }
+                    .severity-medium { color: #eab308; }
+                    .severity-low { color: #22c55e; }
+                    .cooccurrence-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        padding: 12px 16px;
+                        background: rgba(15, 23, 42, 0.6);
+                        border-radius: 8px;
+                        margin-bottom: 8px;
+                        border: 1px solid rgba(148, 163, 184, 0.15);
+                    }
+                    .cooccurrence-sensors {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        flex: 1;
+                    }
+                    .cooccurrence-sensor {
+                        background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(139, 92, 246, 0.2));
+                        color: #a5b4fc;
+                        padding: 6px 12px;
+                        border-radius: 6px;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+                    .cooccurrence-arrow {
+                        color: #64748b;
+                        font-size: 16px;
+                    }
+                    .cooccurrence-count {
+                        background: rgba(16, 185, 129, 0.2);
+                        color: #10b981;
+                        padding: 4px 10px;
+                        border-radius: 12px;
+                        font-size: 12px;
+                        font-weight: 700;
+                    }
+                    .report-actions {
+                        display: flex;
+                        gap: 12px;
+                        margin-bottom: 24px;
+                    }
+                    .btn-download-pdf {
+                        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                        color: white;
+                        border: none;
+                        padding: 12px 24px;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        transition: all 0.2s;
+                    }
+                    .btn-download-pdf:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+                    }
+                    .sensor-tag {
+                        display: inline-block;
+                        background: rgba(59, 130, 246, 0.2);
+                        color: #60a5fa;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        margin: 2px;
+                    }
+                    .analysis-content {
+                        background: rgba(15, 23, 42, 0.4);
+                        padding: 24px;
+                        border-radius: 12px;
+                        border: 1px solid rgba(148, 163, 184, 0.2);
+                        line-height: 1.6;
+                    }
+                    .analysis-content h3 {
+                        color: #10b981;
+                        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+                        padding-bottom: 8px;
+                        margin-top: 20px;
+                    }
+                    .analysis-content ul {
+                        margin-left: 20px;
+                    }
+                    .analysis-content li {
+                        margin-bottom: 8px;
+                    }
+                </style>
+                
+                <div class="report-actions">
+                    <button class="btn-download-pdf" onclick="downloadReportAsPDF()">
+                        📄 Download PDF Report
+                    </button>
+                    <p style="color: #64748b; font-size: 14px; margin: auto 0;">Generated: ${
+                      result.generated_at || new Date().toISOString()
+                    }</p>
+                </div>
+                
+                <div class="report-stats-grid">
+                    <div class="report-stat-box">
+                        <div class="report-stat-value">${(
+                          stats.total_readings || 0
+                        ).toLocaleString()}</div>
+                        <div class="report-stat-label">Total Readings</div>
+                    </div>
+                    <div class="report-stat-box">
+                        <div class="report-stat-value" style="color: #ef4444;">${
+                          stats.total_anomalies || 0
+                        }</div>
+                        <div class="report-stat-label">Anomalies</div>
+                    </div>
+                    <div class="report-stat-box">
+                        <div class="report-stat-value">${
+                          stats.anomaly_rate || 0
+                        }%</div>
+                        <div class="report-stat-label">Anomaly Rate</div>
+                    </div>
+                    <div class="report-stat-box">
+                        <div class="report-stat-value severity-critical">${
+                          stats.severity_distribution?.critical || 0
+                        }</div>
+                        <div class="report-stat-label">Critical</div>
+                    </div>
+                    <div class="report-stat-box">
+                        <div class="report-stat-value severity-high">${
+                          stats.severity_distribution?.high || 0
+                        }</div>
+                        <div class="report-stat-label">High</div>
+                    </div>
+                    <div class="report-stat-box">
+                        <div class="report-stat-value severity-medium">${
+                          stats.severity_distribution?.medium || 0
+                        }</div>
+                        <div class="report-stat-label">Medium</div>
+                    </div>
+                    <div class="report-stat-box">
+                        <div class="report-stat-value severity-low">${
+                          stats.severity_distribution?.low || 0
+                        }</div>
+                        <div class="report-stat-label">Low</div>
+                    </div>
+                </div>
+            `;
+
+        // Top sensors
+        if (stats.top_anomaly_sensors && stats.top_anomaly_sensors.length > 0) {
+          html += `<h3 style="color: #e2e8f0; margin-bottom: 12px;">🎯 Top Anomaly-Contributing Sensors</h3>
+                         <div style="margin-bottom: 24px;">`;
+          stats.top_anomaly_sensors.forEach((s) => {
+            html += `<span class="sensor-tag">${s.sensor}: ${s.count}x</span>`;
+          });
+          html += `</div>`;
         }
 
-        function setProduction() {
-            document.getElementById('durationHours').value = 24;
-            document.getElementById('durationMinutes').value = 0;
-            document.getElementById('intervalSeconds').value = 30;
+        // Sensor Co-occurrences
+        const cooccurrences = corrs.sensor_co_occurrences || [];
+        if (cooccurrences.length > 0) {
+          html += `<h3 style="color: #e2e8f0; margin-bottom: 12px;">🔗 Sensor Co-occurrences</h3>
+                   <p style="color: #94a3b8; font-size: 13px; margin-bottom: 16px;">
+                       Sensors that frequently trigger anomalies together - may indicate related system issues
+                   </p>
+                   <div style="margin-bottom: 24px;">`;
+          cooccurrences.slice(0, 10).forEach((c) => {
+            const sensors = c.sensors || [];
+            html += `<div class="cooccurrence-item">
+                        <div class="cooccurrence-sensors">
+                            <span class="cooccurrence-sensor">${
+                              sensors[0] || "Unknown"
+                            }</span>
+                            <span class="cooccurrence-arrow">↔</span>
+                            <span class="cooccurrence-sensor">${
+                              sensors[1] || "Unknown"
+                            }</span>
+                        </div>
+                        <span class="cooccurrence-count">${
+                          c.count
+                        }x together</span>
+                     </div>`;
+          });
+          html += `</div>`;
         }
 
-        // Auto-refresh every 2 seconds
-        setInterval(() => {
-            updateStats();
-            updateStatus();
-            loadAlerts();
-        }, 2000);
+        // AI Analysis
+        html += `<h3 style="color: #e2e8f0; margin-bottom: 12px;">🤖 AI Analysis</h3>
+                     <div class="analysis-content">
+                         ${formatMarkdown(
+                           result.analysis || "No analysis available."
+                         )}
+                     </div>`;
 
-        // Initial load
-        loadHiddenSensors();
+        // Store for PDF export
+        window.currentFullReport = { result, stats, corrs };
+
+        content.innerHTML = html;
+      }
+
+      // PDF Download function
+      function downloadReportAsPDF() {
+        const report = window.currentFullReport;
+        if (!report) {
+          alert("No report data available");
+          return;
+        }
+
+        const { result, stats, corrs } = report;
+        const cooccurrences = corrs.sensor_co_occurrences || [];
+
+        // Build text content for PDF
+        let textContent = `SENSOR DATA PIPELINE - FULL SESSION ANALYSIS REPORT
+${"=".repeat(60)}
+
+Generated: ${result.generated_at || new Date().toISOString()}
+
+SESSION STATISTICS
+${"-".repeat(40)}
+Total Readings:    ${(stats.total_readings || 0).toLocaleString()}
+Total Anomalies:   ${stats.total_anomalies || 0}
+Anomaly Rate:      ${stats.anomaly_rate || 0}%
+
+SEVERITY DISTRIBUTION
+${"-".repeat(40)}
+Critical:  ${stats.severity_distribution?.critical || 0}
+High:      ${stats.severity_distribution?.high || 0}
+Medium:    ${stats.severity_distribution?.medium || 0}
+Low:       ${stats.severity_distribution?.low || 0}
+
+TOP ANOMALY-CONTRIBUTING SENSORS
+${"-".repeat(40)}
+`;
+
+        if (stats.top_anomaly_sensors && stats.top_anomaly_sensors.length > 0) {
+          stats.top_anomaly_sensors.forEach((s, i) => {
+            textContent += `${i + 1}. ${s.sensor}: ${s.count} occurrences\n`;
+          });
+        } else {
+          textContent += "No sensor data available\n";
+        }
+
+        textContent += `
+SENSOR CO-OCCURRENCES
+${"-".repeat(40)}
+`;
+        if (cooccurrences.length > 0) {
+          cooccurrences.slice(0, 15).forEach((c, i) => {
+            const sensors = c.sensors || [];
+            textContent += `${i + 1}. ${sensors[0]} <-> ${sensors[1]}: ${
+              c.count
+            } times together\n`;
+          });
+        } else {
+          textContent += "No co-occurrence data available\n";
+        }
+
+        textContent += `
+AI ANALYSIS
+${"-".repeat(40)}
+${result.analysis || "No analysis available"}
+
+${"=".repeat(60)}
+Report generated by Sensor Data Pipeline Dashboard
+`;
+
+        // Create and download as text file (works without external libraries)
+        const blob = new Blob([textContent], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `sensor_report_${new Date()
+          .toISOString()
+          .slice(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // Close modal on escape key or clicking outside
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          closeReportModal();
+          closeFullReportModal();
+        }
+      });
+
+      document
+        .getElementById("reportModal")
+        ?.addEventListener("click", function (e) {
+          if (e.target === this) closeReportModal();
+        });
+
+      document
+        .getElementById("fullReportModal")
+        ?.addEventListener("click", function (e) {
+          if (e.target === this) closeFullReportModal();
+        });
+
+      // Markdown formatter for PDF (light theme, print-friendly)
+      function formatMarkdownForPDF(text) {
+        if (!text) return "";
+
+        // Escape HTML first
+        text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+        // Process code blocks (```...```) before other processing
+        const codeBlocks = [];
+        text = text.replace(/```([^`]+)```/g, (match, code) => {
+          const index = codeBlocks.length;
+          codeBlocks.push(`<pre style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; overflow-x: auto; margin: 15px 0;"><code style="background: none; padding: 0; color: #059669; font-family: 'Courier New', monospace; font-size: 13px;">${code.trim()}</code></pre>`);
+          return `__CODEBLOCK_${index}__`;
+        });
+
+        // Process inline code (`...`)
+        text = text.replace(/`([^`]+)`/g, '<code style="background: #f1f5f9; color: #059669; padding: 2px 6px; border-radius: 4px; font-family: \'Courier New\', monospace; font-size: 13px;">$1</code>');
+
+        // Headers (process in order: h3, h2, h1 to avoid conflicts)
+        text = text.replace(/^### (.*$)/gm, '<h3 style="color: #059669; font-size: 18px; margin-top: 30px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #d1fae5;">$1</h3>');
+        text = text.replace(/^## (.*$)/gm, '<h3 style="color: #059669; font-size: 20px; margin-top: 30px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #d1fae5;">$1</h3>');
+        text = text.replace(/^# (.*$)/gm, '<h3 style="color: #059669; font-size: 22px; margin-top: 30px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #d1fae5;">$1</h3>');
+
+        // Bold (process before italic to handle ** vs *)
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1e40af; font-weight: 700;">$1</strong>');
+
+        // Italic
+        text = text.replace(/\*([^*]+)\*/g, '<em style="color: #92400e; font-style: italic;">$1</em>');
+
+        // Horizontal rules
+        text = text.replace(/^---+$/gm, '<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">');
+
+        // Lists - handle multi-level indentation
+        text = text.replace(/^(\s*)- (.*$)/gm, (match, indent, content) => {
+          const level = indent.length / 2;
+          return `<li style="margin-bottom: 10px; line-height: 1.7;">${content}</li>`;
+        });
+        
+        // Wrap lists in ul tags
+        text = text.replace(/(<li[^>]*>.*<\/li>\n?)+/g, (match) => {
+          return `<ul style="margin-left: 25px; margin-bottom: 15px;">${match}</ul>`;
+        });
+
+        // Numbered lists
+        text = text.replace(/^(\s*)\d+\. (.*$)/gm, (match, indent, content) => {
+          return `<li style="margin-bottom: 10px; line-height: 1.7;">${content}</li>`;
+        });
+        text = text.replace(/(<li>.*<\/li>\n?)+/g, (match) => {
+          // Only wrap if not already wrapped in ul
+          if (!match.includes('<ul>')) {
+            return `<ol style="margin-left: 25px; margin-bottom: 15px;">${match}</ol>`;
+          }
+          return match;
+        });
+
+        // Paragraphs and line breaks
+        text = text.replace(/\n\n+/g, "</p><p style='margin-bottom: 15px; line-height: 1.8;'>");
+        text = text.replace(/\n/g, "<br>");
+
+        // Wrap in paragraph tags
+        text = "<p style='margin-bottom: 15px; line-height: 1.8;'>" + text + "</p>";
+
+        // Clean up empty paragraphs
+        text = text.replace(/<p[^>]*><\/p>/g, "");
+        text = text.replace(/<p[^>]*>\s*<\/p>/g, "");
+
+        // Restore code blocks
+        codeBlocks.forEach((block, index) => {
+          text = text.replace(`__CODEBLOCK_${index}__`, block);
+        });
+
+        return text;
+      }
+
+      // Enhanced markdown formatter (for screen display)
+      function formatMarkdown(text) {
+        if (!text) return "";
+
+        // Escape HTML first
+        text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+        // Process code blocks (```...```) before other processing
+        const codeBlocks = [];
+        text = text.replace(/```([^`]+)```/g, (match, code) => {
+          const index = codeBlocks.length;
+          codeBlocks.push(`<pre><code>${code.trim()}</code></pre>`);
+          return `__CODEBLOCK_${index}__`;
+        });
+
+        // Process inline code (`...`)
+        text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+        // Headers (process in order: h3, h2, h1 to avoid conflicts)
+        text = text.replace(/^### (.*$)/gm, "<h3>$1</h3>");
+        text = text.replace(/^## (.*$)/gm, '<h3 style="font-size: 18px;">$1</h3>');
+        text = text.replace(/^# (.*$)/gm, '<h3 style="font-size: 20px;">$1</h3>');
+
+        // Bold (process before italic to handle ** vs *)
+        text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+        // Italic
+        text = text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+
+        // Horizontal rules
+        text = text.replace(/^---+$/gm, '<hr style="border: none; border-top: 1px solid rgba(148, 163, 184, 0.2); margin: 20px 0;">');
+
+        // Lists - handle multi-level indentation
+        text = text.replace(/^(\s*)- (.*$)/gm, (match, indent, content) => {
+          const level = indent.length / 2;
+          return `<li data-level="${level}">${content}</li>`;
+        });
+        
+        // Wrap lists in ul tags
+        text = text.replace(/(<li[^>]*>.*<\/li>\n?)+/g, (match) => {
+          return `<ul>${match}</ul>`;
+        });
+
+        // Numbered lists
+        text = text.replace(/^(\s*)\d+\. (.*$)/gm, (match, indent, content) => {
+          return `<li>${content}</li>`;
+        });
+        text = text.replace(/(<li>.*<\/li>\n?)+/g, (match) => {
+          // Only wrap if not already wrapped in ul
+          if (!match.includes('<ul>')) {
+            return `<ol>${match}</ol>`;
+          }
+          return match;
+        });
+
+        // Paragraphs and line breaks
+        text = text.replace(/\n\n+/g, "</p><p>");
+        text = text.replace(/\n/g, "<br>");
+
+        // Wrap in paragraph tags
+        text = "<p>" + text + "</p>";
+
+        // Clean up empty paragraphs
+        text = text.replace(/<p><\/p>/g, "");
+        text = text.replace(/<p>\s*<\/p>/g, "");
+
+        // Restore code blocks
+        codeBlocks.forEach((block, index) => {
+          text = text.replace(`__CODEBLOCK_${index}__`, block);
+        });
+
+        return text;
+      }
+
+      // Auto-refresh every 2 seconds
+      setInterval(() => {
         updateStats();
         updateStatus();
-        loadConfig();
         loadAlerts();
+        loadMLStats();
+        loadAnomalies();
+        loadLSTMPredictions();
+      }, 2000);
+
+      // Initial load
+      loadHiddenSensors();
+      updateStats();
+      updateStatus();
+      loadConfig();
+      loadAlerts();
+      loadMLStats();
+      loadAnomalies();
+      loadInjectionSettings();
+      loadLSTMStatus();
+      loadLSTMPredictions();
     </script>
-</body>
+  </body>
 </html>

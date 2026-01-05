@@ -9,11 +9,15 @@ import random
 import signal
 import sys
 import time
+import requests
 from datetime import datetime, timedelta
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
 
 import config
+
+# Dashboard API URL for injection settings
+DASHBOARD_API_URL = 'http://localhost:5001'
 
 
 class SensorDataProducer:
@@ -37,6 +41,11 @@ class SensorDataProducer:
         self.logger.info(f"Producer initialized - Duration: {config.DURATION_HOURS} hours, "
                         f"Interval: {config.INTERVAL_SECONDS}s, "
                         f"Total messages: {self.total_messages}")
+        
+        # Anomaly injection state
+        self.last_injection_check = None
+        self.next_injection_time = None
+        self.custom_thresholds = {}
 
     def setup_logging(self):
         """Configure logging."""
@@ -417,6 +426,87 @@ class SensorDataProducer:
             self.logger.error(f"Failed to send message: {e}")
             return False
 
+    def check_injection_settings(self):
+        """Check dashboard API for injection settings."""
+        try:
+            response = requests.get(f'{DASHBOARD_API_URL}/api/injection-settings', timeout=2)
+            if response.status_code == 200:
+                data = response.json()
+                self.custom_thresholds = data.get('thresholds', {})
+                
+                # Check for immediate injection trigger
+                if data.get('inject_now'):
+                    # Clear the inject_now flag via API
+                    requests.post(f'{DASHBOARD_API_URL}/api/injection-settings', 
+                                  json={'inject_now_ack': True}, timeout=2)
+                    return True
+                
+                # Check scheduled injection
+                if data.get('enabled') and data.get('next_injection_time'):
+                    next_time = datetime.fromisoformat(data['next_injection_time'].replace('Z', '+00:00'))
+                    if datetime.utcnow() >= next_time.replace(tzinfo=None):
+                        # Time for scheduled injection - update next time
+                        requests.post(f'{DASHBOARD_API_URL}/api/injection-settings',
+                                      json={'enabled': True, 'interval_minutes': data.get('interval_minutes', 30)},
+                                      timeout=2)
+                        return True
+                
+                return False
+        except Exception as e:
+            # Silently fail - dashboard might not be running
+            pass
+        return False
+
+    def generate_anomalous_reading(self):
+        """Generate a sensor reading with intentional anomalies."""
+        # Start with a normal reading
+        reading = self.generate_sensor_reading()
+        
+        # Pick random sensors to make anomalous (using config values)
+        all_sensors = list(config.SENSOR_RANGES.keys())
+        min_sensors = getattr(config, 'INJECTION_MIN_SENSORS', 3)
+        max_sensors = getattr(config, 'INJECTION_MAX_SENSORS', 7)
+        num_anomalies = random.randint(min_sensors, max_sensors)
+        anomaly_sensors = random.sample(all_sensors, num_anomalies)
+        
+        self.logger.warning(f"🚨 INJECTING ANOMALY - Affecting sensors: {', '.join(anomaly_sensors)}")
+        
+        for sensor in anomaly_sensors:
+            sensor_config = config.SENSOR_RANGES[sensor]
+            default_min = sensor_config['min']
+            default_max = sensor_config['max']
+            
+            # Use custom threshold if set, otherwise use default
+            threshold = self.custom_thresholds.get(sensor, {'min': default_min, 'max': default_max})
+            threshold_min = threshold.get('min', default_min)
+            threshold_max = threshold.get('max', default_max)
+            
+            # Get deviation range from config
+            dev_min = getattr(config, 'INJECTION_DEVIATION_MIN', 0.1)
+            dev_max = getattr(config, 'INJECTION_DEVIATION_MAX', 0.5)
+            
+            # Decide whether to go above max or below min
+            if random.random() > 0.5:
+                # Go above threshold max
+                range_size = default_max - default_min
+                anomaly_value = threshold_max + (range_size * random.uniform(dev_min, dev_max))
+                # Clamp to sensor's physical max
+                anomaly_value = min(anomaly_value, default_max * 1.5)
+            else:
+                # Go below threshold min
+                range_size = default_max - default_min
+                anomaly_value = threshold_min - (range_size * random.uniform(dev_min, dev_max))
+                # Clamp to sensor's physical min
+                anomaly_value = max(anomaly_value, default_min * 0.5)
+            
+            # Apply the anomalous value
+            if isinstance(reading[sensor], int):
+                reading[sensor] = int(anomaly_value)
+            else:
+                reading[sensor] = round(anomaly_value, 2)
+        
+        return reading
+
     def run(self):
         """Main producer loop."""
         try:
@@ -432,8 +522,14 @@ class SensorDataProducer:
 
             # Main loop
             while datetime.utcnow() < end_time and not self.should_shutdown:
-                # Generate sensor reading
-                reading = self.generate_sensor_reading()
+                # Check if we should inject an anomaly
+                should_inject = self.check_injection_settings()
+                
+                # Generate sensor reading (normal or anomalous)
+                if should_inject:
+                    reading = self.generate_anomalous_reading()
+                else:
+                    reading = self.generate_sensor_reading()
 
                 # Send to Kafka
                 self.send_message(reading)

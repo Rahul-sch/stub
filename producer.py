@@ -13,6 +13,7 @@ import requests
 from datetime import datetime, timedelta
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
+import psycopg2
 
 import config
 
@@ -46,6 +47,11 @@ class SensorDataProducer:
         self.last_injection_check = None
         self.next_injection_time = None
         self.custom_thresholds = {}
+        
+        # Custom sensors state
+        self.custom_sensors = {}  # {sensor_name: {min_range, max_range, unit, category, ...}}
+        self.last_config_reload = None
+        self.config_reload_interval = 60  # Reload custom sensors every 60 seconds
 
     def setup_logging(self):
         """Configure logging."""
@@ -87,6 +93,81 @@ class SensorDataProducer:
                     raise
 
         return None
+
+    def load_custom_sensors(self):
+        """Load active custom sensors from database."""
+        try:
+            conn = psycopg2.connect(**config.DB_CONFIG)
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT sensor_name, category, unit, min_range, max_range, 
+                       low_threshold, high_threshold, updated_at
+                FROM custom_sensors
+                WHERE is_active = TRUE
+                ORDER BY sensor_name
+            """)
+            
+            custom_sensors = {}
+            for row in cursor.fetchall():
+                sensor_name, category, unit, min_range, max_range, low_threshold, high_threshold, updated_at = row
+                custom_sensors[sensor_name] = {
+                    'category': category or 'custom',
+                    'unit': unit or '',
+                    'min': float(min_range),
+                    'max': float(max_range),
+                    'low_threshold': float(low_threshold) if low_threshold else None,
+                    'high_threshold': float(high_threshold) if high_threshold else None,
+                    'updated_at': updated_at.isoformat() if updated_at else None
+                }
+            
+            cursor.close()
+            conn.close()
+            
+            if custom_sensors:
+                self.logger.info(f"Loaded {len(custom_sensors)} custom sensors from database")
+            else:
+                self.logger.debug("No custom sensors found in database")
+            
+            self.custom_sensors = custom_sensors
+            self.last_config_reload = datetime.utcnow()
+            return True
+            
+        except Exception as e:
+            # Safe fallback: continue with built-in sensors only
+            self.logger.warning(f"Failed to load custom sensors from database: {e}. Continuing with built-in sensors only.")
+            self.custom_sensors = {}
+            return False
+
+    def should_reload_config(self):
+        """Check if custom sensor config should be reloaded."""
+        if self.last_config_reload is None:
+            return True
+        elapsed = (datetime.utcnow() - self.last_config_reload).total_seconds()
+        return elapsed >= self.config_reload_interval
+
+    def generate_custom_sensors(self):
+        """Generate values for all active custom sensors."""
+        custom_sensor_values = {}
+        
+        for sensor_name, sensor_config in self.custom_sensors.items():
+            min_val = sensor_config['min']
+            max_val = sensor_config['max']
+            
+            # Generate random value within range
+            value = random.uniform(min_val, max_val)
+            
+            # Round to 2 decimal places for consistency
+            if abs(value) < 1:
+                value = round(value, 3)
+            elif abs(value) < 100:
+                value = round(value, 2)
+            else:
+                value = round(value, 1)
+            
+            custom_sensor_values[sensor_name] = value
+        
+        return custom_sensor_values
 
     def generate_sensor_reading(self):
         """Generate a correlated sensor reading with all 50 parameters."""
@@ -391,6 +472,13 @@ class SensorDataProducer:
             'turbulence': turbulence,
             'valve_position': valve_position
         }
+        
+        # Add custom sensors if any are configured
+        if self.custom_sensors:
+            custom_values = self.generate_custom_sensors()
+            if custom_values:
+                reading['custom_sensors'] = custom_values
+        
         return reading
 
     def send_message(self, data):
@@ -516,12 +604,18 @@ class SensorDataProducer:
                 self.logger.error("Could not establish Kafka connection. Exiting.")
                 return
 
+            # Load custom sensors at startup
+            self.load_custom_sensors()
+
             # Calculate end time
             end_time = datetime.utcnow() + timedelta(hours=config.DURATION_HOURS)
             self.logger.info(f"Starting data generation. Will run until {end_time.strftime('%Y-%m-%d %H:%M:%S')} UTC")
 
             # Main loop
             while datetime.utcnow() < end_time and not self.should_shutdown:
+                # Reload custom sensor config if needed
+                if self.should_reload_config():
+                    self.load_custom_sensors()
                 # Check if we should inject an anomaly
                 should_inject = self.check_injection_settings()
                 

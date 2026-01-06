@@ -1564,6 +1564,75 @@
           </p>
           <div id="adminSensorControls"></div>
         </div>
+        
+        <div class="admin-section">
+          <h3>➕ Custom Sensor Management</h3>
+          <p class="card-intro" style="margin-bottom: 16px;">
+            Add and manage custom sensor parameters. New sensors will appear in producer messages and dashboard stats.
+          </p>
+          
+          <!-- Add New Sensor Form -->
+          <div style="margin-bottom: 24px; padding: 20px; background: rgba(15, 23, 42, 0.6); border-radius: 12px; border: 1px solid rgba(96, 165, 250, 0.2);">
+            <h4 style="color: #60a5fa; margin-bottom: 16px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Add New Custom Sensor</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+              <div>
+                <label style="display: block; color: #94a3b8; font-size: 12px; margin-bottom: 6px; text-transform: uppercase;">Sensor Name *</label>
+                <input type="text" id="newSensorName" placeholder="e.g., bearing_vibration_rms" 
+                       style="width: 100%; padding: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 6px; color: #e2e8f0; font-size: 14px;">
+              </div>
+              <div>
+                <label style="display: block; color: #94a3b8; font-size: 12px; margin-bottom: 6px; text-transform: uppercase;">Category</label>
+                <select id="newSensorCategory" 
+                        style="width: 100%; padding: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 6px; color: #e2e8f0; font-size: 14px;">
+                  <option value="custom">Custom Parameters</option>
+                  <option value="environmental">Environmental</option>
+                  <option value="mechanical">Mechanical</option>
+                  <option value="thermal">Thermal</option>
+                  <option value="electrical">Electrical</option>
+                  <option value="fluid">Fluid Dynamics</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; color: #94a3b8; font-size: 12px; margin-bottom: 6px; text-transform: uppercase;">Unit</label>
+                <input type="text" id="newSensorUnit" placeholder="e.g., mm/s, °F, PSI" 
+                       style="width: 100%; padding: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 6px; color: #e2e8f0; font-size: 14px;">
+              </div>
+              <div>
+                <label style="display: block; color: #94a3b8; font-size: 12px; margin-bottom: 6px; text-transform: uppercase;">Min Range *</label>
+                <input type="number" step="any" id="newSensorMinRange" placeholder="0.0" 
+                       style="width: 100%; padding: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 6px; color: #e2e8f0; font-size: 14px;">
+              </div>
+              <div>
+                <label style="display: block; color: #94a3b8; font-size: 12px; margin-bottom: 6px; text-transform: uppercase;">Max Range *</label>
+                <input type="number" step="any" id="newSensorMaxRange" placeholder="100.0" 
+                       style="width: 100%; padding: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 6px; color: #e2e8f0; font-size: 14px;">
+              </div>
+              <div>
+                <label style="display: block; color: #94a3b8; font-size: 12px; margin-bottom: 6px; text-transform: uppercase;">Low Threshold</label>
+                <input type="number" step="any" id="newSensorLowThreshold" placeholder="Optional" 
+                       style="width: 100%; padding: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 6px; color: #e2e8f0; font-size: 14px;">
+              </div>
+              <div>
+                <label style="display: block; color: #94a3b8; font-size: 12px; margin-bottom: 6px; text-transform: uppercase;">High Threshold</label>
+                <input type="number" step="any" id="newSensorHighThreshold" placeholder="Optional" 
+                       style="width: 100%; padding: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 6px; color: #e2e8f0; font-size: 14px;">
+              </div>
+            </div>
+            <button onclick="addCustomSensor()" 
+                    style="padding: 10px 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
+              ➕ Add Custom Sensor
+            </button>
+            <div id="customSensorMessage" style="margin-top: 12px; font-size: 13px;"></div>
+          </div>
+          
+          <!-- Custom Sensors List -->
+          <div>
+            <h4 style="color: #60a5fa; margin-bottom: 16px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Existing Custom Sensors</h4>
+            <div id="customSensorsList" style="min-height: 100px;">
+              <div style="text-align: center; color: #94a3b8; padding: 20px;">Loading custom sensors...</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <details class="hero-info" id="onboardingDetails">
@@ -2626,6 +2695,8 @@
           adminPanel.classList.add('active');
           // Use new sortable admin sensor list
           renderAdminSensorList();
+          // Load custom sensors
+          loadCustomSensors();
         } else {
           adminPanel.classList.remove('active');
           // Refresh operator dashboard when switching back
@@ -5510,6 +5581,339 @@ Report generated by Sensor Data Pipeline Dashboard
       
       // Initialize Live Sensor Readings timer with default 10s interval
       setRefreshRate(10000);
+      
+      // ============================================================================
+      // CUSTOM SENSOR MANAGEMENT FUNCTIONS (Phase 5)
+      // ============================================================================
+      
+      function loadCustomSensors() {
+        fetch('/api/admin/custom-sensors')
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              document.getElementById('customSensorsList').innerHTML = 
+                `<div style="text-align: center; color: #ef4444; padding: 20px;">Error: ${data.error}</div>`;
+              return;
+            }
+            
+            const sensors = data.sensors || [];
+            const container = document.getElementById('customSensorsList');
+            
+            if (sensors.length === 0) {
+              container.innerHTML = 
+                '<div style="text-align: center; color: #94a3b8; padding: 20px;">No custom sensors defined yet. Add one above to get started.</div>';
+              return;
+            }
+            
+            let html = '<div style="display: grid; gap: 12px;">';
+            sensors.forEach(sensor => {
+              const statusClass = sensor.is_active ? 'active' : 'inactive';
+              const statusText = sensor.is_active ? 'Active' : 'Inactive';
+              const statusColor = sensor.is_active ? '#10b981' : '#ef4444';
+              
+              html += `
+                <div style="background: rgba(15, 23, 42, 0.6); padding: 16px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.1);">
+                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <strong style="color: #60a5fa; font-size: 16px;">${sensor.sensor_name}</strong>
+                        <span style="padding: 2px 8px; background: ${statusColor}; color: white; border-radius: 4px; font-size: 11px; font-weight: 600;">${statusText}</span>
+                        <span style="color: #94a3b8; font-size: 12px;">${sensor.category}</span>
+                      </div>
+                      <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">
+                        Range: ${sensor.min_range} - ${sensor.max_range} ${sensor.unit || ''}
+                        ${sensor.low_threshold !== null ? `| Low: ${sensor.low_threshold}` : ''}
+                        ${sensor.high_threshold !== null ? `| High: ${sensor.high_threshold}` : ''}
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                      <button onclick="editCustomSensor(${sensor.id})" 
+                              style="padding: 6px 12px; background: rgba(96, 165, 250, 0.2); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                        ✏️ Edit
+                      </button>
+                      ${sensor.is_active ? 
+                        `<button onclick="deleteCustomSensor(${sensor.id}, '${sensor.sensor_name}')" 
+                                style="padding: 6px 12px; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                          🗑️ Deactivate
+                        </button>` :
+                        `<button onclick="activateCustomSensor(${sensor.id})" 
+                                style="padding: 6px 12px; background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                          ✅ Activate
+                        </button>`
+                      }
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+          })
+          .catch(error => {
+            console.error('Error loading custom sensors:', error);
+            document.getElementById('customSensorsList').innerHTML = 
+              `<div style="text-align: center; color: #ef4444; padding: 20px;">Error loading custom sensors: ${error.message}</div>`;
+          });
+      }
+      
+      function addCustomSensor() {
+        const sensorName = document.getElementById('newSensorName').value.trim();
+        const category = document.getElementById('newSensorCategory').value;
+        const unit = document.getElementById('newSensorUnit').value.trim();
+        const minRange = parseFloat(document.getElementById('newSensorMinRange').value);
+        const maxRange = parseFloat(document.getElementById('newSensorMaxRange').value);
+        const lowThreshold = document.getElementById('newSensorLowThreshold').value.trim();
+        const highThreshold = document.getElementById('newSensorHighThreshold').value.trim();
+        
+        const messageDiv = document.getElementById('customSensorMessage');
+        messageDiv.innerHTML = '';
+        messageDiv.style.color = '';
+        
+        // Validation
+        if (!sensorName) {
+          messageDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Sensor name is required</span>';
+          return;
+        }
+        
+        if (isNaN(minRange) || isNaN(maxRange)) {
+          messageDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Min and max range are required and must be numbers</span>';
+          return;
+        }
+        
+        if (minRange >= maxRange) {
+          messageDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Min range must be less than max range</span>';
+          return;
+        }
+        
+        const payload = {
+          sensor_name: sensorName,
+          category: category,
+          unit: unit,
+          min_range: minRange,
+          max_range: maxRange
+        };
+        
+        if (lowThreshold) {
+          const low = parseFloat(lowThreshold);
+          if (!isNaN(low)) {
+            payload.low_threshold = low;
+          }
+        }
+        
+        if (highThreshold) {
+          const high = parseFloat(highThreshold);
+          if (!isNaN(high)) {
+            payload.high_threshold = high;
+          }
+        }
+        
+        fetch('/api/admin/custom-sensors', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              messageDiv.innerHTML = `<span style="color: #ef4444;">❌ Error: ${data.error}</span>`;
+            } else {
+              messageDiv.innerHTML = '<span style="color: #10b981;">✅ Custom sensor added successfully! Producer will start emitting it on next config reload.</span>';
+              // Clear form
+              document.getElementById('newSensorName').value = '';
+              document.getElementById('newSensorCategory').value = 'custom';
+              document.getElementById('newSensorUnit').value = '';
+              document.getElementById('newSensorMinRange').value = '';
+              document.getElementById('newSensorMaxRange').value = '';
+              document.getElementById('newSensorLowThreshold').value = '';
+              document.getElementById('newSensorHighThreshold').value = '';
+              // Reload list
+              setTimeout(() => {
+                loadCustomSensors();
+                updateStats(); // Refresh stats to show new sensor
+              }, 500);
+            }
+          })
+          .catch(error => {
+            console.error('Error adding custom sensor:', error);
+            messageDiv.innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`;
+          });
+      }
+      
+      function editCustomSensor(sensorId) {
+        fetch(`/api/admin/custom-sensors/${sensorId}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              alert(`Error: ${data.error}`);
+              return;
+            }
+            
+            // Populate form with sensor data
+            document.getElementById('newSensorName').value = data.sensor_name;
+            document.getElementById('newSensorCategory').value = data.category || 'custom';
+            document.getElementById('newSensorUnit').value = data.unit || '';
+            document.getElementById('newSensorMinRange').value = data.min_range;
+            document.getElementById('newSensorMaxRange').value = data.max_range;
+            document.getElementById('newSensorLowThreshold').value = data.low_threshold || '';
+            document.getElementById('newSensorHighThreshold').value = data.high_threshold || '';
+            
+            // Change button to "Update" mode
+            const addButton = document.querySelector('button[onclick="addCustomSensor()"]');
+            const originalOnClick = addButton.getAttribute('onclick');
+            addButton.textContent = '💾 Update Sensor';
+            addButton.setAttribute('onclick', `updateCustomSensor(${sensorId})`);
+            addButton.setAttribute('data-original-onclick', originalOnClick);
+            
+            // Scroll to form
+            document.getElementById('newSensorName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            document.getElementById('newSensorName').focus();
+          })
+          .catch(error => {
+            console.error('Error loading sensor for edit:', error);
+            alert(`Error: ${error.message}`);
+          });
+      }
+      
+      function updateCustomSensor(sensorId) {
+        const category = document.getElementById('newSensorCategory').value;
+        const unit = document.getElementById('newSensorUnit').value.trim();
+        const minRange = parseFloat(document.getElementById('newSensorMinRange').value);
+        const maxRange = parseFloat(document.getElementById('newSensorMaxRange').value);
+        const lowThreshold = document.getElementById('newSensorLowThreshold').value.trim();
+        const highThreshold = document.getElementById('newSensorHighThreshold').value.trim();
+        
+        const messageDiv = document.getElementById('customSensorMessage');
+        messageDiv.innerHTML = '';
+        
+        if (isNaN(minRange) || isNaN(maxRange)) {
+          messageDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Min and max range must be numbers</span>';
+          return;
+        }
+        
+        if (minRange >= maxRange) {
+          messageDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Min range must be less than max range</span>';
+          return;
+        }
+        
+        const payload = {
+          category: category,
+          unit: unit,
+          min_range: minRange,
+          max_range: maxRange
+        };
+        
+        if (lowThreshold) {
+          const low = parseFloat(lowThreshold);
+          if (!isNaN(low)) {
+            payload.low_threshold = low;
+          } else {
+            payload.low_threshold = null;
+          }
+        } else {
+          payload.low_threshold = null;
+        }
+        
+        if (highThreshold) {
+          const high = parseFloat(highThreshold);
+          if (!isNaN(high)) {
+            payload.high_threshold = high;
+          } else {
+            payload.high_threshold = null;
+          }
+        } else {
+          payload.high_threshold = null;
+        }
+        
+        fetch(`/api/admin/custom-sensors/${sensorId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              messageDiv.innerHTML = `<span style="color: #ef4444;">❌ Error: ${data.error}</span>`;
+            } else {
+              messageDiv.innerHTML = '<span style="color: #10b981;">✅ Sensor updated successfully!</span>';
+              // Reset form and button
+              document.getElementById('newSensorName').value = '';
+              document.getElementById('newSensorCategory').value = 'custom';
+              document.getElementById('newSensorUnit').value = '';
+              document.getElementById('newSensorMinRange').value = '';
+              document.getElementById('newSensorMaxRange').value = '';
+              document.getElementById('newSensorLowThreshold').value = '';
+              document.getElementById('newSensorHighThreshold').value = '';
+              
+              const addButton = document.querySelector('button[onclick^="updateCustomSensor"]');
+              if (addButton) {
+                const originalOnClick = addButton.getAttribute('data-original-onclick');
+                addButton.textContent = '➕ Add Custom Sensor';
+                addButton.setAttribute('onclick', originalOnClick);
+                addButton.removeAttribute('data-original-onclick');
+              }
+              
+              // Reload list
+              setTimeout(() => {
+                loadCustomSensors();
+                updateStats(); // Refresh stats
+              }, 500);
+            }
+          })
+          .catch(error => {
+            console.error('Error updating custom sensor:', error);
+            messageDiv.innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`;
+          });
+      }
+      
+      function deleteCustomSensor(sensorId, sensorName) {
+        if (!confirm(`Deactivate sensor "${sensorName}"? It will stop appearing in new readings, but historical data will be preserved.`)) {
+          return;
+        }
+        
+        fetch(`/api/admin/custom-sensors/${sensorId}`, {
+          method: 'DELETE'
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              alert(`Error: ${data.error}`);
+            } else {
+              loadCustomSensors();
+              updateStats(); // Refresh stats
+            }
+          })
+          .catch(error => {
+            console.error('Error deleting custom sensor:', error);
+            alert(`Error: ${error.message}`);
+          });
+      }
+      
+      function activateCustomSensor(sensorId) {
+        fetch(`/api/admin/custom-sensors/${sensorId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ is_active: true })
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              alert(`Error: ${data.error}`);
+            } else {
+              loadCustomSensors();
+              updateStats(); // Refresh stats
+            }
+          })
+          .catch(error => {
+            console.error('Error activating custom sensor:', error);
+            alert(`Error: ${error.message}`);
+          });
+      }
     </script>
   </body>
 </html>

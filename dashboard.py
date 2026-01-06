@@ -1892,5 +1892,358 @@ def api_machine_stats(machine_id):
     return jsonify(filtered_stats)
 
 
+# ============================================================================
+# CUSTOM SENSOR MANAGEMENT API ENDPOINTS (Phase 5)
+# ============================================================================
+
+@app.route('/api/admin/custom-sensors', methods=['GET'])
+def api_list_custom_sensors():
+    """List all custom sensors (active and inactive)."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database not connected'}), 500
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, sensor_name, category, unit, min_range, max_range,
+                   low_threshold, high_threshold, is_active, created_at, updated_at, created_by
+            FROM custom_sensors
+            ORDER BY created_at DESC
+        """)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        sensors = []
+        for row in rows:
+            sensors.append({
+                'id': row[0],
+                'sensor_name': row[1],
+                'category': row[2] or 'custom',
+                'unit': row[3] or '',
+                'min_range': float(row[4]),
+                'max_range': float(row[5]),
+                'low_threshold': float(row[6]) if row[6] else None,
+                'high_threshold': float(row[7]) if row[7] else None,
+                'is_active': row[8],
+                'created_at': str(row[9]) if row[9] else None,
+                'updated_at': str(row[10]) if row[10] else None,
+                'created_by': row[11] or 'admin'
+            })
+        
+        return jsonify({'sensors': sensors})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/custom-sensors', methods=['POST'])
+def api_create_custom_sensor():
+    """Create a new custom sensor."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Missing request data'}), 400
+    
+    # Validate required fields
+    sensor_name = data.get('sensor_name', '').strip()
+    if not sensor_name:
+        return jsonify({'error': 'sensor_name is required'}), 400
+    
+    # Validate sensor name format (alphanumeric + underscore)
+    if not sensor_name.replace('_', '').isalnum():
+        return jsonify({'error': 'sensor_name must contain only letters, numbers, and underscores'}), 400
+    
+    # Check for conflicts with built-in sensors
+    import config
+    if sensor_name in config.SENSOR_RANGES:
+        return jsonify({'error': f'sensor_name "{sensor_name}" conflicts with built-in sensor'}), 400
+    
+    min_range = data.get('min_range')
+    max_range = data.get('max_range')
+    if min_range is None or max_range is None:
+        return jsonify({'error': 'min_range and max_range are required'}), 400
+    
+    try:
+        min_range = float(min_range)
+        max_range = float(max_range)
+    except (ValueError, TypeError):
+        return jsonify({'error': 'min_range and max_range must be numbers'}), 400
+    
+    if min_range >= max_range:
+        return jsonify({'error': 'min_range must be less than max_range'}), 400
+    
+    category = data.get('category', 'custom')
+    unit = data.get('unit', '')
+    low_threshold = data.get('low_threshold')
+    high_threshold = data.get('high_threshold')
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database not connected'}), 500
+    
+    try:
+        cursor = conn.cursor()
+        
+        # Check if sensor name already exists
+        cursor.execute("SELECT id FROM custom_sensors WHERE sensor_name = %s", (sensor_name,))
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': f'sensor_name "{sensor_name}" already exists'}), 400
+        
+        # Insert new sensor
+        cursor.execute("""
+            INSERT INTO custom_sensors 
+            (sensor_name, category, unit, min_range, max_range, low_threshold, high_threshold, is_active, created_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, TRUE, %s)
+            RETURNING id, created_at, updated_at
+        """, (
+            sensor_name, category, unit, min_range, max_range,
+            low_threshold, high_threshold, 'admin'
+        ))
+        
+        row = cursor.fetchone()
+        sensor_id = row[0]
+        created_at = row[1]
+        updated_at = row[2]
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'sensor': {
+                'id': sensor_id,
+                'sensor_name': sensor_name,
+                'category': category,
+                'unit': unit,
+                'min_range': min_range,
+                'max_range': max_range,
+                'low_threshold': low_threshold,
+                'high_threshold': high_threshold,
+                'is_active': True,
+                'created_at': str(created_at),
+                'updated_at': str(updated_at),
+                'created_by': 'admin'
+            }
+        }), 201
+    except psycopg2.IntegrityError:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        return jsonify({'error': f'sensor_name "{sensor_name}" already exists'}), 400
+    except Exception as e:
+        if conn:
+            conn.rollback()
+            cursor.close()
+            conn.close()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/custom-sensors/<int:sensor_id>', methods=['GET'])
+def api_get_custom_sensor(sensor_id):
+    """Get a specific custom sensor by ID."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database not connected'}), 500
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, sensor_name, category, unit, min_range, max_range,
+                   low_threshold, high_threshold, is_active, created_at, updated_at, created_by
+            FROM custom_sensors
+            WHERE id = %s
+        """, (sensor_id,))
+        
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if not row:
+            return jsonify({'error': 'Sensor not found'}), 404
+        
+        return jsonify({
+            'id': row[0],
+            'sensor_name': row[1],
+            'category': row[2] or 'custom',
+            'unit': row[3] or '',
+            'min_range': float(row[4]),
+            'max_range': float(row[5]),
+            'low_threshold': float(row[6]) if row[6] else None,
+            'high_threshold': float(row[7]) if row[7] else None,
+            'is_active': row[8],
+            'created_at': str(row[9]) if row[9] else None,
+            'updated_at': str(row[10]) if row[10] else None,
+            'created_by': row[11] or 'admin'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/custom-sensors/<int:sensor_id>', methods=['PUT'])
+def api_update_custom_sensor(sensor_id):
+    """Update a custom sensor."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Missing request data'}), 400
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database not connected'}), 500
+    
+    try:
+        cursor = conn.cursor()
+        
+        # Check if sensor exists
+        cursor.execute("SELECT sensor_name FROM custom_sensors WHERE id = %s", (sensor_id,))
+        existing = cursor.fetchone()
+        if not existing:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Sensor not found'}), 404
+        
+        # Build update query dynamically based on provided fields
+        updates = []
+        values = []
+        
+        if 'category' in data:
+            updates.append("category = %s")
+            values.append(data['category'])
+        
+        if 'unit' in data:
+            updates.append("unit = %s")
+            values.append(data['unit'])
+        
+        if 'min_range' in data:
+            try:
+                min_range = float(data['min_range'])
+                updates.append("min_range = %s")
+                values.append(min_range)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'min_range must be a number'}), 400
+        
+        if 'max_range' in data:
+            try:
+                max_range = float(data['max_range'])
+                updates.append("max_range = %s")
+                values.append(max_range)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'max_range must be a number'}), 400
+        
+        if 'low_threshold' in data:
+            if data['low_threshold'] is None:
+                updates.append("low_threshold = NULL")
+            else:
+                try:
+                    low_threshold = float(data['low_threshold'])
+                    updates.append("low_threshold = %s")
+                    values.append(low_threshold)
+                except (ValueError, TypeError):
+                    return jsonify({'error': 'low_threshold must be a number'}), 400
+        
+        if 'high_threshold' in data:
+            if data['high_threshold'] is None:
+                updates.append("high_threshold = NULL")
+            else:
+                try:
+                    high_threshold = float(data['high_threshold'])
+                    updates.append("high_threshold = %s")
+                    values.append(high_threshold)
+                except (ValueError, TypeError):
+                    return jsonify({'error': 'high_threshold must be a number'}), 400
+        
+        if 'is_active' in data:
+            updates.append("is_active = %s")
+            values.append(bool(data['is_active']))
+        
+        if not updates:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'No fields to update'}), 400
+        
+        # Validate min/max range if both are being updated
+        if 'min_range' in data and 'max_range' in data:
+            if float(data['min_range']) >= float(data['max_range']):
+                return jsonify({'error': 'min_range must be less than max_range'}), 400
+        
+        values.append(sensor_id)
+        query = f"UPDATE custom_sensors SET {', '.join(updates)} WHERE id = %s RETURNING *"
+        
+        cursor.execute(query, values)
+        row = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'sensor': {
+                'id': row[0],
+                'sensor_name': row[1],
+                'category': row[2] or 'custom',
+                'unit': row[3] or '',
+                'min_range': float(row[4]),
+                'max_range': float(row[5]),
+                'low_threshold': float(row[6]) if row[6] else None,
+                'high_threshold': float(row[7]) if row[7] else None,
+                'is_active': row[8],
+                'created_at': str(row[9]) if row[9] else None,
+                'updated_at': str(row[10]) if row[10] else None,
+                'created_by': row[11] or 'admin'
+            }
+        })
+    except Exception as e:
+        if conn:
+            conn.rollback()
+            cursor.close()
+            conn.close()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/custom-sensors/<int:sensor_id>', methods=['DELETE'])
+def api_delete_custom_sensor(sensor_id):
+    """Soft delete a custom sensor (set is_active=false)."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database not connected'}), 500
+    
+    try:
+        cursor = conn.cursor()
+        
+        # Check if sensor exists
+        cursor.execute("SELECT sensor_name FROM custom_sensors WHERE id = %s", (sensor_id,))
+        existing = cursor.fetchone()
+        if not existing:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Sensor not found'}), 404
+        
+        # Soft delete (set is_active=false)
+        cursor.execute("""
+            UPDATE custom_sensors 
+            SET is_active = FALSE 
+            WHERE id = %s
+            RETURNING sensor_name
+        """, (sensor_id,))
+        
+        sensor_name = cursor.fetchone()[0]
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Sensor "{sensor_name}" has been deactivated'
+        })
+    except Exception as e:
+        if conn:
+            conn.rollback()
+            cursor.close()
+            conn.close()
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

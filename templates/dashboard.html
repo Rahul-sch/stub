@@ -1536,21 +1536,68 @@
       <h1>🚀 Sensor Data Pipeline</h1>
       <div class="subtitle">Real-Time IoT Monitoring Dashboard</div>
 
-      <!-- Login Form (shown when not authenticated) -->
+      <!-- Login/Signup Form (shown when not authenticated) -->
       <div id="loginForm" style="display: none; max-width: 400px; margin: 100px auto; padding: 40px; background: rgba(30, 41, 59, 0.8); border-radius: 20px; border: 1px solid rgba(148, 163, 184, 0.2);">
-        <h2 style="text-align: center; margin-bottom: 30px; color: #60a5fa;">Login</h2>
-        <form id="loginFormElement" onsubmit="handleLogin(event)">
-          <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; color: #94a3b8; font-size: 14px;">Username</label>
-            <input type="text" id="loginUsername" required style="width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; color: #e2e8f0; font-size: 14px;">
-          </div>
-          <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; color: #94a3b8; font-size: 14px;">Password</label>
-            <input type="password" id="loginPassword" required style="width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; color: #e2e8f0; font-size: 14px;">
-          </div>
-          <button type="submit" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%); border: none; border-radius: 8px; color: white; font-weight: 600; font-size: 14px; cursor: pointer;">Login</button>
-          <div id="loginError" style="margin-top: 16px; color: #f87171; font-size: 14px; text-align: center; display: none;"></div>
-        </form>
+        <div style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 1px solid rgba(148, 163, 184, 0.2);">
+          <button id="showLoginBtn" onclick="showLoginForm()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%); border: none; border-radius: 8px 8px 0 0; color: white; font-weight: 600; font-size: 14px; cursor: pointer;">Login</button>
+          <button id="showSignupBtnAuth" onclick="showSignupFormAuth()" style="flex: 1; padding: 12px; background: rgba(15, 23, 42, 0.6); border: none; border-radius: 8px 8px 0 0; color: #94a3b8; font-weight: 600; font-size: 14px; cursor: pointer;">Sign Up</button>
+        </div>
+        
+        <!-- Login Form -->
+        <div id="loginFormContent">
+          <form id="loginFormElement" onsubmit="handleLogin(event)">
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; margin-bottom: 8px; color: #94a3b8; font-size: 14px;">Username</label>
+              <input type="text" id="loginUsername" required style="width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; color: #e2e8f0; font-size: 14px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; margin-bottom: 8px; color: #94a3b8; font-size: 14px;">Password</label>
+              <input type="password" id="loginPassword" required style="width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; color: #e2e8f0; font-size: 14px; box-sizing: border-box;">
+            </div>
+            <button type="submit" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%); border: none; border-radius: 8px; color: white; font-weight: 600; font-size: 14px; cursor: pointer;">Login</button>
+            <div id="loginError" style="margin-top: 16px; color: #f87171; font-size: 14px; text-align: center; display: none;"></div>
+          </form>
+        </div>
+
+        <!-- Signup Form (hidden by default) -->
+        <div id="signupFormContent" style="display: none;">
+          <form id="signupFormElementAuth" onsubmit="handleSignupAuth(event)">
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 6px; color: #94a3b8; font-size: 13px;">Username</label>
+              <input type="text" id="signupUsernameAuth" required style="width: 100%; padding: 10px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; color: #e2e8f0; font-size: 14px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 6px; color: #94a3b8; font-size: 13px;">Password</label>
+              <input type="password" id="signupPasswordAuth" required style="width: 100%; padding: 10px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; color: #e2e8f0; font-size: 14px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="signupAdminToggle" style="cursor: pointer; width: 18px; height: 18px;">
+                <span style="color: #e2e8f0; font-size: 14px;">Create as Admin</span>
+              </label>
+            </div>
+            <div id="machineSelectionAuth" style="margin-bottom: 16px; display: none;">
+              <label style="display: block; margin-bottom: 8px; color: #94a3b8; font-size: 13px;">Machine Access (select at least one)</label>
+              <div style="display: flex; gap: 12px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <input type="checkbox" value="A" class="machine-checkbox-auth" style="cursor: pointer;">
+                  <span style="color: #e2e8f0;">Machine A</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <input type="checkbox" value="B" class="machine-checkbox-auth" style="cursor: pointer;">
+                  <span style="color: #e2e8f0;">Machine B</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <input type="checkbox" value="C" class="machine-checkbox-auth" style="cursor: pointer;">
+                  <span style="color: #e2e8f0;">Machine C</span>
+                </label>
+              </div>
+            </div>
+            <button type="submit" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 8px; color: white; font-weight: 600; font-size: 14px; cursor: pointer;">Sign Up</button>
+            <div id="signupErrorAuth" style="margin-top: 12px; color: #f87171; font-size: 13px; text-align: center; display: none;"></div>
+            <div id="signupSuccessAuth" style="margin-top: 12px; color: #10b981; font-size: 13px; text-align: center; display: none;"></div>
+          </form>
+        </div>
       </div>
 
       <!-- Main Dashboard (hidden when not authenticated) -->

@@ -2603,7 +2603,73 @@
       function filterSensorsArray(sensors) {
         return sensors.filter(sensor => isSensorEnabled(sensor));
       }
-      
+
+      // ========== Admin Sensor List (Drag-and-Drop Sortable) ==========
+
+      // Get category for a sensor name
+      function getSensorCategory(sensorName) {
+        for (const [cat, sensors] of Object.entries(sensorsByCategory)) {
+          if (sensors.includes(sensorName)) return cat;
+        }
+        return 'unknown';
+      }
+
+      // Format sensor name for display (underscores to spaces, capitalize words)
+      function formatSensorName(sensorName) {
+        return sensorName
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, c => c.toUpperCase());
+      }
+
+      // Render the admin sensor list with drag-and-drop support
+      function renderAdminSensorList() {
+        const container = document.getElementById('adminSensorControls');
+        if (!container) return;
+
+        const config = machineParameterConfig[selectedMachineId];
+        if (!config || !config.sensorOrder || config.sensorOrder.length === 0) {
+          // Config not initialized yet, fall back to updateAdminPanel
+          updateAdminPanel();
+          return;
+        }
+
+        let html = '<div class="admin-sensor-list" id="adminSensorList">';
+
+        config.sensorOrder.forEach((sensorName, index) => {
+          const isEnabled = config.enabledSensors.has(sensorName);
+          const category = getSensorCategory(sensorName);
+          const isFirst = index === 0;
+          const isLast = index === config.sensorOrder.length - 1;
+
+          html += `
+            <div class="admin-sensor-item ${isEnabled ? '' : 'disabled'}"
+                 data-sensor="${sensorName}" data-index="${index}">
+              <span class="drag-handle" title="Drag to reorder">☰</span>
+              <div class="sensor-info">
+                <span class="sensor-name">${formatSensorName(sensorName)}</span>
+                <span class="sensor-category">${category}</span>
+              </div>
+              <div class="sensor-controls">
+                <button class="move-btn" onclick="moveSensor('${sensorName}', -1)"
+                        ${isFirst ? 'disabled' : ''} title="Move up">▲</button>
+                <button class="move-btn" onclick="moveSensor('${sensorName}', 1)"
+                        ${isLast ? 'disabled' : ''} title="Move down">▼</button>
+                <button class="toggle-btn ${isEnabled ? 'enabled' : 'disabled-state'}"
+                        onclick="toggleSensorEnabledNew('${sensorName}')">
+                  ${isEnabled ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        html += '</div>';
+        html += '<button class="reset-config-btn" onclick="resetMachineConfig()">Reset to Defaults</button>';
+
+        container.innerHTML = html;
+        attachDragListeners();
+      }
+
       // Filter sensor data by machine and enabled state (non-destructive wrapper)
       function filterSensorData(data) {
         if (!data) return data;

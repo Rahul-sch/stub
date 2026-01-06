@@ -3032,14 +3032,10 @@
         
         // Get sensor units from cached stats data (no API call)
         const sensorUnits = machine.statsData?.stats_by_category?.[selectedHistoryCategory]?.sensors || {};
-        const allSensors = sensorsByCategory[selectedHistoryCategory] || [];
-        const currentState = machineSensorState[selectedMachineId];
-        
-        // Filter out hidden sensors AND disabled sensors for current machine
-        const sensors = allSensors.filter(sensor => {
-          return !hiddenSensors.has(sensor) && 
-                 (currentState[sensor]?.enabled !== false);
-        });
+
+        // Use ordered enabled sensors from machineParameterConfig, also filter hidden sensors
+        const sensors = getOrderedEnabledSensors(selectedHistoryCategory)
+          .filter(sensor => !hiddenSensors.has(sensor));
 
         const historyHTML = machineReadings.map((reading) => {
           const metricsHtml = sensors.map((sensor) => {
@@ -3531,13 +3527,13 @@
                     const isActive =
                       cat === activeStatsCategory ? "active" : "";
 
-                    // Filter out hidden sensors
-                    const visibleSensors = Object.entries(
-                      catData.sensors
-                    ).filter(([name, info]) => !hiddenSensors.has(name));
+                    // Get sensors in configured order, filtered to enabled, also filter hidden
+                    const orderedSensors = getOrderedEnabledSensors(cat)
+                      .filter(name => !hiddenSensors.has(name) && catData.sensors[name]);
 
-                    const statsHtml = visibleSensors
-                      .map(([name, info]) => {
+                    const statsHtml = orderedSensors
+                      .map((name) => {
+                        const info = catData.sensors[name];
                         const displayName = name
                           .replace(/_/g, " ")
                           .toUpperCase();
@@ -3609,13 +3605,12 @@
                   .map((cat) => {
                     const catData = data.stats_by_category[cat];
                     const isActive = cat === activeCategory ? "active" : "";
-                    const currentState = machineSensorState[selectedMachineId];
-                    // Filter out disabled sensors for current machine
-                    const sensorsHtml = Object.entries(catData.sensors)
-                      .filter(([name, info]) => {
-                        return currentState[name]?.enabled !== false;
-                      })
-                      .map(([name, info]) => {
+                    // Get sensors in configured order, filtered to enabled
+                    const orderedSensors = getOrderedEnabledSensors(cat)
+                      .filter(name => catData.sensors[name]);
+                    const sensorsHtml = orderedSensors
+                      .map((name) => {
+                        const info = catData.sensors[name];
                         const displayName = name
                           .replace(/_/g, " ")
                           .toUpperCase();
@@ -4267,19 +4262,20 @@
             }
             document.getElementById("lstmTrend").textContent = trendText;
 
-            // Contributing sensors - filter to only enabled sensors for selected machine
+            // Contributing sensors - filter and order based on machineParameterConfig
             const allSensors = pred.contributing_sensors || [];
-            const sensors = filterSensorsArray(allSensors);
+            const sensors = filterAndOrderSensors(allSensors);
             if (sensors.length > 0) {
               document.getElementById("lstmSensors").textContent = sensors.slice(0, 5).join(", ");
             } else {
               document.getElementById("lstmSensors").textContent = "None identified for Machine " + selectedMachineId;
             }
 
-            // Display detailed sensor analysis - filter to only enabled sensors
+            // Display detailed sensor analysis - filter and order based on config
             const allSensorAnalyses = pred.sensor_analyses || [];
+            const enabledSensorNames = new Set(getOrderedEnabledSensors());
             const sensorAnalyses = allSensorAnalyses.filter(analysis =>
-              isSensorEnabled(analysis.sensor)
+              enabledSensorNames.has(analysis.sensor)
             );
             const analysisContainer = document.getElementById("lstmSensorAnalysisContainer");
             const analysisList = document.getElementById("lstmSensorAnalysisList");
@@ -4471,9 +4467,9 @@
 
             container.innerHTML = anomalies
               .map((anomaly) => {
-                // Filter detected sensors to only show enabled ones
+                // Filter and order detected sensors based on machineParameterConfig
                 const allSensors = anomaly.detected_sensors || [];
-                const sensors = filterSensorsArray(allSensors);
+                const sensors = filterAndOrderSensors(allSensors);
                 const sensorTags = sensors
                   .slice(0, 5)
                   .map((s) => `<span>${s.replace(/_/g, " ")}</span>`)

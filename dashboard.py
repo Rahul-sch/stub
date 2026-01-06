@@ -165,7 +165,8 @@ def check_kafka_health():
         admin = KafkaAdminClient(
             bootstrap_servers=config.KAFKA_BOOTSTRAP_SERVERS,
             client_id='dashboard-heartbeat',
-            request_timeout_ms=5000
+            request_timeout_ms=10000,
+            api_version_auto_timeout_ms=10000
         )
         admin.list_topics()
         admin.close()
@@ -247,7 +248,8 @@ def get_stats():
                 voltage, current, power_factor, frequency, resistance,
                 capacitance, inductance, phase_angle, harmonic_distortion, ground_fault,
                 flow_rate, fluid_pressure, viscosity, density, reynolds_number,
-                pipe_pressure_drop, pump_efficiency, cavitation_index, turbulence, valve_position
+                pipe_pressure_drop, pump_efficiency, cavitation_index, turbulence, valve_position,
+                custom_sensors
             FROM sensor_readings
             ORDER BY created_at DESC
             LIMIT 10;
@@ -318,14 +320,52 @@ def get_stats():
                     'sensors': category_stats
                 }
 
+        # Add custom sensors category
+        cursor.execute("""
+            SELECT sensor_name, category, unit, min_range, max_range
+            FROM custom_sensors
+            WHERE is_active = TRUE
+            ORDER BY sensor_name
+        """)
+        custom_sensors_list = cursor.fetchall()
+        
+        if custom_sensors_list:
+            custom_stats = {}
+            for sensor_name, category, unit, min_range, max_range in custom_sensors_list:
+                # Calculate average from JSONB using PostgreSQL JSON functions
+                cursor.execute("""
+                    SELECT AVG((custom_sensors->>%s)::float)::NUMERIC(10,2)
+                    FROM sensor_readings
+                    WHERE custom_sensors ? %s
+                """, (sensor_name, sensor_name))
+                avg_result = cursor.fetchone()
+                avg_value = float(avg_result[0]) if avg_result and avg_result[0] is not None else None
+                
+                custom_stats[sensor_name] = {
+                    'value': avg_value,
+                    'unit': unit or '',
+                    'metadata': {
+                        'location': '',
+                        'equipment_section': '',
+                        'criticality': 'medium',
+                        'unit': unit or ''
+                    }
+                }
+            
+            if custom_stats:
+                stats_by_category['custom'] = {
+                    'name': 'Custom Parameters',
+                    'sensors': custom_stats
+                }
+
         cursor.close()
         conn.close()
 
-        # Build full readings with all 50 parameters
+        # Build full readings with all 50 parameters + custom sensors
         full_readings_list = []
         if full_readings:
             for reading in full_readings:
-                full_readings_list.append({
+                reading_dict = {
                     'timestamp': str(reading[0]),
                     'created_at': str(reading[1]),
                     'temperature': reading[2], 'pressure': reading[3], 'humidity': reading[4],
@@ -348,7 +388,21 @@ def get_stats():
                     'density': reading[45], 'reynolds_number': reading[46],
                     'pipe_pressure_drop': reading[47], 'pump_efficiency': reading[48],
                     'cavitation_index': reading[49], 'turbulence': reading[50], 'valve_position': reading[51]
-                })
+                }
+                
+                # Add custom sensors from JSONB (reading[52])
+                if reading[52] and isinstance(reading[52], dict):
+                    reading_dict['custom_sensors'] = reading[52]
+                elif reading[52]:
+                    # If it's a string, parse it
+                    try:
+                        reading_dict['custom_sensors'] = json.loads(reading[52]) if isinstance(reading[52], str) else reading[52]
+                    except:
+                        reading_dict['custom_sensors'] = {}
+                else:
+                    reading_dict['custom_sensors'] = {}
+                
+                full_readings_list.append(reading_dict)
 
         return {
             'total_count': total_count,

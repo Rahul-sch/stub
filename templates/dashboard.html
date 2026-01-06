@@ -2534,9 +2534,23 @@
               showDashboard();
               filterMachineSelector();
               updateUserInfo();
-              if (currentUser.role !== 'admin') {
+              if (currentUser.role === 'admin') {
+                // Show mode toggle and admin panel for admins
+                const modeToggle = document.querySelector('.mode-toggle');
+                if (modeToggle) {
+                  modeToggle.style.display = 'flex';
+                }
+                // Auto-switch to admin mode for admins
+                switchMode('admin');
+              } else {
+                // Hide admin panel and mode toggle for operators
                 document.getElementById('adminPanel').style.display = 'none';
-                document.querySelector('.mode-toggle').style.display = 'none';
+                const modeToggle = document.querySelector('.mode-toggle');
+                if (modeToggle) {
+                  modeToggle.style.display = 'none';
+                }
+                // Ensure operator mode is active
+                switchMode('operator');
               }
               return;
             }
@@ -2621,10 +2635,24 @@
             showDashboard();
             filterMachineSelector();
             updateUserInfo();
-            if (currentUser.role !== 'admin') {
+            if (currentUser.role === 'admin') {
+              // Show mode toggle and admin panel for admins
+              const modeToggle = document.querySelector('.mode-toggle');
+              if (modeToggle) {
+                modeToggle.style.display = 'flex';
+              }
+              // Auto-switch to admin mode for admins
+              switchMode('admin');
+            } else {
+              // Hide admin panel and mode toggle for operators
               document.getElementById('adminPanel').style.display = 'none';
-              document.querySelector('.mode-toggle').style.display = 'none';
+              const modeToggle = document.querySelector('.mode-toggle');
+              if (modeToggle) {
+                modeToggle.style.display = 'none';
+              }
               document.getElementById('signupForm').style.display = 'none';
+              // Ensure operator mode is active
+              switchMode('operator');
             }
             errorDiv.style.display = 'none';
             // Select first accessible machine

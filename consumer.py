@@ -178,12 +178,78 @@ class SensorDataConsumer:
             if 'conn' in locals():
                 conn.close()
 
+    def validate_custom_sensors(self, custom_sensors):
+        """Validate custom sensors against registry.
+        
+        Args:
+            custom_sensors: Dict of {sensor_name: value}
+            
+        Returns:
+            tuple: (validated_dict, invalid_sensors_list)
+        """
+        if not custom_sensors:
+            return {}, []
+        
+        validated = {}
+        invalid = []
+        
+        try:
+            # Get list of active custom sensors from database
+            self.db_cursor.execute("""
+                SELECT sensor_name, min_range, max_range
+                FROM custom_sensors
+                WHERE is_active = TRUE
+            """)
+            
+            registered_sensors = {row[0]: {'min': row[1], 'max': row[2]} 
+                                 for row in self.db_cursor.fetchall()}
+            
+            # Validate each custom sensor
+            for sensor_name, value in custom_sensors.items():
+                if sensor_name not in registered_sensors:
+                    invalid.append(sensor_name)
+                    self.logger.warning(f"Unknown custom sensor '{sensor_name}' in reading. Skipping.")
+                    continue
+                
+                # Validate value is within range
+                sensor_config = registered_sensors[sensor_name]
+                min_val = sensor_config['min']
+                max_val = sensor_config['max']
+                
+                try:
+                    float_value = float(value)
+                    if min_val <= float_value <= max_val:
+                        validated[sensor_name] = float_value
+                    else:
+                        invalid.append(sensor_name)
+                        self.logger.warning(
+                            f"Custom sensor '{sensor_name}' value {float_value} "
+                            f"outside range [{min_val}, {max_val}]. Skipping."
+                        )
+                except (ValueError, TypeError):
+                    invalid.append(sensor_name)
+                    self.logger.warning(f"Invalid value for custom sensor '{sensor_name}': {value}. Skipping.")
+            
+        except Exception as e:
+            # If validation fails, log but don't crash - return empty dict
+            self.logger.warning(f"Failed to validate custom sensors: {e}. Skipping custom sensors.")
+            return {}, list(custom_sensors.keys())
+        
+        return validated, invalid
+
     def insert_reading(self, reading):
         """Insert sensor reading with all 50 parameters into database.
         
         Returns:
             int or None: The inserted reading ID, or None on failure
         """
+        # Extract and validate custom sensors
+        custom_sensors_raw = reading.get('custom_sensors', {})
+        custom_sensors_validated, invalid_sensors = self.validate_custom_sensors(custom_sensors_raw)
+        
+        # Convert validated custom sensors to JSONB
+        custom_sensors_jsonb = json.dumps(custom_sensors_validated) if custom_sensors_validated else '{}'
+        
         insert_query = """
             INSERT INTO sensor_readings (
                 timestamp,
@@ -196,7 +262,8 @@ class SensorDataConsumer:
                 voltage, current, power_factor, frequency, resistance,
                 capacitance, inductance, phase_angle, harmonic_distortion, ground_fault,
                 flow_rate, fluid_pressure, viscosity, density, reynolds_number,
-                pipe_pressure_drop, pump_efficiency, cavitation_index, turbulence, valve_position
+                pipe_pressure_drop, pump_efficiency, cavitation_index, turbulence, valve_position,
+                custom_sensors
             )
             VALUES (
                 %s,
@@ -209,7 +276,8 @@ class SensorDataConsumer:
                 %s, %s, %s, %s, %s,
                 %s, %s, %s, %s, %s,
                 %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s,
+                %s::jsonb
             )
             RETURNING id
         """
@@ -241,7 +309,9 @@ class SensorDataConsumer:
                 reading.get('flow_rate'), reading.get('fluid_pressure'), reading.get('viscosity'),
                 reading.get('density'), reading.get('reynolds_number'),
                 reading.get('pipe_pressure_drop'), reading.get('pump_efficiency'),
-                reading.get('cavitation_index'), reading.get('turbulence'), reading.get('valve_position')
+                reading.get('cavitation_index'), reading.get('turbulence'), reading.get('valve_position'),
+                # Custom sensors JSONB
+                custom_sensors_jsonb
             ))
             reading_id = self.db_cursor.fetchone()[0]
             self.db_conn.commit()

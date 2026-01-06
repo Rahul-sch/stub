@@ -1572,7 +1572,7 @@
             </div>
             <div style="margin-bottom: 16px;">
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="signupAdminToggle" style="cursor: pointer; width: 18px; height: 18px;">
+                <input type="checkbox" id="signupAdminToggle" onchange="toggleMachineSelectionAuth()" style="cursor: pointer; width: 18px; height: 18px;">
                 <span style="color: #e2e8f0; font-size: 14px;">Create as Admin</span>
               </label>
             </div>
@@ -2550,6 +2550,50 @@
       function showLogin() {
         document.getElementById('loginForm').style.display = 'block';
         document.getElementById('mainDashboard').style.display = 'none';
+        showLoginForm(); // Show login form by default
+      }
+
+      function showLoginForm() {
+        document.getElementById('loginFormContent').style.display = 'block';
+        document.getElementById('signupFormContent').style.display = 'none';
+        const loginBtn = document.getElementById('showLoginBtn');
+        const signupBtn = document.getElementById('showSignupBtnAuth');
+        if (loginBtn) {
+          loginBtn.style.background = 'linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%)';
+          loginBtn.style.color = 'white';
+        }
+        if (signupBtn) {
+          signupBtn.style.background = 'rgba(15, 23, 42, 0.6)';
+          signupBtn.style.color = '#94a3b8';
+        }
+      }
+
+      function showSignupFormAuth() {
+        document.getElementById('loginFormContent').style.display = 'none';
+        document.getElementById('signupFormContent').style.display = 'block';
+        const loginBtn = document.getElementById('showLoginBtn');
+        const signupBtn = document.getElementById('showSignupBtnAuth');
+        if (signupBtn) {
+          signupBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+          signupBtn.style.color = 'white';
+        }
+        if (loginBtn) {
+          loginBtn.style.background = 'rgba(15, 23, 42, 0.6)';
+          loginBtn.style.color = '#94a3b8';
+        }
+        toggleMachineSelectionAuth();
+      }
+
+      function toggleMachineSelectionAuth() {
+        const adminToggle = document.getElementById('signupAdminToggle');
+        const machineSelection = document.getElementById('machineSelectionAuth');
+        if (adminToggle && machineSelection) {
+          if (adminToggle.checked) {
+            machineSelection.style.display = 'none';
+          } else {
+            machineSelection.style.display = 'block';
+          }
+        }
       }
 
       function showDashboard() {
@@ -2589,6 +2633,59 @@
             }
           } else {
             errorDiv.textContent = data.error || 'Login failed';
+            errorDiv.style.display = 'block';
+          }
+        } catch (e) {
+          errorDiv.textContent = 'Network error. Please try again.';
+          errorDiv.style.display = 'block';
+        }
+      }
+
+      async function handleSignupAuth(event) {
+        event.preventDefault();
+        const username = document.getElementById('signupUsernameAuth').value;
+        const password = document.getElementById('signupPasswordAuth').value;
+        const isAdmin = document.getElementById('signupAdminToggle').checked;
+        const errorDiv = document.getElementById('signupErrorAuth');
+        const successDiv = document.getElementById('signupSuccessAuth');
+        
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+
+        const role = isAdmin ? 'admin' : 'operator';
+        let machine_ids = [];
+        
+        if (!isAdmin) {
+          const checkboxes = document.querySelectorAll('.machine-checkbox-auth:checked');
+          machine_ids = Array.from(checkboxes).map(cb => cb.value);
+          
+          if (machine_ids.length === 0) {
+            errorDiv.textContent = 'Operator users must have at least one machine assigned';
+            errorDiv.style.display = 'block';
+            return;
+          }
+        }
+
+        try {
+          const response = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, role, machine_ids })
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            successDiv.textContent = `User "${username}" created! You can now login.`;
+            successDiv.style.display = 'block';
+            // Reset form
+            document.getElementById('signupFormElementAuth').reset();
+            toggleMachineSelectionAuth();
+            // Switch to login after 2 seconds
+            setTimeout(() => {
+              showLoginForm();
+            }, 2000);
+          } else {
+            errorDiv.textContent = data.error || 'Failed to create user';
             errorDiv.style.display = 'block';
           }
         } catch (e) {

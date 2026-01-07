@@ -69,8 +69,7 @@ body {
   color: var(--text-primary);
   padding: 0;
   margin: 0;
-  min-height: 100vh;
-  max-height: 100vh;
+  height: 100vh;
   line-height: 1.5;
   font-size: 14px;
   overflow: hidden;
@@ -235,7 +234,8 @@ body {
 .scada-pipeline-value {
   font-family: var(--font-mono);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--text-primary);
   color: var(--text-primary);
   line-height: 1;
 }
@@ -633,7 +633,9 @@ body {
   padding: var(--space-lg);
   height: calc(100vh - 50px);
   overflow-y: auto;
+  overflow-x: hidden;
   transition: margin-left var(--transition-normal);
+  box-sizing: border-box;
 }
 
 .scada-main.sidebar-open {
@@ -955,8 +957,9 @@ body {
 }
 
 .health-card-meta {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
   font-size: 11px;
   color: var(--text-muted);
   font-family: var(--font-mono);
@@ -1203,9 +1206,22 @@ body {
 }
 
 .scada-upload-zone:hover {
-  border-color: var(--interactive-primary);
+  border-color: var(--status-running);
   background: var(--bg-tertiary);
-  box-shadow: 0 0 12px rgba(0, 191, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: var(--status-running);
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  }
+  50% {
+    border-color: var(--interactive-primary);
+    box-shadow: 0 0 30px rgba(0, 191, 255, 0.5);
+  }
 }
 
 .scada-upload-zone.scada-upload-zone-has-file {
@@ -1594,6 +1610,135 @@ h3 {
 
 .card:hover {
   border-color: var(--border-default);
+}
+
+/* ============================================
+         RIG ALPHA CARD STYLE
+         ============================================ */
+.rig-card {
+  background: #1f2833;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.rig-card-header {
+  background: #2a3441;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-strong);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rig-card-body {
+  padding: var(--space-lg);
+  flex: 1;
+  background: #1f2833;
+}
+
+.rig-btn {
+  padding: var(--space-md) var(--space-lg);
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rig-btn-start {
+  background: var(--status-running);
+  color: #000;
+}
+
+.rig-btn-start:hover {
+  background: #00cc33;
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+}
+
+.rig-btn-stop {
+  background: var(--status-error);
+  color: #fff;
+}
+
+.rig-btn-stop:hover {
+  background: #ff3333;
+  box-shadow: 0 0 15px rgba(255, 23, 68, 0.5);
+}
+
+.rig-btn-secondary {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+}
+
+.rig-btn-secondary:hover {
+  background: var(--bg-elevated);
+  border-color: var(--interactive-primary);
+}
+
+/* ============================================
+         RIG ACCORDION
+         ============================================ */
+.rig-accordion {
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  margin-bottom: var(--space-sm);
+  background: var(--bg-tertiary);
+}
+
+.rig-accordion-header {
+  padding: var(--space-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--transition-fast);
+}
+
+.rig-accordion-header:hover {
+  background: var(--bg-elevated);
+}
+
+.rig-accordion-chevron {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.rig-accordion-content {
+  padding: var(--space-sm);
+  background: var(--bg-tertiary);
+}
+
+/* ============================================
+         THRESHOLD COLORING
+         ============================================ */
+.value-normal {
+  color: var(--status-running) !important;
+  font-weight: 700;
+}
+
+.value-warning {
+  color: var(--status-warning) !important;
+  font-weight: 700;
+}
+
+.value-critical {
+  color: var(--status-error) !important;
+  font-weight: 700;
 }
 
 .card h2 {
@@ -3321,4 +3466,206 @@ input:checked + .toggle-slider:before {
 
 .reset-config-btn:hover {
   background: rgba(251, 146, 60, 0.3);
+}
+
+/* ============================================
+   NUCLEAR LAYOUT FIXES (Add to bottom of CSS)
+   ============================================ */
+
+/* 1. Main Grid Container */
+.monitoring-layout-container {
+  display: grid;
+  grid-template-columns: 320px 1fr; /* Fixed Left Sidebar, Flexible Right */
+  gap: 16px;
+  height: 100%;
+  overflow: hidden; /* Prevent double scrollbars */
+}
+
+/* 2. Left Panel (Vertical Stack) */
+.monitoring-left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  overflow: hidden; /* Disable main scroll */
+  padding-right: 4px;
+}
+
+/* Health Matrix Container - scrollable area */
+#healthMatrixContainer {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Force Health Matrix to be 2 Columns in the sidebar */
+.monitoring-left-panel .health-matrix {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2 Columns fit nicely in 320px */
+  gap: 10px;
+}
+
+/* Make Health Cards smaller to fit sidebar */
+.monitoring-left-panel .health-card {
+  padding: 10px;
+  min-height: 100px;
+}
+.monitoring-left-panel .health-card-value {
+  font-size: 24px; /* Smaller font */
+}
+
+/* 3. Right Panel (Telemetry Grid) */
+.monitoring-right-panel {
+  overflow-y: auto;
+  background: #111;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+/* Force Telemetry Grid to fill space */
+.monitoring-right-panel .telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(250px, 1fr)
+  ); /* Responsive Grid */
+  gap: 16px;
+}
+
+/* 4. Command Deck Styling */
+.command-deck {
+  flex-shrink: 0; /* Stay fixed at bottom */
+  height: auto !important; /* Shrink to fit content */
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+/* 5. Hide the scrollbar but allow scrolling */
+.monitoring-left-panel::-webkit-scrollbar {
+  width: 4px;
+}
+.monitoring-left-panel::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 2px;
+}
+
+/* ============================================
+   COMMAND DECK FILLER (Make it Seamless)
+   ============================================ */
+
+/* 1. Command deck body - compact layout */
+.command-deck .rig-card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Pack items at top */
+  gap: 12px;
+  height: auto !important;
+  padding: 16px;
+}
+
+/* 2. Make the Start/Stop buttons taller/chonkier */
+.command-deck .rig-btn-start,
+.command-deck .rig-btn-stop {
+  padding: 24px 0; /* Taller buttons */
+  font-size: 16px; /* Bigger text */
+  letter-spacing: 1px;
+}
+
+/* 3. Make the Inject button stand out */
+.command-deck button[onclick="triggerAnomalyInjection()"] {
+  padding: 16px;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+/* 4. Style the labels to be more visible */
+.command-deck label {
+  font-size: 11px;
+  margin-bottom: 8px;
+  color: var(--text-muted); /* Match theme */
+}
+
+/* ============================================
+   COMPACT COMMAND DECK STYLES
+   ============================================ */
+
+/* Match header style */
+.command-deck .rig-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: transparent;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Status indicator for command deck */
+.command-deck .status-indicator.status-nom {
+  background: var(--status-normal);
+  box-shadow: 0 0 4px var(--status-normal);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Command deck internal layout */
+.command-btn-row {
+  display: flex;
+  gap: 10px;
+}
+.command-btn-row .rig-btn {
+  flex: 1;
+  padding: 12px;
+}
+
+.command-slider-group {
+  display: flex;
+  flex-direction: column;
+}
+.command-slider-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.command-slider-header label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.command-slider-header span {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+.command-slider-group input[type="range"] {
+  width: 100%;
+}
+
+.command-anomaly-group label {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 6px;
+}
+.command-anomaly-row {
+  display: flex;
+  gap: 10px;
+}
+.command-anomaly-row .rig-select {
+  flex: 2;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  padding: 8px;
+  border-radius: 4px;
+}
+.command-anomaly-row .rig-btn {
+  flex: 1;
+  padding: 10px;
+  font-size: 13px;
 }

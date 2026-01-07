@@ -99,13 +99,6 @@
               </svg>
               <span class="scada-sidebar-icon-label">ALARMS</span>
             </div>
-            <div class="scada-sidebar-icon" onclick="switchSection('controls')" data-section="controls" title="Controls">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
-              </svg>
-              <span class="scada-sidebar-icon-label">CONTROLS</span>
-            </div>
             <div class="scada-sidebar-icon" onclick="switchSection('configuration')" data-section="configuration" title="Configuration" id="sidebarConfigIcon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -176,18 +169,8 @@
                 <div class="scada-status-dot-indicator" id="statusSafety"></div>
               </div>
             </div>
-            <div class="scada-global-controls">
-              <button onclick="globalStartMachine()" class="scada-global-btn scada-global-start" id="globalStartBtn" title="Start Current Machine">
-                <span class="scada-global-btn-icon">▶</span>
-                <span class="scada-global-btn-label">START</span>
-              </button>
-              <button onclick="globalStopMachine()" class="scada-global-btn scada-global-stop" id="globalStopBtn" title="Stop Current Machine">
-                <span class="scada-global-btn-icon">■</span>
-                <span class="scada-global-btn-label">STOP</span>
-              </button>
-            </div>
-            <!-- Pipeline Health Telemetry -->
-            <div class="scada-pipeline-health">
+            
+            <div class="scada-pipeline-health" style="border: none;">
               <div class="scada-pipeline-metric scada-total-messages">
                 <span class="scada-pipeline-label">TOTAL</span>
                 <span class="scada-pipeline-value scada-odometer" id="total-readings">0</span>
@@ -196,28 +179,9 @@
                 <span class="scada-pipeline-label">MPS</span>
                 <span class="scada-pipeline-value" id="message-velocity">0.0</span>
               </div>
-              <div class="scada-pipeline-control">
-                <label class="scada-pipeline-label" for="sampling-frequency">FREQ</label>
-                <input type="range" id="sampling-frequency" min="10" max="100" value="50" step="10" class="scada-frequency-slider" onchange="updateSamplingFrequency(this.value)">
-                <span class="scada-frequency-value" id="frequency-display">Sampling Rate: 50Hz</span>
-              </div>
-            </div>
-            <!-- Categorized Telemetry Rail -->
-            <div class="scada-telemetry-rail">
-              <div class="scada-telemetry-categories" id="telemetryCategories">
-                <!-- Categories will be populated dynamically -->
-              </div>
-              <div class="scada-refresh-control">
-                <label class="scada-pipeline-label">REFRESH</label>
-                <select id="refreshRateSelect" class="scada-refresh-select" onchange="updateRefreshRate(this.value)">
-                  <option value="500">Real-time</option>
-                  <option value="1000" selected>1s</option>
-                  <option value="5000">5s</option>
-                  <option value="-1">Paused</option>
-                </select>
-              </div>
             </div>
           </div>
+
           <div class="scada-topbar-right">
             <div class="scada-alerts-badge none" id="scadaAlertsBadge">
               <span>ALERTS</span>
@@ -225,9 +189,6 @@
             </div>
             <div class="scada-utc-time" id="scadaUTCTime">--:--:-- UTC</div>
             <div class="scada-topbar-controls">
-              <button onclick="openAnomalyInjectionModal()" class="scada-btn" id="anomalyInjectionBtn" title="Anomaly Injection">
-                INJECT
-              </button>
               <button onclick="handleLogout()" class="scada-btn">LOGOUT</button>
             </div>
           </div>
@@ -288,15 +249,51 @@
       <div class="scada-main">
         <!-- Monitoring Section (Default) -->
         <div class="scada-section active" id="section-monitoring">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
-            <!-- Left Panel: Health Matrix -->
-            <div>
+          <div class="monitoring-layout-container">
+            
+            <div class="monitoring-left-panel">
               <div id="healthMatrixContainer"></div>
+
+              <div class="rig-card command-deck">
+                <div class="rig-card-header">
+                  <span>SYSTEM COMMAND</span>
+                  <span class="status-indicator status-nom"></span>
+                </div>
+                <div class="rig-card-body">
+
+                  <div class="command-btn-row">
+                    <button id="btn-start" class="rig-btn rig-btn-start" onclick="globalStartMachine()">START</button>
+                    <button id="btn-stop" class="rig-btn rig-btn-stop" onclick="globalStopMachine()">STOP</button>
+                  </div>
+
+                  <div class="command-slider-group">
+                    <div class="command-slider-header">
+                      <label for="commandSamplingRate">SAMPLING SPEED</label>
+                      <span id="commandMPSDisplay">10 MPS</span>
+                    </div>
+                    <input type="range" id="commandSamplingRate" min="1" max="20" value="10" step="1" onchange="updateTargetMPS(this.value)">
+                  </div>
+
+                  <div class="command-anomaly-group">
+                    <label>ANOMALY SIMULATION</label>
+                    <div class="command-anomaly-row">
+                      <select id="anomalyTypeSelect" class="rig-select">
+                        <option value="temperature_spike">Temperature Spike</option>
+                        <option value="pressure_drop">Pressure Drop</option>
+                        <option value="vibration_surge">Sensor Noise</option>
+                      </select>
+                      <button class="rig-btn rig-btn-warn" onclick="triggerAnomalyInjection()">INJECT</button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
             </div>
-            <!-- Right Panel: Real-time Telemetry -->
-            <div>
+
+            <div class="monitoring-right-panel">
               <div id="telemetryContainer"></div>
             </div>
+
           </div>
         </div>
         
@@ -310,8 +307,8 @@
           </div>
         </div>
         
-        <!-- Controls Section -->
-        <div class="scada-section" id="section-controls">
+        <!-- Controls Section (Removed - moved to Operator Controls card) -->
+        <div class="scada-section" id="section-controls" style="display: none;">
           <div style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 6px; padding: var(--space-xl);">
             <h2 style="font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--space-lg);">
               KAFKA CONTROLS
@@ -372,54 +369,31 @@
               SYSTEM CONFIGURATION
             </h2>
             
-            <!-- Kafka Controls (Visible to all) -->
-            <div style="margin-bottom: var(--space-2xl);">
-              <h3 style="font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--space-md);">
-                KAFKA CONTROLS
-              </h3>
-              <div style="display: grid; gap: var(--space-lg); padding: var(--space-lg); background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 4px;">
-                <!-- Producer Controls -->
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
-                    <div style="font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-primary); text-transform: uppercase;">
-                      PRODUCER
-                    </div>
+            <!-- Connection Status (Mini Panel) -->
+            <div class="rig-card" style="margin-bottom: var(--space-lg); max-width: 300px;">
+              <div class="rig-card-header">CONNECTION STATUS</div>
+              <div class="rig-card-body" style="padding: var(--space-md);">
+                <div style="display: grid; gap: var(--space-sm);">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase;">PRODUCER</span>
                     <div style="display: flex; align-items: center; gap: var(--space-xs);">
                       <div class="scada-status-dot-indicator" id="configProducerStatus"></div>
-                      <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);" id="configProducerStatusText">STOPPED</span>
+                      <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);" id="configProducerStatusText">STOPPED</span>
                     </div>
                   </div>
-                  <div style="display: flex; gap: var(--space-sm);">
-                    <button onclick="startComponent('producer')" class="scada-btn" style="flex: 1;">START</button>
-                    <button onclick="stopComponent('producer')" class="scada-btn" style="flex: 1;">STOP</button>
-                  </div>
-                </div>
-                
-                <!-- Consumer Controls -->
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
-                    <div style="font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-primary); text-transform: uppercase;">
-                      CONSUMER
-                    </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase;">CONSUMER</span>
                     <div style="display: flex; align-items: center; gap: var(--space-xs);">
                       <div class="scada-status-dot-indicator" id="configConsumerStatus"></div>
-                      <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);" id="configConsumerStatusText">STOPPED</span>
+                      <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);" id="configConsumerStatusText">STOPPED</span>
                     </div>
                   </div>
-                  <div style="display: flex; gap: var(--space-sm);">
-                    <button onclick="startComponent('consumer')" class="scada-btn" style="flex: 1;">START</button>
-                    <button onclick="stopComponent('consumer')" class="scada-btn" style="flex: 1;">STOP</button>
-                  </div>
-                </div>
-                
-                <!-- Kafka Status -->
-                <div style="padding: var(--space-md); background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 4px;">
-                  <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
-                    KAFKA BROKER
-                  </div>
-                  <div style="display: flex; align-items: center; gap: var(--space-sm);">
-                    <div class="scada-status-dot-indicator" id="configKafkaStatus"></div>
-                    <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);" id="configKafkaStatusText">Checking...</span>
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-sm); border-top: 1px solid var(--border-subtle);">
+                    <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase;">KAFKA</span>
+                    <div style="display: flex; align-items: center; gap: var(--space-xs);">
+                      <div class="scada-status-dot-indicator" id="configKafkaStatus"></div>
+                      <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);" id="configKafkaStatusText">Checking...</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -448,65 +422,6 @@
               </div>
             </div>
             
-            <!-- User Management (Admin Only) -->
-            <div id="adminUserManagementSection" style="display: none;">
-              <h3 style="font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--space-md);">
-                USER MANAGEMENT
-              </h3>
-              <div style="display: grid; gap: var(--space-lg);">
-                <!-- Create New User Form -->
-                <div style="padding: var(--space-lg); background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 4px;">
-                  <h4 style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-bottom: var(--space-md); text-transform: uppercase;">
-                    CREATE NEW USER
-                  </h4>
-                  <form id="adminCreateUserForm" onsubmit="adminCreateUser(event)" style="display: grid; gap: var(--space-md);">
-                    <div>
-                      <label style="display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
-                        USERNAME
-                      </label>
-                      <input type="text" id="adminNewUsername" required style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;">
-                    </div>
-                    <div>
-                      <label style="display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
-                        PASSWORD
-                      </label>
-                      <input type="password" id="adminNewPassword" required style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;">
-                    </div>
-                    <div>
-                      <label style="display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
-                        ROLE
-                      </label>
-                      <select id="adminNewRole" required style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; cursor: pointer;">
-                        <option value="operator">Operator</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style="display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
-                        ASSIGNED MACHINES
-                      </label>
-                      <div style="display: flex; gap: var(--space-md);">
-                        <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
-                          <input type="checkbox" value="A" class="admin-machine-checkbox" style="cursor: pointer;">
-                          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);">A</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
-                          <input type="checkbox" value="B" class="admin-machine-checkbox" style="cursor: pointer;">
-                          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);">B</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
-                          <input type="checkbox" value="C" class="admin-machine-checkbox" style="cursor: pointer;">
-                          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);">C</span>
-                        </label>
-                      </div>
-                    </div>
-                    <button type="submit" class="scada-btn" style="width: 100%;">CREATE USER</button>
-                    <div id="adminCreateUserError" style="display: none; color: var(--status-error); font-family: var(--font-mono); font-size: 11px; text-align: center;"></div>
-                    <div id="adminCreateUserSuccess" style="display: none; color: var(--status-running); font-family: var(--font-mono); font-size: 11px; text-align: center;"></div>
-                  </form>
-                </div>
-              </div>
-            </div>
             
             <!-- AI-Powered Smart Sensor Onboarding (Admin Only) -->
             <div id="adminSmartSensorSection" style="margin-bottom: var(--space-2xl); display: none;">
@@ -609,26 +524,170 @@
               </div>
             </div>
 
+            <!-- Sensor Management Section -->
+            <div class="card" style="margin-bottom: var(--space-2xl); background: #1f2833; border: 1px solid var(--status-running); border-radius: 4px; padding: var(--space-lg);">
+              <h3 style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--space-md);">
+                SENSOR MANAGEMENT - MACHINE <span id="configMachineLabel" style="color: var(--status-running);">A</span>
+              </h3>
+              <p style="font-size: 11px; color: var(--text-muted); margin-bottom: var(--space-lg); line-height: 1.4;">
+                Enable/disable sensors and configure thresholds for the selected machine. Operators can view and adjust thresholds; only Admins can disable sensors.
+              </p>
+              
+              <!-- Sensor List -->
+              <div id="configSensorList" style="background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 4px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-default);">
+                      <th style="padding: var(--space-sm); font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; text-align: left;">SENSOR</th>
+                      <th style="padding: var(--space-sm); font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; text-align: center;">ENABLE</th>
+                      <th style="padding: var(--space-sm); font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; text-align: center;">MIN THRESH</th>
+                      <th style="padding: var(--space-sm); font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; text-align: center;">MAX THRESH</th>
+                    </tr>
+                  </thead>
+                  <tbody id="configSensorListBody">
+                    <tr>
+                      <td colspan="4" style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 11px;">
+                        Loading sensors...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             <!-- Custom Sensor Management -->
-            <div id="sectionConfigContent">
-              <!-- Custom sensor management will be populated here -->
+            <div id="sectionConfigContent" class="card" style="background: #1f2833; border: 1px solid var(--status-running); border-radius: 4px; padding: var(--space-lg);">
+              <h3 style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--space-md);">
+                ➕ CUSTOM SENSOR MANAGEMENT
+              </h3>
+              <p style="font-size: 11px; color: var(--text-muted); margin-bottom: var(--space-lg); line-height: 1.4;">
+                Add and manage custom sensor parameters. New sensors will appear in producer messages and dashboard stats.
+              </p>
+              
+              <!-- Add New Sensor Form -->
+              <div style="margin-bottom: var(--space-xl); padding: var(--space-lg); background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 4px;">
+                <h4 style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-md); text-transform: uppercase;">ADD NEW CUSTOM SENSOR</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-md);">
+                  <div>
+                    <label style="display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">SENSOR NAME *</label>
+                    <input type="text" id="newSensorName" placeholder="e.g., bearing_vibration_rms" 
+                           style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">CATEGORY</label>
+                    <select id="newSensorCategory" 
+                            style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; cursor: pointer;">
+                      <option value="custom">Custom Parameters</option>
+                      <option value="environmental">Environmental</option>
+                      <option value="mechanical">Mechanical</option>
+                      <option value="thermal">Thermal</option>
+                      <option value="electrical">Electrical</option>
+                      <option value="fluid">Fluid Dynamics</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">UNIT</label>
+                    <input type="text" id="newSensorUnit" placeholder="e.g., mm/s, °F, PSI" 
+                           style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">MIN RANGE *</label>
+                    <input type="number" step="any" id="newSensorMinRange" placeholder="0.0" 
+                           style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">MAX RANGE *</label>
+                    <input type="number" step="any" id="newSensorMaxRange" placeholder="100.0" 
+                           style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">LOW THRESHOLD</label>
+                    <input type="number" step="any" id="newSensorLowThreshold" placeholder="Optional" 
+                           style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">HIGH THRESHOLD</label>
+                    <input type="number" step="any" id="newSensorHighThreshold" placeholder="Optional" 
+                           style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;">
+                  </div>
+                </div>
+                <button onclick="addCustomSensor()" class="scada-btn" style="width: 100%;">
+                  ➕ ADD CUSTOM SENSOR
+                </button>
+                <div id="customSensorMessage" style="margin-top: var(--space-sm); font-family: var(--font-mono); font-size: 11px; text-align: center;"></div>
+              </div>
+              
+              <!-- Custom Sensors List -->
+              <div>
+                <h4 style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-md); text-transform: uppercase;">EXISTING CUSTOM SENSORS</h4>
+                <div id="customSensorsList" style="min-height: 100px; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 4px; padding: var(--space-md);">
+                  <div style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 11px;">Loading custom sensors...</div>
+                </div>
+              </div>
+
+              <!-- Drag-and-Drop AI Parse Zone -->
+              <div style="margin-top: var(--space-2xl);">
+                <h4 style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-md); text-transform: uppercase;">SMART SENSOR ONBOARDING (AI PARSE)</h4>
+                <div id="sensorUploadZone" class="scada-upload-zone" ondrop="handleSensorFileDrop(event)" ondragover="event.preventDefault()" onclick="document.getElementById('sensorFileInput').click()" style="border: 2px dashed var(--status-running); background: var(--bg-tertiary); padding: var(--space-2xl); text-align: center; border-radius: 4px; cursor: pointer; transition: all var(--transition-normal);">
+                  <div class="scada-upload-icon" style="font-size: 48px; margin-bottom: var(--space-md);">📄</div>
+                  <div class="scada-upload-text" style="font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-xs);">
+                    <span>DRAG & DROP</span> or <span>CLICK TO UPLOAD</span>
+                  </div>
+                  <div class="scada-upload-hint" style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);">
+                    Drop Sensor Spec PDF to Auto-Configure
+                  </div>
+                  <input type="file" id="sensorFileInput" accept=".pdf,.csv,.json" style="display: none;" onchange="handleSensorFileSelect(event)">
+                </div>
+                
+                <!-- AI Parse Button -->
+                <div style="margin-top: var(--space-md);">
+                  <button onclick="aiParseSensorFile()" class="scada-btn" id="aiParseBtn" style="width: 100%; background: linear-gradient(135deg, var(--interactive-primary) 0%, var(--status-info) 100%); border: none; color: white; font-weight: 700;">
+                    <span style="margin-right: var(--space-xs);">✨</span>
+                    AI PARSE & AUTO-FILL
+                  </button>
+                </div>
+                
+                <!-- Loading Animation -->
+                <div id="aiParseLoading" style="display: none; margin-top: var(--space-md); padding: var(--space-lg); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; text-align: center;">
+                  <div class="scada-loading-spinner"></div>
+                  <div style="margin-top: var(--space-md); font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);">
+                    LLM analyzing sensor parameters...
+                  </div>
+                </div>
+                
+                <!-- Parsed Results Preview -->
+                <div id="aiParseResults" style="display: none; margin-top: var(--space-md); padding: var(--space-lg); background: var(--bg-secondary); border: 1px solid var(--status-running); border-radius: 4px;">
+                  <div style="font-family: var(--font-mono); font-size: 10px; color: var(--status-running); margin-bottom: var(--space-md); text-transform: uppercase; font-weight: 700;">
+                    ✓ AI ANALYSIS COMPLETE
+                  </div>
+                  <div id="aiParsePreview" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);">
+                    <!-- Preview will be populated here -->
+                  </div>
+                  <button onclick="applyAIParseResults()" class="scada-btn" style="width: 100%; margin-top: var(--space-md); background: var(--status-running); color: white; border: none; font-weight: 700;">
+                    APPLY TO FORM
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         
         <!-- Analytics Section (Admin Only) -->
-        <div class="scada-section" id="section-analytics">
-          <div style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 6px; padding: var(--space-xl);">
-            <h2 style="font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--space-lg);">
-              LSTM REPORTS
-            </h2>
-            <div style="display: grid; gap: var(--space-sm);">
-              <button onclick="generateFutureReport(this)" class="scada-btn" style="width: 100%;">
-                GENERATE FUTURE REPORT
-              </button>
-              <button onclick="generateFullSessionReport(this)" class="scada-btn" style="width: 100%;">
-                GENERATE FULL SESSION REPORT
-              </button>
+        <div class="scada-section" id="section-analytics" style="display: none;">
+          <div style="display: grid; gap: var(--space-lg);">
+            <!-- LSTM Reports Card -->
+            <div class="rig-card">
+              <div class="rig-card-header">LSTM REPORTS</div>
+              <div class="rig-card-body">
+                <div style="display: grid; gap: var(--space-md);">
+                  <button onclick="generateFutureReport(this)" class="rig-btn rig-btn-secondary" style="width: 100%;">
+                    GENERATE FUTURE REPORT
+                  </button>
+                  <button onclick="generateFullSessionReport(this)" class="rig-btn rig-btn-secondary" style="width: 100%;">
+                    GENERATE FULL SESSION REPORT
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -695,12 +754,63 @@
         </div>
         
         <!-- Users Section (Admin Only) -->
-        <div class="scada-section" id="section-users">
-          <div style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 6px; padding: var(--space-xl);">
-            <h2 style="font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--space-lg);">
-              USER MANAGEMENT
-            </h2>
-            <div id="sectionUsersContent">
+        <div class="scada-section" id="section-users" style="display: none;">
+          <div class="rig-card">
+            <div class="rig-card-header">USER MANAGEMENT</div>
+            <div class="rig-card-body">
+              <form id="adminCreateUserForm" onsubmit="adminCreateUser(event)" style="display: grid; gap: var(--space-lg);">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md);">
+                  <div>
+                    <label style="display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
+                      USERNAME
+                    </label>
+                    <input type="text" id="adminNewUsername" required style="width: 100%; padding: var(--space-sm); background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; font-weight: 700;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
+                      PASSWORD
+                    </label>
+                    <input type="password" id="adminNewPassword" required style="width: 100%; padding: var(--space-sm); background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; font-weight: 700;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
+                      ROLE
+                    </label>
+                    <select id="adminNewRole" required style="width: 100%; padding: var(--space-sm); background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; font-weight: 700; cursor: pointer;">
+                      <option value="operator">Operator</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label style="display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
+                    ASSIGNED MACHINES
+                  </label>
+                  <div style="display: flex; gap: var(--space-md);">
+                    <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
+                      <input type="checkbox" value="A" class="admin-machine-checkbox" style="cursor: pointer;">
+                      <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">A</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
+                      <input type="checkbox" value="B" class="admin-machine-checkbox" style="cursor: pointer;">
+                      <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">B</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
+                      <input type="checkbox" value="C" class="admin-machine-checkbox" style="cursor: pointer;">
+                      <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">C</span>
+                    </label>
+                  </div>
+                </div>
+                <button type="submit" class="rig-btn rig-btn-start" style="width: 100%;">CREATE USER</button>
+                <div id="adminCreateUserError" style="display: none; color: var(--status-error); font-family: var(--font-mono); font-size: 11px; text-align: center; font-weight: 700;"></div>
+                <div id="adminCreateUserSuccess" style="display: none; color: var(--status-running); font-family: var(--font-mono); font-size: 11px; text-align: center; font-weight: 700;"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Old Users Section (to be removed) -->
+        <div id="sectionUsersContent" style="display: none;">
               <button onclick="toggleSignupForm()" class="scada-btn" style="width: 100%; margin-bottom: var(--space-lg);">
                 CREATE NEW USER
               </button>
@@ -1729,10 +1839,8 @@
                 initializeAdminSidebar();
                 // Show admin sections in configuration
                 const adminLogsSection = document.getElementById('adminOperatorLogsSection');
-                const adminUserSection = document.getElementById('adminUserManagementSection');
                 const adminSmartSensorSection = document.getElementById('adminSmartSensorSection');
                 if (adminLogsSection) adminLogsSection.style.display = 'block';
-                if (adminUserSection) adminUserSection.style.display = 'block';
                 if (adminSmartSensorSection) adminSmartSensorSection.style.display = 'block';
               } else {
                 // Hide admin panel and mode toggle for operators
@@ -1745,18 +1853,31 @@
                 switchMode('operator');
                 // Hide admin sections (but keep config icon visible for Kafka Controls)
                 const adminLogsSection = document.getElementById('adminOperatorLogsSection');
-                const adminUserSection = document.getElementById('adminUserManagementSection');
                 const adminSmartSensorSection = document.getElementById('adminSmartSensorSection');
                 if (adminLogsSection) adminLogsSection.style.display = 'none';
-                if (adminUserSection) adminUserSection.style.display = 'none';
                 if (adminSmartSensorSection) adminSmartSensorSection.style.display = 'none';
               }
               // Config icon is always visible (Kafka Controls available to all)
               const configIcon = document.getElementById('sidebarConfigIcon');
               if (configIcon) configIcon.style.display = 'flex';
               
+              // Show Users icon for admins
+              const usersIcon = document.getElementById('sidebarUsersIcon');
+              if (usersIcon && currentUser.role === 'admin') {
+                usersIcon.style.display = 'flex';
+              }
+              
               // Initialize left sidebar
               initializeAdminSidebar();
+              
+              // Initialize MPS display and header controls
+              initializeMPSDisplay();
+              
+              // Initialize uptime tracking
+              if (!systemStartTime && producerRunning) {
+                systemStartTime = Date.now();
+              }
+              updateSessionUptime();
               return;
             }
           }
@@ -2150,6 +2271,11 @@
         loadMLStats();
         loadAnomalies();
         loadLSTMPredictions();
+        
+        // Update config section if it's open
+        if (document.getElementById('section-configuration') && document.getElementById('section-configuration').classList.contains('active')) {
+          renderConfigSensorManagement();
+        }
       }
 
       // Render UI from machine-specific cache (instant switch)
@@ -3680,28 +3806,58 @@
           const statusClass = healthData.status;
           const statusLabel = statusClass === 'nom' ? 'NOM' : statusClass === 'wrn' ? 'WRN' : 'CRIT';
           
-          // Calculate uptime (time since last anomaly or system start)
-          // For now, use a placeholder - will be enhanced later
-          const uptime = '--:--:--';
+          // Use frontend timer for uptime (synced across all cards)
+          const uptime = formatUptime(systemStartTime, systemPausedTime, accumulatedUptime);
+          
+          // Get anomaly history for this category
+          const currentMachine = machineData[selectedMachineId];
+          const categoryAnomalies = (currentMachine?.anomalies || []).filter(anomaly => {
+            // Match anomalies by sensor category
+            const sensors = anomaly.detected_sensors || [];
+            return sensors.some(sensor => {
+              const sensorCategory = getSensorCategory(sensor);
+              return sensorCategory === cat.key;
+            });
+          }).slice(0, 3); // Last 3 anomalies
+          
+          // Format anomaly history
+          let anomalyHistoryHtml = '';
+          if (categoryAnomalies.length === 0) {
+            anomalyHistoryHtml = '<div style="font-family: var(--font-mono); font-size: 9px; color: var(--status-running); font-weight: 700;">No Recent Anomalies</div>';
+          } else {
+            anomalyHistoryHtml = categoryAnomalies.map(anomaly => {
+              const time = new Date(anomaly.created_at);
+              const timeStr = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`;
+              const sensor = (anomaly.detected_sensors || [])[0] || 'Unknown';
+              const sensorName = sensor.replace(/_/g, ' ').substring(0, 15);
+              return `<div style="font-family: var(--font-mono); font-size: 9px; color: var(--text-primary); margin-bottom: 2px;">${sensorName} @ ${timeStr}</div>`;
+            }).join('');
+          }
+          
+          // Update status label if paused
+          const displayStatusLabel = isSystemPaused && statusClass !== 'err' ? 'PAUSED' : statusLabel;
+          const displayStatusClass = isSystemPaused && statusClass !== 'err' ? 'wrn' : statusClass;
           
           html += `
             <div class="health-card" onclick="openHealthCardModal('${cat.key}', '${cat.name}')">
               <div class="health-card-header">
                 <div class="health-card-name">${cat.name}</div>
                 <div class="health-card-status">
-                  <div class="health-card-status-dot ${statusClass}"></div>
-                  <span class="health-card-status-label">${statusLabel}</span>
+                  <div class="health-card-status-dot ${displayStatusClass}"></div>
+                  <span class="health-card-status-label">${displayStatusLabel}</span>
                 </div>
               </div>
-              <div class="health-card-value ${statusClass}">${healthData.health}%</div>
+              <div class="health-card-value ${displayStatusClass}">${healthData.health}%</div>
               <div class="health-card-meta">
-                <div class="health-card-meta-item">
-                  <div class="health-card-meta-label">ALARMS</div>
-                  <div class="health-card-meta-value">${healthData.violations}</div>
+                <div class="health-card-meta-item" style="grid-column: 1 / -1; margin-top: var(--space-xs); padding-top: var(--space-xs); border-top: 1px solid var(--border-subtle);">
+                  <div class="health-card-meta-label" style="margin-bottom: var(--space-xs);">ANOMALY LOG</div>
+                  <div style="font-family: var(--font-mono); font-size: 9px; color: var(--text-secondary);">
+                    ${anomalyHistoryHtml}
+                  </div>
                 </div>
                 <div class="health-card-meta-item">
                   <div class="health-card-meta-label">UPTIME</div>
-                  <div class="health-card-meta-value">${uptime}</div>
+                  <div class="health-card-meta-value" data-uptime-category="${cat.key}">${uptime}</div>
                 </div>
               </div>
             </div>
@@ -3916,8 +4072,12 @@
           const displayCurrentValue = currentValue !== null && currentValue !== undefined && !isNaN(currentValue) ? currentValue : 0;
           const displayAvgValue = avgValue || 0;
           
-          // Generate sparkline with threshold and status class for dynamic coloring
+          // Get threshold color class
           const thresholdForSparkline = getThreshold(sensorName);
+          const currentColorClass = getThresholdColorClass(displayCurrentValue, thresholdForSparkline);
+          const avgColorClass = getThresholdColorClass(displayAvgValue, thresholdForSparkline);
+          
+          // Generate sparkline with threshold and status class for dynamic coloring
           const sparkline = generateSparkline(
             historicalValues.length > 0 ? historicalValues : (currentValue !== null && currentValue !== undefined && !isNaN(currentValue) ? [currentValue] : []), 
             200, 
@@ -3933,7 +4093,7 @@
                 <div class="telemetry-tile-name">${displayName}</div>
                 <div class="telemetry-tile-unit">${unit}</div>
               </div>
-              <div class="telemetry-tile-value ${statusClass}">${formatNumber(displayCurrentValue, 1)}</div>
+              <div class="telemetry-tile-value ${currentColorClass}" style="font-family: var(--font-mono); font-weight: 700;">${formatNumber(displayCurrentValue, 1)}</div>
               <div class="telemetry-tile-sparkline">
                 ${sparkline}
               </div>
@@ -3947,12 +4107,12 @@
               ` : ''}
               <div class="telemetry-tile-footer">
                 <div class="telemetry-tile-footer-row">
-                  <span class="telemetry-tile-footer-label">CURR</span>
-                  <span class="telemetry-tile-footer-value">${formatNumber(displayCurrentValue, 1)}</span>
+                  <span class="telemetry-tile-footer-label" style="font-weight: 700;">CURR</span>
+                  <span class="telemetry-tile-footer-value ${currentColorClass}" style="font-family: var(--font-mono); font-weight: 700;">${formatNumber(displayCurrentValue, 1)}</span>
                 </div>
                 <div class="telemetry-tile-footer-row">
-                  <span class="telemetry-tile-footer-label">AVG</span>
-                  <span class="telemetry-tile-footer-value">${formatNumber(displayAvgValue, 1)}</span>
+                  <span class="telemetry-tile-footer-label" style="font-weight: 700;">AVG</span>
+                  <span class="telemetry-tile-footer-value ${avgColorClass}" style="font-family: var(--font-mono); font-weight: 700;">${formatNumber(displayAvgValue, 1)}</span>
                 </div>
               </div>
             </div>
@@ -4441,7 +4601,12 @@
         // SYSTEM: Overall system health (producer + consumer running)
         const systemEl = document.getElementById('statusSystem');
         if (systemEl) {
-          if (statusData.producer_running && statusData.consumer_running) {
+          // Check if system is paused (stopped but not reset)
+          if (isSystemPaused) {
+            // Paused state: Yellow (Paused)
+            systemEl.className = 'scada-status-dot-indicator wrn';
+            systemEl.style.boxShadow = 'none';
+          } else if (statusData.producer_running && statusData.consumer_running) {
             // Both running: Neon Green with glow
             systemEl.className = 'scada-status-dot-indicator nom';
             systemEl.style.boxShadow = '0 0 10px rgba(0, 255, 65, 0.6)';
@@ -5795,6 +5960,20 @@ Report generated by Sensor Data Pipeline Dashboard
           return;
         }
         
+        // Resume or start uptime tracking
+        if (isSystemPaused && systemStartTime) {
+          // Resuming from pause - add accumulated time
+          accumulatedUptime += (systemPausedTime - systemStartTime);
+          systemStartTime = Date.now();
+          systemPausedTime = null;
+          isSystemPaused = false;
+        } else if (!systemStartTime) {
+          // Starting fresh
+          systemStartTime = Date.now();
+          accumulatedUptime = 0;
+          isSystemPaused = false;
+        }
+        
         // Start producer first (required for data flow)
         fetch(`/api/start/producer`, {
           method: 'POST',
@@ -5820,6 +5999,8 @@ Report generated by Sensor Data Pipeline Dashboard
               updateStatus();
               // Log operator action
               logOperatorAction(`Started Machine ${selectedMachineId}`, selectedMachineId);
+              // Refresh health matrix to show updated uptime
+              updateStats();
             } else {
               alert(`Failed to start machine: ${result.error || 'Unknown error'}`);
             }
@@ -5835,6 +6016,18 @@ Report generated by Sensor Data Pipeline Dashboard
           return;
         }
         
+        // Update UI to show Yellow (Paused) state
+        if (document.getElementById('statusSystem')) {
+          document.getElementById('statusSystem').className = 'scada-status-dot-indicator wrn'; // WRN = Yellow
+        }
+        
+        // Pause uptime timer
+        if (systemStartTime && !isSystemPaused) {
+          systemPausedTime = Date.now();
+          accumulatedUptime += (systemPausedTime - systemStartTime);
+          isSystemPaused = true;
+        }
+        
         // Stop machine state first
         fetch(`/api/machines/${selectedMachineId}/stop`, {
           method: 'POST',
@@ -5844,7 +6037,11 @@ Report generated by Sensor Data Pipeline Dashboard
           .then(result => {
             if (result.success) {
               machineRunning[selectedMachineId] = false;
-              updateStatus();
+              producerRunning = false;
+              
+              // Update UI to show Yellow (Paused) state
+              updatePausedStatus();
+              
               // Log operator action
               logOperatorAction(`Stopped Machine ${selectedMachineId}`, selectedMachineId);
             } else {
@@ -5854,6 +6051,31 @@ Report generated by Sensor Data Pipeline Dashboard
           .catch(error => {
             alert(`Failed to stop machine: ${error.message}`);
           });
+      }
+      
+      // Update UI to show Paused (Yellow) state
+      function updatePausedStatus() {
+        // Update SYSTEM LED to Yellow (Paused)
+        const systemEl = document.getElementById('statusSystem');
+        if (systemEl) {
+          systemEl.className = 'scada-status-dot-indicator wrn';
+          systemEl.style.boxShadow = 'none';
+        }
+        
+        // Update all category status LEDs to Yellow
+        document.querySelectorAll('.health-card-status-dot').forEach(dot => {
+          const currentClass = dot.className;
+          if (!currentClass.includes('err')) {
+            dot.className = 'health-card-status-dot wrn';
+          }
+        });
+        
+        // Update status text
+        document.querySelectorAll('.health-card-status-label').forEach(label => {
+          if (label.textContent !== 'CRIT') {
+            label.textContent = 'PAUSED';
+          }
+        });
       }
       
       // ============================================
@@ -6011,23 +6233,116 @@ Report generated by Sensor Data Pipeline Dashboard
         container.innerHTML = html;
       }
       
-      function updateSamplingFrequency(hz) {
-        globalSamplingFrequency = parseInt(hz);
-        const displayEl = document.getElementById('frequency-display');
+      // MPS-based frequency control (1-20 MPS range)
+      let targetMPS = 10; // Default 10 MPS
+      const BATCH_SIZE = 5; // Multiply MPS by this to get Hz
+      
+      function updateTargetMPS(mps) {
+        targetMPS = parseFloat(mps);
+        const displayEl = document.getElementById('mps-display');
+        const operatorDisplayEl = document.getElementById('operatorMPSDisplay');
+        const commandDisplayEl = document.getElementById('commandMPSDisplay');
         if (displayEl) {
-          displayEl.textContent = `Sampling Rate: ${globalSamplingFrequency}Hz`;
+          displayEl.textContent = `${targetMPS.toFixed(1)} MPS`;
+          displayEl.style.fontWeight = '700';
         }
-        const configDisplayEl = document.getElementById('configFrequencyDisplay');
-        if (configDisplayEl) {
-          configDisplayEl.textContent = `Sampling Rate: ${globalSamplingFrequency}Hz`;
+        if (operatorDisplayEl) {
+          operatorDisplayEl.textContent = `${targetMPS.toFixed(1)} MPS`;
+          operatorDisplayEl.style.fontWeight = '700';
         }
-        const configSliderEl = document.getElementById('configSamplingFrequency');
-        if (configSliderEl) {
-          configSliderEl.value = globalSamplingFrequency;
+        if (commandDisplayEl) {
+          commandDisplayEl.textContent = `${targetMPS.toFixed(0)} MPS`;
+          commandDisplayEl.style.fontWeight = '700';
         }
-        // TODO: Send to backend to update producer interval
-        // For now, this is frontend-only
-        logOperatorAction(`Changed sampling frequency to ${globalSamplingFrequency}Hz`);
+        const operatorSlider = document.getElementById('operatorSamplingRate');
+        const commandSlider = document.getElementById('commandSamplingRate');
+        if (operatorSlider) {
+          operatorSlider.value = targetMPS;
+        }
+        if (commandSlider) {
+          commandSlider.value = targetMPS;
+        }
+        // Calculate Hz for backend (MPS * batch size)
+        const calculatedHz = targetMPS * BATCH_SIZE;
+        // TODO: Send calculatedHz to backend to update producer interval
+        logOperatorAction(`Changed target MPS to ${targetMPS.toFixed(1)} MPS (${calculatedHz}Hz)`);
+      }
+      
+      // Initialize MPS display on load
+      function initializeMPSDisplay() {
+        const mpsSlider = document.getElementById('target-mps');
+        const mpsDisplay = document.getElementById('mps-display');
+        const operatorSlider = document.getElementById('operatorSamplingRate');
+        const operatorDisplay = document.getElementById('operatorMPSDisplay');
+        const commandSlider = document.getElementById('commandSamplingRate');
+        const commandDisplay = document.getElementById('commandMPSDisplay');
+        
+        if (mpsSlider && mpsDisplay) {
+          mpsDisplay.textContent = `${targetMPS.toFixed(1)} MPS`;
+          mpsDisplay.style.fontWeight = '700';
+          mpsSlider.value = targetMPS;
+        }
+        if (operatorSlider && operatorDisplay) {
+          operatorDisplay.textContent = `${targetMPS.toFixed(1)} MPS`;
+          operatorDisplay.style.fontWeight = '700';
+          operatorSlider.value = targetMPS;
+        }
+        if (commandSlider && commandDisplay) {
+          commandDisplay.textContent = `${targetMPS.toFixed(0)} MPS`;
+          commandDisplay.style.fontWeight = '700';
+          commandSlider.value = targetMPS;
+        }
+        
+        // Load config values into header and operator controls
+        fetch("/api/config")
+          .then((r) => r.json())
+          .then((data) => {
+            const headerDuration = document.getElementById('headerDurationMinutes');
+            const headerInterval = document.getElementById('headerIntervalSeconds');
+            const operatorDuration = document.getElementById('operatorDuration');
+            const commandDuration = document.getElementById('commandDuration');
+            if (headerDuration) headerDuration.value = data.duration_minutes ?? 0;
+            if (headerInterval) headerInterval.value = data.interval_seconds ?? 0.5;
+            if (operatorDuration) operatorDuration.value = data.duration_minutes ?? 0;
+            if (commandDuration) commandDuration.value = data.duration_minutes ?? 0;
+          })
+          .catch(e => console.error('Error loading config for header:', e));
+      }
+
+      function updateHeaderDuration(minutes) {
+        const mins = parseInt(minutes) || 0;
+        // Update backend config
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            duration_hours: 0,
+            duration_minutes: mins,
+            interval_seconds: parseFloat(document.getElementById('headerIntervalSeconds').value) || 0.5
+          })
+        }).then(r => r.json()).then(data => {
+          if (data.success) {
+            logOperatorAction(`Updated producer duration to ${mins} minutes`);
+          }
+        });
+      }
+
+      function updateHeaderInterval(seconds) {
+        const secs = parseFloat(seconds) || 0.5;
+        // Update backend config
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            duration_hours: 0,
+            duration_minutes: parseInt(document.getElementById('headerDurationMinutes').value) || 0,
+            interval_seconds: secs
+          })
+        }).then(r => r.json()).then(data => {
+          if (data.success) {
+            logOperatorAction(`Updated producer interval to ${secs} seconds`);
+          }
+        });
       }
 
       function updateConfigSamplingFrequency(hz) {
@@ -6060,6 +6375,295 @@ Report generated by Sensor Data Pipeline Dashboard
         // Update any machine-specific status indicators
         // This will be called when switching machines to reflect actual state
       }
+
+      // Render sensor management in config section
+      function renderConfigSensorManagement() {
+        const tbody = document.getElementById('configSensorListBody');
+        const machineLabel = document.getElementById('configMachineLabel');
+        if (!tbody) return;
+        
+        if (machineLabel) {
+          machineLabel.textContent = selectedMachineId;
+        }
+        
+        // Get all sensors
+        const allSensors = [];
+        if (typeof sensorsByCategory !== 'undefined') {
+          Object.keys(sensorsByCategory).forEach(cat => {
+            sensorsByCategory[cat].forEach(sensor => {
+              allSensors.push({ name: sensor, category: cat });
+            });
+          });
+        }
+        
+        // Get custom sensors
+        if (typeof unifiedSensorRegistry !== 'undefined') {
+          Object.values(unifiedSensorRegistry).forEach(sensor => {
+            if (sensor.source === 'custom') {
+              allSensors.push({ name: sensor.name, category: sensor.category || 'custom' });
+            }
+          });
+        }
+        
+        const currentState = machineSensorState[selectedMachineId] || {};
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        
+        if (allSensors.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 11px;">No sensors available</td></tr>';
+          return;
+        }
+        
+        let html = '';
+        allSensors.forEach(({ name, category }) => {
+          const state = currentState[name] || { enabled: true, baseline: null };
+          const displayName = name.replace(/_/g, ' ').toUpperCase();
+          const sensorData = unifiedSensorRegistry && unifiedSensorRegistry[name];
+          const minThreshold = sensorData?.low_threshold || '';
+          const maxThreshold = sensorData?.high_threshold || '';
+          
+          html += `
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: var(--space-sm); font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">
+                ${displayName}
+              </td>
+              <td style="padding: var(--space-sm); text-align: center;">
+                <label class="toggle-switch" style="display: inline-block;">
+                  <input type="checkbox" ${state.enabled ? 'checked' : ''} 
+                         ${!isAdmin ? 'disabled' : ''}
+                         onchange="toggleSensorEnabled('${name}', this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </td>
+              <td style="padding: var(--space-sm); text-align: center;">
+                <input type="number" step="any" 
+                       value="${minThreshold}" 
+                       placeholder="Min"
+                       style="width: 80px; padding: 4px 6px; background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 11px;"
+                       onchange="updateSensorThreshold('${name}', 'low', this.value)">
+              </td>
+              <td style="padding: var(--space-sm); text-align: center;">
+                <input type="number" step="any" 
+                       value="${maxThreshold}" 
+                       placeholder="Max"
+                       style="width: 80px; padding: 4px 6px; background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 11px;"
+                       onchange="updateSensorThreshold('${name}', 'high', this.value)">
+              </td>
+            </tr>
+          `;
+        });
+        
+        tbody.innerHTML = html;
+      }
+
+      function updateSensorThreshold(sensorName, type, value) {
+        // Update threshold via API
+        const thresholdValue = value ? parseFloat(value) : null;
+        logOperatorAction(`Updated ${sensorName} ${type} threshold to ${thresholdValue || 'none'}`);
+        // TODO: Send to backend API to persist threshold
+      }
+
+      // Trigger anomaly injection from Operator Controls
+      function triggerAnomalyInjection() {
+        fetch('/api/inject-anomaly', { method: 'POST' })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              logOperatorAction('Triggered anomaly injection');
+            } else {
+              alert('Failed to trigger injection: ' + (data.error || 'Unknown error'));
+            }
+          })
+          .catch(e => {
+            console.error('Error triggering injection:', e);
+            alert('Error triggering injection');
+          });
+      }
+
+      // Frontend uptime tracking (synced across all category cards)
+      let systemStartTime = null; // Set when producer starts
+      let systemPausedTime = null; // Set when producer stops (to pause timer)
+      let accumulatedUptime = 0; // Accumulated uptime before pause
+      let isSystemPaused = false; // Paused state flag
+      
+      function formatUptime(startTime, pausedTime, accumulated) {
+        if (!startTime && accumulated === 0) return '00:00:00';
+        
+        let elapsed = accumulated;
+        if (startTime && !pausedTime) {
+          // Currently running
+          elapsed = Date.now() - startTime + accumulated;
+        } else if (pausedTime) {
+          // Currently paused
+          elapsed = pausedTime - startTime + accumulated;
+        }
+        
+        const hours = Math.floor(elapsed / 3600000);
+        const minutes = Math.floor((elapsed % 3600000) / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      }
+      
+      // Update all uptime displays every second
+      function updateAllUptimes() {
+        if (!systemStartTime && accumulatedUptime === 0) return;
+        
+        const uptimeString = formatUptime(systemStartTime, systemPausedTime, accumulatedUptime);
+        
+        // Update all category uptime elements
+        document.querySelectorAll('[data-uptime-category]').forEach(el => {
+          el.textContent = uptimeString;
+        });
+        
+        // Update session uptime in Command Deck
+        const sessionUptimeEl = document.getElementById('sessionUptime');
+        if (sessionUptimeEl) {
+          sessionUptimeEl.textContent = uptimeString;
+        }
+      }
+      
+      // Update uptime every second
+      setInterval(updateAllUptimes, 1000);
+      
+      // Session uptime tracking (for Command Deck)
+      function updateSessionUptime() {
+        const uptimeEl = document.getElementById('sessionUptime');
+        if (!uptimeEl) return;
+        
+        if (systemStartTime) {
+          uptimeEl.textContent = formatUptime(systemStartTime);
+        } else {
+          uptimeEl.textContent = '00:00:00';
+        }
+      }
+
+      // Filter operator logs by user
+      function filterOperatorLogs() {
+        const filter = document.getElementById('logUserFilter').value;
+        const tbody = document.getElementById('operatorLogsTableBody');
+        if (!tbody) return;
+        
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach(row => {
+          const usernameCell = row.querySelector('td:first-child');
+          if (!usernameCell) return;
+          const username = usernameCell.textContent.trim();
+          if (!filter || username === filter) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      }
+
+      // Toggle logs collapse
+      let logsCollapsed = false;
+      function toggleLogsCollapse() {
+        logsCollapsed = !logsCollapsed;
+        const container = document.getElementById('operatorLogsContainer');
+        const btn = document.getElementById('logsCollapseBtn');
+        if (container) {
+          container.style.display = logsCollapsed ? 'none' : 'block';
+        }
+        if (btn) {
+          btn.textContent = logsCollapsed ? '▶' : '▼';
+        }
+      }
+
+      // Export logs to PDF (placeholder)
+      function exportLogsPDF() {
+        alert('PDF export functionality will be implemented with backend integration');
+        // TODO: Implement PDF export
+      }
+
+      // Render custom sensors with accordion by category
+      function renderCustomSensorsAccordion() {
+        const container = document.getElementById('customSensorsAccordion');
+        if (!container || typeof unifiedSensorRegistry === 'undefined') return;
+        
+        const customSensors = Object.values(unifiedSensorRegistry).filter(s => s.source === 'custom');
+        if (customSensors.length === 0) {
+          container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 11px;">No custom sensors</div>';
+          return;
+        }
+        
+        // Group by category
+        const byCategory = {};
+        customSensors.forEach(sensor => {
+          const cat = sensor.category || 'custom';
+          if (!byCategory[cat]) byCategory[cat] = [];
+          byCategory[cat].push(sensor);
+        });
+        
+        const categories = ['environmental', 'electrical', 'fluid', 'mechanical', 'thermal', 'custom'];
+        let html = '';
+        categories.forEach(cat => {
+          if (!byCategory[cat] || byCategory[cat].length === 0) return;
+          
+          const catLabel = cat.charAt(0).toUpperCase() + cat.slice(1);
+          html += `
+            <div class="rig-accordion">
+              <div class="rig-accordion-header" onclick="toggleAccordion('${cat}')">
+                <span style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary); text-transform: uppercase;">${catLabel}</span>
+                <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);">(${byCategory[cat].length})</span>
+                <span class="rig-accordion-chevron" id="chevron-${cat}">▼</span>
+              </div>
+              <div class="rig-accordion-content" id="accordion-${cat}" style="display: none;">
+                ${byCategory[cat].map(sensor => `
+                  <div style="padding: var(--space-sm); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">${sensor.name.replace(/_/g, ' ').toUpperCase()}</span>
+                      <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-left: var(--space-sm);">${sensor.unit || ''}</span>
+                    </div>
+                    <div style="display: flex; gap: var(--space-sm);">
+                      <button onclick="editCustomSensor(${sensor.id})" class="rig-btn rig-btn-secondary" style="padding: 4px 8px; font-size: 9px;">EDIT</button>
+                      <button onclick="deleteCustomSensor(${sensor.id})" class="rig-btn rig-btn-stop" style="padding: 4px 8px; font-size: 9px;">DELETE</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        });
+        
+        container.innerHTML = html;
+      }
+
+      function toggleAccordion(category) {
+        const content = document.getElementById(`accordion-${category}`);
+        const chevron = document.getElementById(`chevron-${category}`);
+        if (content) {
+          const isHidden = content.style.display === 'none';
+          content.style.display = isHidden ? 'block' : 'none';
+          if (chevron) {
+            chevron.textContent = isHidden ? '▲' : '▼';
+          }
+        }
+      }
+
+      // Get threshold color class for values
+      function getThresholdColorClass(value, threshold) {
+        if (!threshold || value === null || value === undefined || isNaN(value)) {
+          return 'value-normal';
+        }
+        
+        const { min, max } = threshold;
+        const range = max - min;
+        const warningZone = range * 0.1; // 10% of range for warning
+        
+        // Critical: outside threshold
+        if (value < min || value > max) {
+          return 'value-critical';
+        }
+        
+        // Warning: within 10% of threshold
+        if (value <= min + warningZone || value >= max - warningZone) {
+          return 'value-warning';
+        }
+        
+        // Normal: safely within range
+        return 'value-normal';
+      }
+
 
       // Load config values into form
       function loadConfigIntoForm() {
@@ -6286,18 +6890,32 @@ Report generated by Sensor Data Pipeline Dashboard
       
       function updateOperatorLogsTable() {
         const tbody = document.getElementById('operatorLogsTableBody');
+        const userFilter = document.getElementById('logUserFilter');
         if (!tbody) return;
         
         if (operatorLogs.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: var(--space-lg);">No logs available</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 11px;">No logs available</td></tr>';
           return;
         }
         
-        tbody.innerHTML = operatorLogs.map(log => `
+        // Populate user filter dropdown
+        if (userFilter) {
+          const uniqueUsers = [...new Set(operatorLogs.map(l => l.operatorName))];
+          const currentValue = userFilter.value;
+          userFilter.innerHTML = '<option value="">All Users</option>' + 
+            uniqueUsers.map(u => `<option value="${u}">${u}</option>`).join('');
+          userFilter.value = currentValue;
+        }
+        
+        // Filter logs
+        const filter = userFilter?.value || '';
+        const filteredLogs = filter ? operatorLogs.filter(l => l.operatorName === filter) : operatorLogs;
+        
+        tbody.innerHTML = filteredLogs.map(log => `
           <tr>
-            <td>${log.operatorName}</td>
-            <td>${log.action}</td>
-            <td>${new Date(log.timestamp).toLocaleString()}</td>
+            <td style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">${log.operatorName}</td>
+            <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);">${log.action}</td>
+            <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${new Date(log.timestamp).toLocaleString()}</td>
           </tr>
         `).join('');
       }
@@ -6441,6 +7059,21 @@ Report generated by Sensor Data Pipeline Dashboard
           // Load config when opening configuration section
           if (sectionName === 'configuration') {
             loadConfigIntoForm();
+            renderConfigSensorManagement();
+            renderCustomSensorsAccordion();
+            // Update machine label
+            const machineLabel = document.getElementById('configMachineLabel');
+            if (machineLabel) machineLabel.textContent = selectedMachineId;
+          }
+          
+          // Update sensor management when switching machines
+          if (sectionName === 'configuration') {
+            renderConfigSensorManagement();
+          }
+          
+          // Load operator logs when opening config (if admin)
+          if (sectionName === 'configuration' && currentUser && currentUser.role === 'admin') {
+            loadOperatorLogs();
           }
         } else {
           console.error(`Section 'section-${sectionName}' not found`);
@@ -6849,8 +7482,18 @@ Report generated by Sensor Data Pipeline Dashboard
               renderAdminSensorList();
             }
             
-            // Update admin panel custom sensors list
-            const container = document.getElementById('customSensorsList');
+            // Update admin panel custom sensors list (use accordion if in config section)
+            const accordionContainer = document.getElementById('customSensorsAccordion');
+            const listContainer = document.getElementById('customSensorsList');
+            
+            // If config section is open, use accordion
+            if (accordionContainer && document.getElementById('section-configuration')?.classList.contains('active')) {
+              renderCustomSensorsAccordion();
+              return;
+            }
+            
+            // Otherwise use old list format (for backward compatibility)
+            const container = listContainer;
             if (!container) return;
             
             if (sensors.length === 0) {
@@ -7168,4 +7811,6 @@ Report generated by Sensor Data Pipeline Dashboard
       }
     </script>
   </body>
+</html>
+
 </html>

@@ -401,38 +401,63 @@
         text-transform: uppercase;
         letter-spacing: 1px;
       }
+      /* ============================================
+         STATUS INDICATORS - Deviation-Only Color
+         HP-HMI: Normal state is intentionally muted
+         Color appears ONLY when attention needed
+         ============================================ */
       .status-indicator {
         display: inline-block;
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
-        margin-right: 10px;
-        animation: pulse 2s infinite;
+        margin-right: var(--space-sm);
+        flex-shrink: 0;
       }
-      @keyframes pulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.5;
-        }
-      }
+
       .status-running {
-        background: #10b981;
-        box-shadow: 0 0 10px #10b981;
+        background: var(--status-running);
+        box-shadow: 0 0 0 2px rgba(52, 168, 83, 0.2);
       }
+
       .status-stopped {
-        background: #ef4444;
-        box-shadow: 0 0 10px #ef4444;
+        background: var(--status-error);
+        box-shadow: 0 0 0 2px rgba(234, 67, 53, 0.2);
       }
+
       .status-pending {
-        background: #f59e0b;
-        box-shadow: 0 0 10px #f59e0b;
+        background: var(--status-warning);
+        box-shadow: 0 0 0 2px rgba(249, 171, 0, 0.2);
+        animation: status-pulse 1.5s ease-in-out infinite;
       }
+
       .status-unknown {
-        background: #64748b;
-        box-shadow: 0 0 10px #64748b;
+        background: var(--status-normal);
+      }
+
+      @keyframes status-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+
+      /* Status text labels */
+      .status-text {
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .status-text.running {
+        color: var(--status-running);
+      }
+
+      .status-text.stopped {
+        color: var(--status-error);
+      }
+
+      .status-text.warning {
+        color: var(--status-warning);
       }
       .history-container {
         max-height: 600px;

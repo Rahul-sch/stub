@@ -515,60 +515,99 @@
       .history-metric.hidden {
         display: none;
       }
+      /* ============================================
+         ALERTS - Severity-Based Visual Weight
+         HP-HMI: Border color indicates severity
+         ============================================ */
       .alert-list {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: var(--space-sm);
         max-height: 360px;
         overflow-y: auto;
       }
+
       .alert-item {
-        background: rgba(148, 163, 184, 0.08);
-        border-radius: 12px;
-        padding: 14px;
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+        padding: var(--space-md);
+        border-left: 3px solid var(--border-default);
         display: flex;
         justify-content: space-between;
-        gap: 16px;
+        align-items: flex-start;
+        gap: var(--space-md);
       }
+
+      .alert-item.severity-critical {
+        border-left-color: var(--status-critical);
+        background: rgba(217, 48, 37, 0.08);
+      }
+
+      .alert-item.severity-error {
+        border-left-color: var(--status-error);
+      }
+
+      .alert-item.severity-warning {
+        border-left-color: var(--status-warning);
+      }
+
+      .alert-item.severity-info {
+        border-left-color: var(--status-info);
+      }
+
       .alert-type {
-        font-weight: 700;
-        color: #f8fafc;
-        font-size: 14px;
-      }
-      .alert-message {
-        color: #cbd5f5;
+        font-weight: 500;
+        color: var(--text-primary);
         font-size: 13px;
-        margin-top: 4px;
       }
+
+      .alert-message {
+        color: var(--text-secondary);
+        font-size: 12px;
+        margin-top: var(--space-xs);
+        line-height: 1.4;
+      }
+
       .alert-meta {
         text-align: right;
-        font-size: 12px;
-        color: #94a3b8;
+        font-size: 11px;
+        color: var(--text-muted);
+        flex-shrink: 0;
       }
+
+      .alert-time {
+        margin-top: var(--space-xs);
+      }
+
+      /* Alert badges - compact pills */
       .alert-badge {
-        padding: 4px 12px;
-        border-radius: 999px;
-        font-weight: 700;
         display: inline-block;
-        margin-bottom: 6px;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 600;
         text-transform: uppercase;
+        letter-spacing: 0.3px;
       }
-      .alert-badge.info {
-        background: rgba(59, 130, 246, 0.15);
-        color: #60a5fa;
-      }
-      .alert-badge.warning {
-        background: rgba(245, 158, 11, 0.15);
-        color: #fbbf24;
-      }
-      .alert-badge.error {
-        background: rgba(248, 113, 113, 0.15);
-        color: #f87171;
-      }
+
       .alert-badge.critical {
-        background: rgba(248, 113, 113, 0.25);
-        color: #fecaca;
+        background: var(--status-critical);
+        color: white;
+      }
+
+      .alert-badge.error {
+        background: rgba(234, 67, 53, 0.15);
+        color: var(--status-error);
+      }
+
+      .alert-badge.warning {
+        background: rgba(249, 171, 0, 0.15);
+        color: var(--status-warning);
+      }
+
+      .alert-badge.info {
+        background: rgba(66, 133, 244, 0.15);
+        color: var(--status-info);
       }
       .config-meta {
         margin-top: 12px;
@@ -995,104 +1034,122 @@
         line-height: 1.6;
       }
 
-      /* ML Anomaly Detection Styles */
+      /* ============================================
+         ML ANOMALY DETECTION - Clear, Scannable
+         HP-HMI: Anomalies get attention via border
+         ============================================ */
       .anomaly-item {
-        background: rgba(30, 41, 59, 0.8);
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 12px;
-        border-left: 4px solid #ef4444;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+        padding: var(--space-lg);
+        margin-bottom: var(--space-sm);
+        border-left: 3px solid var(--status-error);
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        gap: 16px;
-        transition: all 0.3s;
+        gap: var(--space-lg);
       }
-      .anomaly-item:hover {
-        transform: translateX(4px);
-        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
-      }
+
       .anomaly-info {
         flex: 1;
+        min-width: 0;
       }
+
       .anomaly-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 8px;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-sm);
+        flex-wrap: wrap;
       }
+
       .anomaly-score {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        background: var(--status-error);
         color: white;
-        padding: 4px 12px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 700;
-      }
-      .anomaly-method {
-        color: #94a3b8;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-      .anomaly-timestamp {
-        color: #60a5fa;
-        font-size: 14px;
-        font-weight: 600;
-      }
-      .anomaly-sensors {
-        color: #cbd5e1;
-        font-size: 13px;
-        margin-top: 8px;
-      }
-      .anomaly-sensors span {
-        display: inline-block;
-        background: rgba(96, 165, 250, 0.15);
-        color: #60a5fa;
         padding: 2px 8px;
-        border-radius: 6px;
-        margin-right: 6px;
-        margin-top: 4px;
+        border-radius: 3px;
         font-size: 11px;
         font-weight: 600;
+        font-family: var(--font-mono);
       }
+
+      .anomaly-method {
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .anomaly-timestamp {
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-family: var(--font-mono);
+      }
+
+      .anomaly-sensors {
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-top: var(--space-sm);
+        line-height: 1.6;
+      }
+
+      .anomaly-sensors span {
+        display: inline-block;
+        background: var(--bg-elevated);
+        color: var(--text-secondary);
+        padding: 2px 6px;
+        border-radius: 3px;
+        margin-right: var(--space-xs);
+        margin-top: var(--space-xs);
+        font-size: 10px;
+        font-family: var(--font-mono);
+      }
+
       .anomaly-actions {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: var(--space-sm);
+        flex-shrink: 0;
       }
+
       .btn-report {
-        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-        color: white;
-        padding: 10px 16px;
-        border: none;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 700;
+        background: var(--bg-elevated);
+        color: var(--text-primary);
+        padding: var(--space-sm) var(--space-md);
+        border: 1px solid var(--border-default);
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
         cursor: pointer;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        transition: all 0.3s;
+        transition: all var(--transition-normal);
         white-space: nowrap;
       }
-      .btn-report:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+
+      .btn-report:hover:not(:disabled) {
+        background: var(--interactive-primary);
+        color: var(--bg-base);
+        border-color: var(--interactive-primary);
       }
+
       .btn-report:disabled {
-        opacity: 0.5;
+        opacity: 0.4;
         cursor: not-allowed;
-        transform: none;
       }
+
       .btn-view-report {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: var(--status-running);
+        color: white;
+        border-color: var(--status-running);
       }
-      .btn-view-report:hover {
-        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+
+      .btn-view-report:hover:not(:disabled) {
+        opacity: 0.9;
+        background: var(--status-running);
       }
+
       .report-status {
-        font-size: 11px;
-        color: #94a3b8;
+        font-size: 10px;
+        color: var(--text-muted);
         text-align: center;
       }
 

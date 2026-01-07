@@ -255,6 +255,32 @@
         background: var(--status-critical);
       }
       
+      /* Override old button styles to grayscale rig theme */
+      .btn-success, .btn-danger, .btn-primary, .btn-secondary, .btn-warning {
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-default) !important;
+        color: var(--text-primary) !important;
+        font-family: var(--font-mono) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        transition: all var(--transition-fast) !important;
+      }
+      
+      .btn-success:hover, .btn-danger:hover, .btn-primary:hover, .btn-secondary:hover, .btn-warning:hover {
+        background: var(--bg-elevated) !important;
+        border-color: var(--border-strong) !important;
+      }
+      
+      .btn-danger.critical, .btn-warning.critical {
+        background: var(--status-error) !important;
+        color: white !important;
+        border-color: var(--status-error) !important;
+      }
+      
+      .btn-danger.critical:hover {
+        background: var(--status-critical) !important;
+      }
+      
       /* ============================================
          SCADA MAIN LAYOUT - 50/50 Split
          ============================================ */

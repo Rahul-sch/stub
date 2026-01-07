@@ -506,6 +506,84 @@
         color: var(--text-muted);
         font-family: var(--font-mono);
       }
+      
+      /* ============================================
+         ALARM CONSOLE - Fixed Bottom Panel
+         ============================================ */
+      .alarm-console-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--font-mono);
+        font-size: 11px;
+      }
+      
+      .alarm-console-table thead {
+        background: var(--bg-tertiary);
+        border-bottom: 1px solid var(--border-default);
+      }
+      
+      .alarm-console-table th {
+        padding: var(--space-sm) var(--space-md);
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 9px;
+      }
+      
+      .alarm-console-table td {
+        padding: var(--space-sm) var(--space-md);
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-primary);
+      }
+      
+      .alarm-console-table tbody tr:hover {
+        background: var(--bg-tertiary);
+      }
+      
+      .alarm-console-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+      
+      .alarm-severity {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 9px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .alarm-severity.info {
+        background: var(--bg-tertiary);
+        color: var(--text-muted);
+      }
+      
+      .alarm-severity.warning {
+        background: var(--status-warning);
+        color: var(--bg-base);
+      }
+      
+      .alarm-severity.error {
+        background: var(--status-error);
+        color: white;
+      }
+      
+      .alarm-severity.critical {
+        background: var(--status-critical);
+        color: white;
+      }
+      
+      .alarm-time {
+        color: var(--text-secondary);
+        font-size: 10px;
+      }
+      
+      .alarm-message {
+        color: var(--text-primary);
+      }
       /* ============================================
          TYPOGRAPHY - Clean, Professional
          ============================================ */
@@ -5370,6 +5448,57 @@
         return `<svg width="${width}" height="${height}">
           <polyline points="${points}" class="telemetry-tile-sparkline-line" fill="none" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
         </svg>`;
+      }
+      
+      // ============================================
+      // ALARM CONSOLE - Bottom Panel Table
+      // ============================================
+      
+      // Render alarm console table in bottom panel
+      function renderAlarmConsole(alerts) {
+        const container = document.getElementById('alarmConsoleContent');
+        if (!container) return;
+        
+        if (!alerts || alerts.length === 0) {
+          container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px; font-family: var(--font-mono); font-size: 11px;">NO ALARMS</div>';
+          return;
+        }
+        
+        // Sort by severity (critical > error > warning > info) and then by time (newest first)
+        const severityOrder = { critical: 0, error: 1, warning: 2, info: 3 };
+        const sortedAlerts = [...alerts].sort((a, b) => {
+          const aSev = severityOrder[(a.severity || 'info').toLowerCase()] || 3;
+          const bSev = severityOrder[(b.severity || 'info').toLowerCase()] || 3;
+          if (aSev !== bSev) return aSev - bSev;
+          // Then by time (newest first)
+          const aTime = new Date(a.created_at || a.timestamp || 0).getTime();
+          const bTime = new Date(b.created_at || b.timestamp || 0).getTime();
+          return bTime - aTime;
+        });
+        
+        // Show last 20 alarms
+        const displayAlerts = sortedAlerts.slice(0, 20);
+        
+        let html = '<table class="alarm-console-table">';
+        html += '<thead><tr><th>TIME</th><th>SEVERITY</th><th>MESSAGE</th></tr></thead>';
+        html += '<tbody>';
+        
+        displayAlerts.forEach(alert => {
+          const severity = (alert.severity || 'info').toLowerCase();
+          const time = formatDateTime(alert.created_at || alert.timestamp);
+          const message = alert.message || 'No message';
+          
+          html += `
+            <tr>
+              <td class="alarm-time">${time}</td>
+              <td><span class="alarm-severity ${severity}">${severity.toUpperCase()}</span></td>
+              <td class="alarm-message">${message}</td>
+            </tr>
+          `;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
       }
       
       // Render telemetry tiles (8 tiles with sparklines)

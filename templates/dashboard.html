@@ -6280,6 +6280,12 @@
 
             // Always render from machine-specific buffer
             const alerts = currentMachine.alerts;
+            
+            // Update top bar alerts badge
+            updateAlertsBadge();
+            
+            // Render alarm console in bottom panel
+            renderAlarmConsole(alerts);
 
             if (alerts.length === 0) {
               container.innerHTML =

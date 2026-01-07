@@ -68,14 +68,205 @@
         font-family: var(--font-sans);
         background: var(--bg-base);
         color: var(--text-primary);
-        padding: var(--space-lg);
+        padding: 0;
+        margin: 0;
         min-height: 100vh;
         line-height: 1.5;
         font-size: 14px;
+        overflow-x: hidden;
       }
       .container {
-        max-width: 1600px;
-        margin: 0 auto;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      
+      /* ============================================
+         SCADA TOP BAR - Fixed Position
+         ============================================ */
+      .scada-topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-default);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 var(--space-lg);
+        z-index: 1000;
+        font-family: var(--font-mono);
+        font-size: 12px;
+      }
+      
+      .scada-topbar-left {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xl);
+      }
+      
+      .scada-logo {
+        width: 32px;
+        height: 32px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-default);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 14px;
+      }
+      
+      .scada-branding {
+        font-weight: 600;
+        color: var(--text-primary);
+        letter-spacing: 0.5px;
+      }
+      
+      .scada-machine-dropdown {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+      }
+      
+      .scada-machine-select {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-default);
+        color: var(--text-primary);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        cursor: pointer;
+      }
+      
+      .scada-status-dots {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+      }
+      
+      .scada-status-dot {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+        font-size: 11px;
+      }
+      
+      .scada-status-dot-label {
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .scada-status-dot-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--status-normal);
+      }
+      
+      .scada-status-dot-indicator.nom {
+        background: var(--status-running);
+      }
+      
+      .scada-status-dot-indicator.wrn {
+        background: var(--status-warning);
+      }
+      
+      .scada-status-dot-indicator.err {
+        background: var(--status-error);
+      }
+      
+      .scada-topbar-right {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xl);
+      }
+      
+      .scada-alerts-badge {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        padding: 4px 12px;
+        background: var(--status-error);
+        color: white;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 11px;
+      }
+      
+      .scada-alerts-badge.none {
+        background: var(--bg-tertiary);
+        color: var(--text-muted);
+      }
+      
+      .scada-utc-time {
+        color: var(--text-secondary);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.5px;
+      }
+      
+      /* ============================================
+         SCADA MAIN LAYOUT - 50/50 Split
+         ============================================ */
+      .scada-main {
+        margin-top: 50px;
+        margin-bottom: 200px;
+        padding: var(--space-lg);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-lg);
+        min-height: calc(100vh - 250px);
+      }
+      
+      .scada-left-panel {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-lg);
+      }
+      
+      .scada-right-panel {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-lg);
+      }
+      
+      /* ============================================
+         SCADA BOTTOM ALARM CONSOLE
+         ============================================ */
+      .scada-bottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 200px;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-default);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .scada-bottom-header {
+        padding: var(--space-md) var(--space-lg);
+        border-bottom: 1px solid var(--border-subtle);
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+      }
+      
+      .scada-bottom-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--space-sm) var(--space-lg);
       }
       /* ============================================
          TYPOGRAPHY - Clean, Professional
@@ -1956,11 +2147,52 @@
 
       <!-- Main Dashboard (hidden when not authenticated) -->
       <div id="mainDashboard" style="display: none;">
-        <!-- User Info Bar -->
-        <div style="text-align: right; margin-bottom: 20px; padding: 12px; background: rgba(30, 41, 59, 0.6); border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.1);">
-          <span id="userInfo" style="color: #94a3b8; margin-right: 16px;"></span>
-          <button id="showSignupBtn" onclick="toggleSignupForm()" style="display: none; padding: 6px 16px; background: rgba(96, 165, 250, 0.2); border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 6px; color: #60a5fa; font-size: 12px; cursor: pointer; margin-right: 8px;">➕ Create User</button>
-          <button onclick="handleLogout()" style="padding: 6px 16px; background: rgba(248, 113, 113, 0.2); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; color: #f87171; font-size: 12px; cursor: pointer;">Logout</button>
+        <!-- SCADA Fixed Top Bar -->
+        <div class="scada-topbar">
+          <div class="scada-topbar-left">
+            <div class="scada-logo">I</div>
+            <div class="scada-branding">ITHENA SCADA</div>
+            <div class="scada-machine-dropdown">
+              <span style="color: var(--text-muted);">Machine:</span>
+              <select class="scada-machine-select" id="scadaMachineSelect" onchange="selectMachine(this.value)">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+              </select>
+            </div>
+            <div class="scada-status-dots">
+              <div class="scada-status-dot">
+                <span class="scada-status-dot-label">SYSTEM</span>
+                <div class="scada-status-dot-indicator" id="statusSystem"></div>
+              </div>
+              <div class="scada-status-dot">
+                <span class="scada-status-dot-label">COMM</span>
+                <div class="scada-status-dot-indicator" id="statusComm"></div>
+              </div>
+              <div class="scada-status-dot">
+                <span class="scada-status-dot-label">POWER</span>
+                <div class="scada-status-dot-indicator" id="statusPower"></div>
+              </div>
+              <div class="scada-status-dot">
+                <span class="scada-status-dot-label">SAFETY</span>
+                <div class="scada-status-dot-indicator" id="statusSafety"></div>
+              </div>
+            </div>
+          </div>
+          <div class="scada-topbar-right">
+            <div class="scada-alerts-badge none" id="scadaAlertsBadge">
+              <span>ALERTS</span>
+              <span id="scadaAlertsCount">0</span>
+            </div>
+            <div class="scada-utc-time" id="scadaUTCTime">--:--:-- UTC</div>
+            <button onclick="handleLogout()" style="padding: 4px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-secondary); font-size: 11px; cursor: pointer; font-family: var(--font-mono);">LOGOUT</button>
+          </div>
+        </div>
+        
+        <!-- User Info (hidden, kept for compatibility) -->
+        <div style="display: none;">
+          <span id="userInfo"></span>
+          <button id="showSignupBtn" onclick="toggleSignupForm()" style="display: none;">➕ Create User</button>
         </div>
 
         <!-- Sign Up Form (admin only, hidden by default) -->
@@ -2008,8 +2240,31 @@
           </form>
         </div>
 
-      <!-- Machine and Mode Controls -->
-      <div class="machine-mode-controls">
+      <!-- SCADA Main Content Area (50/50 Split) -->
+      <div class="scada-main">
+        <!-- Left Panel: Health Matrix (will be populated in Phase 2) -->
+        <div class="scada-left-panel" id="scadaLeftPanel">
+          <!-- Health Matrix Grid - 6 cards will go here -->
+          <div id="healthMatrixContainer"></div>
+        </div>
+        
+        <!-- Right Panel: Real-time Telemetry (will be populated in Phase 3) -->
+        <div class="scada-right-panel" id="scadaRightPanel">
+          <!-- Telemetry Tiles - 8 tiles will go here -->
+          <div id="telemetryContainer"></div>
+        </div>
+      </div>
+      
+      <!-- SCADA Fixed Bottom: Alarm Console (will be populated in Phase 4) -->
+      <div class="scada-bottom">
+        <div class="scada-bottom-header">ALARM CONSOLE</div>
+        <div class="scada-bottom-content" id="alarmConsoleContent">
+          <!-- Alarm table will go here -->
+        </div>
+      </div>
+      
+      <!-- Legacy Machine and Mode Controls (hidden, kept for compatibility) -->
+      <div class="machine-mode-controls" style="display: none;">
         <div class="machine-selector">
           <label>Machine:</label>
           <div class="machine-buttons">
@@ -3257,6 +3512,11 @@
         document.querySelectorAll('.machine-btn').forEach(btn => {
           btn.classList.toggle('active', btn.dataset.machine === machineId);
         });
+        // Update top bar dropdown
+        const topBarSelect = document.getElementById('scadaMachineSelect');
+        if (topBarSelect) {
+          topBarSelect.value = machineId;
+        }
         document.getElementById('adminMachineLabel').textContent = machineId;
 
         // Load machine-specific custom sensor state when switching machines
@@ -5140,7 +5400,85 @@
                 }
               }
             }
+            
+            // Update SCADA top bar status dots
+            updateSystemStatusDots(data);
           });
+      }
+      
+      // Update SCADA top bar system status dots
+      function updateSystemStatusDots(statusData) {
+        // SYSTEM: Overall system health (producer + consumer running)
+        const systemEl = document.getElementById('statusSystem');
+        if (systemEl) {
+          if (statusData.producer_running && statusData.consumer_running) {
+            systemEl.className = 'scada-status-dot-indicator nom';
+          } else if (statusData.producer_running || statusData.consumer_running) {
+            systemEl.className = 'scada-status-dot-indicator wrn';
+          } else {
+            systemEl.className = 'scada-status-dot-indicator err';
+          }
+        }
+        
+        // COMM: Kafka/communication status
+        const commEl = document.getElementById('statusComm');
+        if (commEl && statusData.kafka) {
+          if (statusData.kafka.status === 'healthy') {
+            commEl.className = 'scada-status-dot-indicator nom';
+          } else if (statusData.kafka.status === 'unhealthy') {
+            commEl.className = 'scada-status-dot-indicator err';
+          } else {
+            commEl.className = 'scada-status-dot-indicator';
+          }
+        }
+        
+        // POWER: Electrical/power status (based on voltage/current sensors)
+        const powerEl = document.getElementById('statusPower');
+        if (powerEl) {
+          // Default to normal, will be updated based on sensor data
+          powerEl.className = 'scada-status-dot-indicator nom';
+        }
+        
+        // SAFETY: Safety interlock status (based on critical anomalies)
+        const safetyEl = document.getElementById('statusSafety');
+        if (safetyEl) {
+          // Default to normal, will be updated based on anomaly data
+          safetyEl.className = 'scada-status-dot-indicator nom';
+        }
+      }
+      
+      // Update UTC timestamp in top bar
+      function updateUTCTimestamp() {
+        const utcEl = document.getElementById('scadaUTCTime');
+        if (utcEl) {
+          const now = new Date();
+          const utcTime = now.toISOString().substr(11, 8);
+          const utcDate = now.toISOString().substr(0, 10);
+          utcEl.textContent = `${utcDate} ${utcTime} UTC`;
+        }
+      }
+      
+      // Update alerts badge in top bar
+      function updateAlertsBadge() {
+        const badge = document.getElementById('scadaAlertsBadge');
+        const countEl = document.getElementById('scadaAlertsCount');
+        if (badge && countEl) {
+          const currentMachine = machineData[selectedMachineId];
+          const alertCount = currentMachine ? currentMachine.alerts.length : 0;
+          const criticalCount = currentMachine ? currentMachine.alerts.filter(a => 
+            a.severity === 'critical' || a.severity === 'error'
+          ).length : 0;
+          
+          countEl.textContent = alertCount;
+          if (alertCount === 0) {
+            badge.className = 'scada-alerts-badge none';
+          } else if (criticalCount > 0) {
+            badge.className = 'scada-alerts-badge';
+          } else {
+            badge.className = 'scada-alerts-badge';
+            badge.style.background = 'var(--status-warning)';
+          }
+        }
       }
 
       function loadConfig() {
@@ -6564,7 +6902,16 @@ Report generated by Sensor Data Pipeline Dashboard
         loadMLStats();
         loadAnomalies();
         loadLSTMPredictions();
+        updateAlertsBadge();
       }, 2000);
+      
+      // Update UTC timestamp every second
+      setInterval(() => {
+        updateUTCTimestamp();
+      }, 1000);
+      
+      // Initial UTC timestamp
+      updateUTCTimestamp();
 
       // Initial load
       loadHiddenSensors();

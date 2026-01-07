@@ -2706,6 +2706,47 @@
 
       <!-- Main Dashboard (hidden when not authenticated) -->
       <div id="mainDashboard" style="display: none;">
+        <!-- SCADA Left Sidebar -->
+        <div class="scada-left-sidebar" id="leftSidebar">
+          <div class="scada-sidebar-hamburger" onclick="toggleLeftSidebar()">
+            ☰
+          </div>
+          <div class="scada-sidebar-icons">
+            <div class="scada-sidebar-icon active" onclick="switchSection('monitoring')" data-section="monitoring" title="Monitoring">
+              <span>📊</span>
+              <span class="scada-sidebar-icon-label">MONITORING</span>
+            </div>
+            <div class="scada-sidebar-icon" onclick="switchSection('alarms')" data-section="alarms" title="Alarms">
+              <span>🚨</span>
+              <span class="scada-sidebar-icon-label">ALARMS</span>
+            </div>
+            <div class="scada-sidebar-icon" onclick="switchSection('controls')" data-section="controls" title="Controls">
+              <span>⚙️</span>
+              <span class="scada-sidebar-icon-label">CONTROLS</span>
+            </div>
+            <div class="scada-sidebar-icon" onclick="switchSection('configuration')" data-section="configuration" title="Configuration" id="sidebarConfigIcon" style="display: none;">
+              <span>🔧</span>
+              <span class="scada-sidebar-icon-label">CONFIG</span>
+            </div>
+            <div class="scada-sidebar-icon" onclick="switchSection('analytics')" data-section="analytics" title="Analytics" id="sidebarAnalyticsIcon" style="display: none;">
+              <span>📈</span>
+              <span class="scada-sidebar-icon-label">ANALYTICS</span>
+            </div>
+            <div class="scada-sidebar-icon" onclick="switchSection('injection')" data-section="injection" title="Anomaly Injection" id="sidebarInjectionIcon" style="display: none;">
+              <span>⚡</span>
+              <span class="scada-sidebar-icon-label">INJECTION</span>
+            </div>
+            <div class="scada-sidebar-icon" onclick="switchSection('export')" data-section="export" title="Export">
+              <span>💾</span>
+              <span class="scada-sidebar-icon-label">EXPORT</span>
+            </div>
+            <div class="scada-sidebar-icon" onclick="switchSection('users')" data-section="users" title="Users" id="sidebarUsersIcon" style="display: none;">
+              <span>👥</span>
+              <span class="scada-sidebar-icon-label">USERS</span>
+            </div>
+          </div>
+        </div>
+        
         <!-- SCADA Fixed Top Bar -->
         <div class="scada-topbar">
           <div class="scada-topbar-left">

@@ -3602,6 +3602,18 @@ input:checked + .toggle-slider:before {
   overflow: hidden;
 }
 
+.digital-twin-card {
+  flex: 1.5;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.digital-twin-card .rig-card-body {
+  flex: 1;
+  min-height: 0;
+}
+
 /* Live Readings Card in Monitoring */
 .live-readings-card {
   flex: 1;
@@ -3725,13 +3737,18 @@ input:checked + .toggle-slider:before {
 
 /* Telemetry Grid override for rail layout */
 #telemetryContainer {
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-sm);
 }
 
 .monitoring-right-panel .telemetry-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   gap: var(--space-sm);
+  height: 100%;
 }
 
 /* Compact telemetry tiles */
@@ -3968,6 +3985,19 @@ input:checked + .toggle-slider:before {
   background: #059669 !important;
   box-shadow: none !important;
   opacity: 0.9;
+}
+.rig-btn-start.active {
+  background: #10b981 !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.3) !important;
+  animation: pulse-green 2s ease-in-out infinite;
+}
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.8), 0 0 60px rgba(16, 185, 129, 0.5);
+  }
 }
 
 .rig-btn-stop {

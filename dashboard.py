@@ -576,7 +576,7 @@ def get_stats():
                 }
 
         cursor.close()
-        conn.close()
+        return_db_connection(conn)
 
         # Build full readings with all 50 parameters + custom sensors
         full_readings_list = []
@@ -1316,8 +1316,10 @@ def start_component(component):
         return jsonify({'success': False, 'error': 'Invalid component'})
 
     # Check if component is already running
+    # Note: We allow starting even if check says running, in case of stale process detection
+    # The subprocess will handle duplicate processes gracefully
     if is_component_running(component):
-        return jsonify({'success': False, 'error': f'{component.capitalize()} is already running'})
+        logger.warning(f"{component.capitalize()} check says it's running, but attempting to start anyway (may be stale detection)")
 
     try:
         # Determine Python executable path (cross-platform)

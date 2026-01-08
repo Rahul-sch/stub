@@ -39,7 +39,7 @@ def debug_log(location, message, data=None, hypothesis_id=None):
         pass  # Silently fail if logging fails
 
 # Dashboard API URL for injection settings
-DASHBOARD_API_URL = 'http://localhost:5001'
+DASHBOARD_API_URL = 'http://localhost:5000'
 
 
 class SensorDataProducer:

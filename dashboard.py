@@ -856,8 +856,41 @@ def log_action(action_type, resource_type=None, resource_id=None, capture_state=
         def decorated_function(*args, **kwargs):
             # Get user info from session (if available)
             user_id = session.get('user_id')
-            username = session.get('username', 'system')
-            role = session.get('role', 'system')
+            username = session.get('username')
+            role = session.get('role')
+            
+            # If no session (e.g., API key auth for /api/v1/ingest), default to admin_rahul
+            if not user_id:
+                conn = get_db_connection()
+                if conn:
+                    try:
+                        cursor = conn.cursor()
+                        # Get admin_rahul user (ID: 1) as default operator
+                        cursor.execute("SELECT id, username, role FROM users WHERE username = 'admin_rahul' OR id = 1 LIMIT 1")
+                        admin_row = cursor.fetchone()
+                        if admin_row:
+                            user_id = admin_row[0]
+                            username = admin_row[1] or 'admin_rahul'
+                            role = admin_row[2] or 'admin'
+                        else:
+                            # Fallback if admin_rahul doesn't exist
+                            user_id = None
+                            username = 'system'
+                            role = 'system'
+                        cursor.close()
+                    except Exception as e:
+                        logging.warning(f"Failed to get default admin user for audit log: {e}")
+                        user_id = None
+                        username = 'system'
+                        role = 'system'
+                    finally:
+                        if conn:
+                            conn.close()
+                else:
+                    # No DB connection, use system defaults
+                    user_id = None
+                    username = 'system'
+                    role = 'system'
             
             # Get request metadata
             ip_address = request.remote_addr
@@ -869,12 +902,20 @@ def log_action(action_type, resource_type=None, resource_id=None, capture_state=
             if capture_state and request.method in ['POST', 'PUT', 'PATCH']:
                 new_state = request.get_json(silent=True)
             
+            # Extract resource_id from kwargs if not provided (e.g., sensor_id from URL)
+            final_resource_id = resource_id
+            if not final_resource_id:
+                # Try to get from kwargs (common pattern: sensor_id, user_id, machine_id, etc.)
+                for key in ['sensor_id', 'user_id', 'machine_id', 'id']:
+                    if key in kwargs:
+                        final_resource_id = str(kwargs[key])
+                        break
+            
             # Execute the function
             try:
                 result = f(*args, **kwargs)
                 
-                # Extract resource_id from result or kwargs if not provided
-                final_resource_id = resource_id
+                # Extract resource_id from result if still not set
                 if not final_resource_id and isinstance(result, tuple):
                     # Try to extract from response
                     response_data = result[0] if len(result) > 0 else None
@@ -2795,6 +2836,7 @@ def api_machine_stats(machine_id):
 
 @app.route('/api/admin/custom-sensors', methods=['GET'])
 @require_admin
+@log_action('READ', resource_type='custom_sensor', resource_id=None)
 def api_list_custom_sensors():
     """List all custom sensors (active and inactive)."""
     conn = get_db_connection()
@@ -2857,6 +2899,7 @@ def api_list_custom_sensors():
 
 @app.route('/api/admin/custom-sensors', methods=['POST'])
 @require_admin
+@log_action('CREATE', resource_type='custom_sensor', resource_id=None)
 def api_create_custom_sensor():
     """Create a new custom sensor."""
     data = request.get_json()
@@ -2962,6 +3005,7 @@ def api_create_custom_sensor():
 
 @app.route('/api/admin/custom-sensors/<int:sensor_id>', methods=['GET'])
 @require_admin
+@log_action('READ', resource_type='custom_sensor', resource_id=None)
 def api_get_custom_sensor(sensor_id):
     """Get a specific custom sensor by ID."""
     conn = get_db_connection()
@@ -3004,6 +3048,7 @@ def api_get_custom_sensor(sensor_id):
 
 @app.route('/api/admin/custom-sensors/<int:sensor_id>', methods=['PUT'])
 @require_admin
+@log_action('UPDATE', resource_type='custom_sensor', resource_id=None, capture_state=True)  # sensor_id extracted from kwargs
 def api_update_custom_sensor(sensor_id):
     """Update a custom sensor."""
     data = request.get_json()
@@ -3255,6 +3300,7 @@ Example output:
 
 @app.route('/api/admin/custom-sensors/<int:sensor_id>', methods=['DELETE'])
 @require_admin
+@log_action('DELETE', resource_type='custom_sensor', resource_id=None)  # sensor_id extracted from kwargs
 def api_delete_custom_sensor(sensor_id):
     """Soft delete a custom sensor (set is_active=false)."""
     conn = get_db_connection()

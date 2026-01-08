@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/css/style.css">
     <!-- All CSS has been moved to static/css/style.css -->
+    <!-- Three.js for 3D Digital Twin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   </head>
   <body>
     <div id="boot-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:black;z-index:9999;color:#0f0;font-family:monospace;display:flex;align-items:center;justify-content:center;flex-direction:column;">
@@ -182,6 +184,14 @@
                 <span class="scada-pipeline-label">MPS</span>
                 <span class="scada-pipeline-value" id="message-velocity">0.0</span>
               </div>
+              <div class="scada-pipeline-metric">
+                <span class="scada-pipeline-label">CPU</span>
+                <span class="scada-pipeline-value" id="cpu-load" style="color: var(--status-running);">--%</span>
+              </div>
+              <div class="scada-pipeline-metric">
+                <span class="scada-pipeline-label">DB</span>
+                <span class="scada-pipeline-value" id="db-latency" style="color: var(--status-info);">--ms</span>
+              </div>
             </div>
           </div>
 
@@ -293,13 +303,81 @@
               </div>
             </div>
 
+            <!-- 3D Digital Twin Center Panel -->
+            <div class="monitoring-center-panel" style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: var(--space-md);">
+              <div class="rig-card digital-twin-card" style="flex: 1; min-height: 400px;">
+                <div class="rig-card-header">
+                  <span>3D DIGITAL TWIN</span>
+                  <span class="status-indicator" id="digitalTwinStatus" style="background: var(--status-running);"></span>
+                </div>
+                <div class="rig-card-body" style="padding: 0; position: relative; height: calc(100% - 40px); overflow: hidden;">
+                  <canvas id="rigCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+                  <div id="rigRiskIndicator" style="position: absolute; bottom: 10px; left: 10px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--status-running); text-transform: uppercase; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 4px;">
+                    RIG STATUS: NOMINAL
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="monitoring-right-panel">
               <div id="telemetryContainer"></div>
             </div>
 
           </div>
         </div>
-        
+
+        <!-- Full-Screen Critical Alarm Overlay -->
+        <div id="criticalAlarmOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(220, 38, 38, 0.85); z-index: 10000; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+          <div style="text-align: center; animation: alarmPulse 1s ease-in-out infinite;">
+            <div style="font-family: var(--font-mono); font-size: 72px; font-weight: 900; color: #fff; text-shadow: 0 0 30px rgba(255,0,0,1), 0 0 60px rgba(255,0,0,0.8); letter-spacing: 8px; margin-bottom: 20px;">
+              CRITICAL FAILURE IMMINENT
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 32px; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 10px;">
+              RISK SCORE: <span id="alarmRiskScore">--</span>%
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 18px; color: rgba(255,255,255,0.7); margin-bottom: 40px;">
+              MACHINE <span id="alarmMachineId">A</span> - IMMEDIATE ACTION REQUIRED
+            </div>
+            <button id="silenceAlarmBtn" onclick="silenceCriticalAlarm()" style="padding: 20px 60px; font-family: var(--font-mono); font-size: 18px; font-weight: 700; background: rgba(0,0,0,0.8); border: 3px solid #fff; border-radius: 8px; color: #fff; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; transition: all 0.3s ease;">
+              SILENCE ALARM
+            </button>
+          </div>
+        </div>
+
+        <style>
+          @keyframes alarmPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.9; }
+          }
+          @keyframes rigShake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+          }
+          .rig-shaking {
+            animation: rigShake 0.5s ease-in-out infinite;
+          }
+          #silenceAlarmBtn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.05);
+          }
+          .monitoring-layout-container {
+            display: flex;
+            gap: var(--space-lg);
+            flex-wrap: wrap;
+          }
+          .monitoring-center-panel {
+            flex: 1;
+            min-width: 300px;
+          }
+          @media (max-width: 1200px) {
+            .monitoring-center-panel {
+              order: -1;
+              flex-basis: 100%;
+            }
+          }
+        </style>
+
         <!-- Alarms Section -->
         <div class="scada-section" id="section-alarms">
           <div style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 6px; height: calc(100vh - 250px); display: flex; flex-direction: column;">
@@ -7990,11 +8068,327 @@ Report generated by Sensor Data Pipeline Dashboard
       
       // Update RUL every 30 seconds (less frequent than stats)
       setInterval(updateRULPredictions, 30000);
-      
+
       // Initial load
       setTimeout(updateRULPredictions, 5000);
+
+      // ========== SYSTEM METRICS (CPU Load & DB Latency) ==========
+      function updateSystemMetrics() {
+        fetch('/api/system-metrics')
+          .then(r => r.json())
+          .then(data => {
+            // Update CPU Load
+            const cpuEl = document.getElementById('cpu-load');
+            if (cpuEl && data.cpu_percent !== undefined) {
+              cpuEl.textContent = data.cpu_percent.toFixed(0) + '%';
+              // Color based on load
+              if (data.cpu_percent >= 80) {
+                cpuEl.style.color = 'var(--status-error)';
+              } else if (data.cpu_percent >= 50) {
+                cpuEl.style.color = 'var(--status-warning)';
+              } else {
+                cpuEl.style.color = 'var(--status-running)';
+              }
+            }
+
+            // Update DB Latency
+            const dbEl = document.getElementById('db-latency');
+            if (dbEl) {
+              if (data.db_latency_ms !== null) {
+                dbEl.textContent = data.db_latency_ms.toFixed(0) + 'ms';
+                // Color based on latency
+                if (data.db_latency_ms >= 200) {
+                  dbEl.style.color = 'var(--status-error)';
+                } else if (data.db_latency_ms >= 100) {
+                  dbEl.style.color = 'var(--status-warning)';
+                } else {
+                  dbEl.style.color = 'var(--status-info)';
+                }
+              } else {
+                dbEl.textContent = 'ERR';
+                dbEl.style.color = 'var(--status-error)';
+              }
+            }
+          })
+          .catch(err => {
+            console.error('System metrics fetch error:', err);
+          });
+      }
+
+      // Poll system metrics every 5 seconds
+      setInterval(updateSystemMetrics, 5000);
+      setTimeout(updateSystemMetrics, 1000);
+
+      // ========== 3D DIGITAL TWIN (Three.js Neon Wireframe Drilling Rig) ==========
+      let rigScene, rigCamera, rigRenderer, rigGroup;
+      let rigIsHighRisk = false;
+      let rigAnimationId;
+      const NEON_CYAN = 0x00ffff;
+      const NEON_RED = 0xff0040;
+
+      function initDigitalTwin() {
+        const canvas = document.getElementById('rigCanvas');
+        if (!canvas || typeof THREE === 'undefined') {
+          console.warn('Three.js or canvas not available');
+          return;
+        }
+
+        // Scene setup
+        rigScene = new THREE.Scene();
+        rigScene.background = new THREE.Color(0x0a0f1a);
+
+        // Camera
+        const container = canvas.parentElement;
+        const aspect = container.clientWidth / container.clientHeight || 1;
+        rigCamera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
+        rigCamera.position.set(8, 6, 10);
+        rigCamera.lookAt(0, 2, 0);
+
+        // Renderer
+        rigRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        rigRenderer.setSize(container.clientWidth, container.clientHeight);
+        rigRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // Create rig group
+        rigGroup = new THREE.Group();
+
+        // Create neon wireframe material
+        const neonMaterial = new THREE.LineBasicMaterial({ color: NEON_CYAN, linewidth: 2 });
+
+        // === DRILLING RIG COMPONENTS ===
+
+        // Base platform (large rectangle)
+        const baseGeom = new THREE.BoxGeometry(6, 0.3, 4);
+        const baseEdges = new THREE.EdgesGeometry(baseGeom);
+        const baseLine = new THREE.LineSegments(baseEdges, neonMaterial.clone());
+        baseLine.position.y = 0.15;
+        rigGroup.add(baseLine);
+
+        // Main derrick tower (tall structure)
+        const towerGeom = new THREE.BoxGeometry(1.5, 8, 1.5);
+        const towerEdges = new THREE.EdgesGeometry(towerGeom);
+        const towerLine = new THREE.LineSegments(towerEdges, neonMaterial.clone());
+        towerLine.position.set(0, 4.3, 0);
+        rigGroup.add(towerLine);
+
+        // Cross braces on tower
+        for (let i = 0; i < 4; i++) {
+          const braceGeom = new THREE.BoxGeometry(1.4, 0.1, 0.1);
+          const braceEdges = new THREE.EdgesGeometry(braceGeom);
+          const braceLine = new THREE.LineSegments(braceEdges, neonMaterial.clone());
+          braceLine.position.set(0, 1.5 + i * 1.8, 0);
+          braceLine.rotation.y = (i % 2) * Math.PI / 4;
+          rigGroup.add(braceLine);
+        }
+
+        // Crown block at top
+        const crownGeom = new THREE.BoxGeometry(2, 0.5, 2);
+        const crownEdges = new THREE.EdgesGeometry(crownGeom);
+        const crownLine = new THREE.LineSegments(crownEdges, neonMaterial.clone());
+        crownLine.position.set(0, 8.5, 0);
+        rigGroup.add(crownLine);
+
+        // Drill string (cylinder going down)
+        const drillGeom = new THREE.CylinderGeometry(0.15, 0.15, 6, 8);
+        const drillEdges = new THREE.EdgesGeometry(drillGeom);
+        const drillLine = new THREE.LineSegments(drillEdges, neonMaterial.clone());
+        drillLine.position.set(0, -2.7, 0);
+        rigGroup.add(drillLine);
+
+        // Traveling block
+        const blockGeom = new THREE.BoxGeometry(0.8, 1, 0.8);
+        const blockEdges = new THREE.EdgesGeometry(blockGeom);
+        const blockLine = new THREE.LineSegments(blockEdges, neonMaterial.clone());
+        blockLine.position.set(0, 5.5, 0);
+        rigGroup.add(blockLine);
+
+        // Mud pump housing (side structure)
+        const pumpGeom = new THREE.BoxGeometry(1.5, 1.2, 1);
+        const pumpEdges = new THREE.EdgesGeometry(pumpGeom);
+        const pumpLine = new THREE.LineSegments(pumpEdges, neonMaterial.clone());
+        pumpLine.position.set(-2.5, 0.9, 0);
+        rigGroup.add(pumpLine);
+
+        // Generator housing
+        const genGeom = new THREE.BoxGeometry(1.2, 0.8, 0.8);
+        const genEdges = new THREE.EdgesGeometry(genGeom);
+        const genLine = new THREE.LineSegments(genEdges, neonMaterial.clone());
+        genLine.position.set(2.3, 0.7, 1);
+        rigGroup.add(genLine);
+
+        // Pipe rack
+        for (let i = 0; i < 3; i++) {
+          const pipeGeom = new THREE.CylinderGeometry(0.08, 0.08, 4, 6);
+          const pipeEdges = new THREE.EdgesGeometry(pipeGeom);
+          const pipeLine = new THREE.LineSegments(pipeEdges, neonMaterial.clone());
+          pipeLine.rotation.z = Math.PI / 2;
+          pipeLine.position.set(0, 0.5 + i * 0.25, -1.8);
+          rigGroup.add(pipeLine);
+        }
+
+        // Add grid floor
+        const gridHelper = new THREE.GridHelper(12, 12, 0x1a3a4a, 0x0d1f2a);
+        rigScene.add(gridHelper);
+
+        rigScene.add(rigGroup);
+
+        // Start animation
+        animateRig();
+
+        // Handle resize
+        window.addEventListener('resize', onRigResize);
+
+        // Initial resize
+        setTimeout(onRigResize, 100);
+      }
+
+      function onRigResize() {
+        const canvas = document.getElementById('rigCanvas');
+        if (!canvas || !rigRenderer || !rigCamera) return;
+
+        const container = canvas.parentElement;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        rigCamera.aspect = width / height;
+        rigCamera.updateProjectionMatrix();
+        rigRenderer.setSize(width, height);
+      }
+
+      function animateRig() {
+        rigAnimationId = requestAnimationFrame(animateRig);
+
+        if (rigGroup) {
+          // Slow rotation
+          rigGroup.rotation.y += 0.003;
+
+          // Shake effect when high risk
+          if (rigIsHighRisk) {
+            rigGroup.position.x = Math.sin(Date.now() * 0.05) * 0.1;
+            rigGroup.position.z = Math.cos(Date.now() * 0.07) * 0.08;
+          } else {
+            rigGroup.position.x = 0;
+            rigGroup.position.z = 0;
+          }
+        }
+
+        if (rigRenderer && rigScene && rigCamera) {
+          rigRenderer.render(rigScene, rigCamera);
+        }
+      }
+
+      function setRigRiskState(isHighRisk, riskScore) {
+        rigIsHighRisk = isHighRisk;
+        const color = isHighRisk ? NEON_RED : NEON_CYAN;
+        const statusIndicator = document.getElementById('digitalTwinStatus');
+        const riskIndicator = document.getElementById('rigRiskIndicator');
+
+        // Update all wireframe colors
+        if (rigGroup) {
+          rigGroup.traverse((child) => {
+            if (child.isLineSegments && child.material) {
+              child.material.color.setHex(color);
+            }
+          });
+        }
+
+        // Update status indicator
+        if (statusIndicator) {
+          statusIndicator.style.background = isHighRisk ? 'var(--status-error)' : 'var(--status-running)';
+        }
+
+        // Update risk indicator text
+        if (riskIndicator) {
+          if (isHighRisk) {
+            riskIndicator.textContent = `RIG STATUS: CRITICAL (${riskScore.toFixed(0)}%)`;
+            riskIndicator.style.color = '#ff4444';
+            riskIndicator.style.background = 'rgba(255,0,0,0.3)';
+          } else {
+            riskIndicator.textContent = 'RIG STATUS: NOMINAL';
+            riskIndicator.style.color = 'var(--status-running)';
+            riskIndicator.style.background = 'rgba(0,0,0,0.7)';
+          }
+        }
+      }
+
+      // Initialize 3D Twin after DOM ready
+      setTimeout(initDigitalTwin, 500);
+
+      // ========== CRITICAL ALARM SYSTEM ==========
+      let alarmSilenced = false;
+      let alarmTriggeredForSession = false;
+
+      function triggerCriticalAlarm(riskScore, machineId) {
+        if (alarmSilenced) return;
+
+        const overlay = document.getElementById('criticalAlarmOverlay');
+        const riskEl = document.getElementById('alarmRiskScore');
+        const machineEl = document.getElementById('alarmMachineId');
+
+        if (overlay) {
+          overlay.style.display = 'flex';
+          if (riskEl) riskEl.textContent = riskScore.toFixed(1);
+          if (machineEl) machineEl.textContent = machineId;
+
+          // Log to audit if not already triggered this session
+          if (!alarmTriggeredForSession) {
+            alarmTriggeredForSession = true;
+            fetch('/api/log-critical-alarm', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ risk_score: riskScore, machine_id: machineId })
+            }).catch(err => console.error('Failed to log critical alarm:', err));
+          }
+        }
+      }
+
+      function silenceCriticalAlarm() {
+        alarmSilenced = true;
+        const overlay = document.getElementById('criticalAlarmOverlay');
+        if (overlay) {
+          overlay.style.display = 'none';
+        }
+        // Reset after 5 minutes
+        setTimeout(() => {
+          alarmSilenced = false;
+          alarmTriggeredForSession = false;
+        }, 300000);
+      }
+
+      // ========== RISK SCORE MONITORING ==========
+      let lastRiskScore = 0;
+      const CRITICAL_RISK_THRESHOLD = 85;
+
+      function monitorRiskScore() {
+        fetch('/api/lstm-predictions')
+          .then(r => r.json())
+          .then(data => {
+            if (data.available && data.trained && data.current_prediction) {
+              const riskScore = data.current_prediction.risk_score || 0;
+              lastRiskScore = riskScore;
+
+              // Update 3D rig state
+              const isHighRisk = riskScore >= 70;
+              setRigRiskState(isHighRisk, riskScore);
+
+              // Trigger alarm if risk > 85%
+              if (riskScore > CRITICAL_RISK_THRESHOLD) {
+                triggerCriticalAlarm(riskScore, selectedMachineId);
+              }
+            } else {
+              // No predictions available - set to nominal
+              setRigRiskState(false, 0);
+            }
+          })
+          .catch(() => {
+            setRigRiskState(false, 0);
+          });
+      }
+
+      // Monitor risk score every 3 seconds
+      setInterval(monitorRiskScore, 3000);
+      setTimeout(monitorRiskScore, 2000);
+
     </script>
   </body>
-</html>
-
 </html>

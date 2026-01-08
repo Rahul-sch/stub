@@ -77,24 +77,24 @@ flowchart TB
 
 ### Core Capabilities
 
-| Feature | Description |
-|---------|-------------|
-| **50+ Sensor Parameters** | Environmental, Mechanical, Thermal, Electrical, Fluid Dynamics |
-| **Multi-Machine Support** | Monitor Machine A, B, C with per-machine configuration |
-| **Real-time Streaming** | Apache Kafka for reliable, fault-tolerant message delivery |
-| **Hybrid ML Detection** | Isolation Forest (point-based) + LSTM Autoencoder (temporal) |
-| **Future Anomaly Prediction** | LSTM predicts anomalies before they occur |
-| **Remaining Useful Life (RUL)** | Estimates hours until failure based on sensor trends |
-| **AI-Powered Analysis** | Groq/LLaMA generates root cause analysis and recommendations |
-| **AI Sensor Parser** | Automatically extracts sensor specs from PDF/CSV/JSON files |
-| **Custom Sensors** | Add new sensor parameters at runtime via Admin UI |
-| **Dynamic Thresholds** | Configure min/max thresholds per sensor |
-| **Per-Sensor Frequency Control** | Adjust sampling rate per sensor (global + per-machine) |
-| **User Authentication** | Login/signup with role-based access control (admin/operator) |
-| **Machine Access Control** | Operators can only access assigned machines |
-| **Comprehensive Audit Logging** | All actions logged to `audit_logs_v2` for compliance |
-| **Cloud-Ready** | Supports Neon.tech (PostgreSQL) and Upstash (Kafka) |
-| **Modern Dashboard** | Real-time updates, charts, controls, "Rig Alpha" industrial theme |
+| Feature                          | Description                                                       |
+| -------------------------------- | ----------------------------------------------------------------- |
+| **50+ Sensor Parameters**        | Environmental, Mechanical, Thermal, Electrical, Fluid Dynamics    |
+| **Multi-Machine Support**        | Monitor Machine A, B, C with per-machine configuration            |
+| **Real-time Streaming**          | Apache Kafka for reliable, fault-tolerant message delivery        |
+| **Hybrid ML Detection**          | Isolation Forest (point-based) + LSTM Autoencoder (temporal)      |
+| **Future Anomaly Prediction**    | LSTM predicts anomalies before they occur                         |
+| **Remaining Useful Life (RUL)**  | Estimates hours until failure based on sensor trends              |
+| **AI-Powered Analysis**          | Groq/LLaMA generates root cause analysis and recommendations      |
+| **AI Sensor Parser**             | Automatically extracts sensor specs from PDF/CSV/JSON files       |
+| **Custom Sensors**               | Add new sensor parameters at runtime via Admin UI                 |
+| **Dynamic Thresholds**           | Configure min/max thresholds per sensor                           |
+| **Per-Sensor Frequency Control** | Adjust sampling rate per sensor (global + per-machine)            |
+| **User Authentication**          | Login/signup with role-based access control (admin/operator)      |
+| **Machine Access Control**       | Operators can only access assigned machines                       |
+| **Comprehensive Audit Logging**  | All actions logged to `audit_logs_v2` for compliance              |
+| **Cloud-Ready**                  | Supports Neon.tech (PostgreSQL) and Upstash (Kafka)               |
+| **Modern Dashboard**             | Real-time updates, charts, controls, "Rig Alpha" industrial theme |
 
 ### Advanced Features
 
@@ -153,6 +153,7 @@ python train_combined_detector.py
 ```
 
 **Requirements:**
+
 - **Isolation Forest**: Minimum 100 readings (recommended: 500+)
 - **LSTM Autoencoder**: Minimum 100 readings (recommended: 500+ for best results)
 
@@ -167,10 +168,12 @@ python dashboard.py
 Go to: **http://localhost:5000**
 
 **Default Admin Credentials:**
+
 - Username: `admin`
 - Password: `admin`
 
 **Or create a new account:**
+
 1. Click "Sign Up" on the login page
 2. Enter username and password
 3. Check "Create as Admin" for admin access
@@ -183,6 +186,7 @@ Go to: **http://localhost:5000**
 ### Layout
 
 **Left Panel (320px fixed width):**
+
 - **Health Matrix**: 6 category cards (Environmental, Electrical, Fluid, Mechanical, Thermal, Custom)
   - Health percentage, status indicator (NOM/WRN/CRIT)
   - Anomaly log (last 3 anomalies per category)
@@ -191,6 +195,7 @@ Go to: **http://localhost:5000**
 - **System Command Deck**: Control panel with START/STOP, Sampling Speed slider, Anomaly Simulation
 
 **Right Panel (Flexible width):**
+
 - **Telemetry Grid**: Responsive grid of sensor cards
   - Real-time values (CURR) and averages (AVG)
   - Dynamic threshold coloring (Green/Yellow/Red)
@@ -198,6 +203,7 @@ Go to: **http://localhost:5000**
   - Sensor metadata and status indicators
 
 **Header:**
+
 - Logo & branding
 - Machine selector (A, B, C)
 - Status dots (SYSTEM, COMM, POWER, SAFETY)
@@ -208,13 +214,13 @@ Go to: **http://localhost:5000**
 
 ### Key Controls
 
-| Control | Function |
-|---------|----------|
-| **START** | Starts producer and consumer |
-| **STOP** | Pauses system (Yellow state, uptime pauses) |
-| **Sampling Speed** | Adjust MPS (Messages Per Second) from 1-20 |
-| **Anomaly Trigger** | Inject simulated faults for testing |
-| **Machine Selector** | Switch between Machine A, B, or C |
+| Control              | Function                                    |
+| -------------------- | ------------------------------------------- |
+| **START**            | Starts producer and consumer                |
+| **STOP**             | Pauses system (Yellow state, uptime pauses) |
+| **Sampling Speed**   | Adjust MPS (Messages Per Second) from 1-20  |
+| **Anomaly Trigger**  | Inject simulated faults for testing         |
+| **Machine Selector** | Switch between Machine A, B, or C           |
 
 ---
 
@@ -222,10 +228,10 @@ Go to: **http://localhost:5000**
 
 ### User Roles
 
-| Role | Access Level |
-|------|--------------|
-| **Admin** | Full access to all machines (A, B, C) and admin features |
-| **Operator** | Access only to assigned machines |
+| Role         | Access Level                                             |
+| ------------ | -------------------------------------------------------- |
+| **Admin**    | Full access to all machines (A, B, C) and admin features |
+| **Operator** | Access only to assigned machines                         |
 
 ### Admin Features
 
@@ -238,16 +244,16 @@ Go to: **http://localhost:5000**
 
 ### API Endpoints
 
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/auth/login` | POST | No | Authenticate and create session |
-| `/api/auth/logout` | POST | Yes | Destroy session |
-| `/api/auth/me` | GET | Yes | Get current user info |
-| `/api/auth/signup` | POST | No | Create new user account |
-| `/api/v1/ingest` | POST | API Key | External sensor data ingestion |
-| `/api/admin/custom-sensors` | GET/POST | Admin | Manage custom sensors |
-| `/api/admin/parse-sensor-file` | POST | Admin | AI-powered sensor spec parsing |
-| `/api/v1/predictive-health` | GET | Yes | Get RUL predictions |
+| Endpoint                       | Method   | Auth    | Description                     |
+| ------------------------------ | -------- | ------- | ------------------------------- |
+| `/api/auth/login`              | POST     | No      | Authenticate and create session |
+| `/api/auth/logout`             | POST     | Yes     | Destroy session                 |
+| `/api/auth/me`                 | GET      | Yes     | Get current user info           |
+| `/api/auth/signup`             | POST     | No      | Create new user account         |
+| `/api/v1/ingest`               | POST     | API Key | External sensor data ingestion  |
+| `/api/admin/custom-sensors`    | GET/POST | Admin   | Manage custom sensors           |
+| `/api/admin/parse-sensor-file` | POST     | Admin   | AI-powered sensor spec parsing  |
+| `/api/v1/predictive-health`    | GET      | Yes     | Get RUL predictions             |
 
 ---
 
@@ -264,6 +270,7 @@ AI_MODEL_REPORTS = "llama-3.3-70b-versatile"  # Deep analysis
 ```
 
 **Environment Variable:**
+
 ```bash
 GROQ_API_KEY=gsk_...
 ```
@@ -273,12 +280,14 @@ GROQ_API_KEY=gsk_...
 **Endpoint:** `POST /api/admin/parse-sensor-file`
 
 **Supported Formats:**
+
 - PDF (PyPDF2 - extracts first 2 pages)
 - CSV (direct text parsing)
 - TXT (raw specification sheets)
 - JSON (passthrough or AI enhancement)
 
 **Features:**
+
 - Automatically extracts sensor specifications
 - Auto-fills "Add New Sensor" form
 - Handles missing API key with fallback mock data
@@ -297,11 +306,13 @@ GROQ_API_KEY=gsk_...
 ### Hybrid Detection System
 
 **1. Isolation Forest (Point-Based)**
+
 - Detects single abnormal readings
 - Fast and effective for instant anomalies
 - Identifies contributing sensors
 
 **2. LSTM Autoencoder (Temporal)**
+
 - Analyzes sequences of readings over time
 - Detects gradual degradation and pattern changes
 - Predicts future anomalies before they occur
@@ -312,12 +323,14 @@ GROQ_API_KEY=gsk_...
 **Endpoint:** `GET /api/v1/predictive-health`
 
 **Features:**
+
 - Estimates hours until failure based on sensor trends
 - Uses linear regression/exponential decay model
 - Displays countdown in health cards (EST. LIFE)
 - Color-coded by severity (Green/Yellow/Red)
 
 **Display Format:**
+
 - `< 24 hours`: Shows "X HRS" (Red)
 - `< 1 week`: Shows "X DAYS" (Yellow)
 - `>= 1 week`: Shows "X WEEKS" (Green)
@@ -344,14 +357,14 @@ python train_combined_detector.py --force
 
 All actions are logged to `audit_logs_v2` table:
 
-| Action Type | Endpoints | Resource Type |
-|-------------|-----------|---------------|
-| `INGEST` | `/api/v1/ingest` | `ingest` |
-| `CREATE` | `POST /api/admin/custom-sensors` | `custom_sensor` |
-| `READ` | `GET /api/admin/custom-sensors` | `custom_sensor` |
-| `UPDATE` | `PUT /api/admin/custom-sensors/<id>` | `custom_sensor` |
-| `DELETE` | `DELETE /api/admin/custom-sensors/<id>` | `custom_sensor` |
-| `PARSE` | `POST /api/admin/parse-sensor-file` | `sensor_file` |
+| Action Type | Endpoints                               | Resource Type   |
+| ----------- | --------------------------------------- | --------------- |
+| `INGEST`    | `/api/v1/ingest`                        | `ingest`        |
+| `CREATE`    | `POST /api/admin/custom-sensors`        | `custom_sensor` |
+| `READ`      | `GET /api/admin/custom-sensors`         | `custom_sensor` |
+| `UPDATE`    | `PUT /api/admin/custom-sensors/<id>`    | `custom_sensor` |
+| `DELETE`    | `DELETE /api/admin/custom-sensors/<id>` | `custom_sensor` |
+| `PARSE`     | `POST /api/admin/parse-sensor-file`     | `sensor_file`   |
 
 ### Audit Log Schema
 
@@ -379,6 +392,7 @@ CREATE TABLE audit_logs_v2 (
 When no session exists (e.g., API key auth), the system automatically uses `admin_rahul` (ID: 1) as the default operator.
 
 **Query Audit Logs:**
+
 ```sql
 SELECT id, user_id, username, action_type, resource_type, timestamp
 FROM audit_logs_v2
@@ -393,6 +407,7 @@ LIMIT 10;
 ### Database (Neon.tech)
 
 **Configuration:**
+
 1. Add `DATABASE_URL` to `.env`:
    ```bash
    DATABASE_URL=postgresql://user:password@ep-xxx.aws.neon.tech/neondb?sslmode=require
@@ -401,6 +416,7 @@ LIMIT 10;
 3. The app automatically detects and uses Neon database
 
 **Verify Connection:**
+
 ```powershell
 .\venv\Scripts\python.exe check_db_version.py
 ```
@@ -408,6 +424,7 @@ LIMIT 10;
 ### Kafka (Upstash)
 
 **Configuration:**
+
 1. Add to `.env`:
    ```bash
    KAFKA_BROKER_URL=your-upstash-endpoint:9092
@@ -424,6 +441,7 @@ LIMIT 10;
 - **`docker-compose.yml`**: Local development setup
 
 **Deploy to Render:**
+
 1. Connect GitHub repository
 2. Set environment variables (DATABASE_URL, KAFKA_BROKER_URL, etc.)
 3. Deploy automatically on push
@@ -498,6 +516,7 @@ The app uses `config.py` (NOT SQLAlchemy) to manage connections:
 2. **Fallback:** Local defaults (`localhost:5432`)
 
 **Check Current Config:**
+
 ```powershell
 .\venv\Scripts\python.exe check_db_version.py
 ```
@@ -546,26 +565,32 @@ docker exec stub-postgres psql -U sensoruser -d sensordb -c "SELECT COUNT(*) FRO
 ### Common Issues
 
 **"Docker not recognized"**
+
 - Open Docker Desktop first
 - Wait for it to fully start
 
 **"Kafka connection failed"**
+
 - Wait 60 seconds after starting Docker
 - Run: `Start-Sleep -Seconds 60`
 
 **"Consumer not receiving"**
+
 - Always start Consumer BEFORE Producer
 
 **"Execution policy error"**
+
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 **"PDF parsing not available"**
+
 - Install PyPDF2: `pip install PyPDF2`
 - Restart Flask server
 
 **"Session expired"**
+
 - Clear browser cookies
 - Login again
 
@@ -578,6 +603,7 @@ docker-compose down
 ```
 
 To delete all data too:
+
 ```powershell
 docker-compose down -v
 ```
@@ -590,13 +616,13 @@ docker-compose down -v
 
 **No!** In production, use **Docker containers**:
 
-| Development | Production |
-|-------------|------------|
-| Python venv on laptop | Docker containers |
-| docker-compose on one PC | Kubernetes cluster |
-| Single Kafka broker | Kafka cluster (3+ brokers) |
-| Single database | Database with replicas |
-| Dashboard on localhost | Dashboard behind firewall |
+| Development              | Production                 |
+| ------------------------ | -------------------------- |
+| Python venv on laptop    | Docker containers          |
+| docker-compose on one PC | Kubernetes cluster         |
+| Single Kafka broker      | Kafka cluster (3+ brokers) |
+| Single database          | Database with replicas     |
+| Dashboard on localhost   | Dashboard behind firewall  |
 
 ### Monitoring in Production
 
@@ -612,26 +638,26 @@ docker-compose down -v
 
 ### LSTM Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/lstm-status` | GET | Returns training quality, threshold, sequence length |
-| `/api/lstm-predictions` | GET | Returns current future anomaly prediction |
-| `/api/generate-future-report` | POST | Generates and downloads PDF report |
+| Endpoint                      | Method | Description                                          |
+| ----------------------------- | ------ | ---------------------------------------------------- |
+| `/api/lstm-status`            | GET    | Returns training quality, threshold, sequence length |
+| `/api/lstm-predictions`       | GET    | Returns current future anomaly prediction            |
+| `/api/generate-future-report` | POST   | Generates and downloads PDF report                   |
 
 ### Machine Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/machines/<id>/start` | POST | Start producer for machine |
-| `/api/machines/<id>/stop` | POST | Stop producer for machine |
-| `/api/machines/<id>/status` | GET | Get machine status |
-| `/api/machines/<id>/stats` | GET | Get machine statistics |
+| Endpoint                    | Method | Description                |
+| --------------------------- | ------ | -------------------------- |
+| `/api/machines/<id>/start`  | POST   | Start producer for machine |
+| `/api/machines/<id>/stop`   | POST   | Stop producer for machine  |
+| `/api/machines/<id>/status` | GET    | Get machine status         |
+| `/api/machines/<id>/stats`  | GET    | Get machine statistics     |
 
 ### Stats Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/stats` | GET | Get overall statistics |
+| Endpoint      | Method   | Description              |
+| ------------- | -------- | ------------------------ |
+| `/api/stats`  | GET      | Get overall statistics   |
 | `/api/config` | GET/POST | Get/update configuration |
 
 ---
@@ -650,6 +676,7 @@ docker-compose down -v
 ### Interview Questions
 
 See the [README Interview Questions section](#interview-questions--answers) for detailed explanations of:
+
 - Why Kafka?
 - Producer vs Consumer
 - Isolation Forest vs LSTM
@@ -667,6 +694,7 @@ This project is part of the **Industrial Sensor Anomaly Detection Pipeline** por
 ## 🤝 Contributing
 
 This is a portfolio project demonstrating:
+
 - Real-time data streaming
 - ML anomaly detection
 - AI-powered analysis

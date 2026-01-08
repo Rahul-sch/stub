@@ -16,6 +16,7 @@ import time
 import csv
 import io
 import logging
+import psutil
 from datetime import datetime
 from functools import wraps
 
@@ -1334,6 +1335,127 @@ def api_status():
         'consumer_running': consumer_running,
         'kafka': kafka_snapshot
     })
+
+@app.route('/api/system-metrics')
+@require_auth
+def api_system_metrics():
+    """Get system metrics: CPU load and DB latency"""
+    # Get CPU load using psutil
+    cpu_percent = psutil.cpu_percent(interval=0.1)
+
+    # Measure DB latency by pinging the database
+    db_latency_ms = None
+    db_status = 'unknown'
+
+    try:
+        import config
+        start_time = time.time()
+        conn = psycopg2.connect(**config.DB_CONFIG)
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+        cursor.close()
+        conn.close()
+        db_latency_ms = round((time.time() - start_time) * 1000, 2)
+        db_status = 'healthy'
+    except Exception as e:
+        db_status = 'unhealthy'
+        logging.warning(f"DB latency check failed: {e}")
+
+    return jsonify({
+        'cpu_percent': cpu_percent,
+        'db_latency_ms': db_latency_ms,
+        'db_status': db_status,
+        'timestamp': datetime.utcnow().isoformat()
+    })
+
+@app.route('/api/log-critical-alarm', methods=['POST'])
+@require_auth
+def api_log_critical_alarm():
+    """Log a CRITICAL_ALARM_TRIGGERED event to audit_logs_v2"""
+    # Get user info from session (or default to admin_rahul)
+    user_id = session.get('user_id')
+    username = session.get('username')
+    role = session.get('role')
+
+    # If no session, default to admin_rahul (ID: 1)
+    if not user_id:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT id, username, role FROM users WHERE username = 'admin_rahul' OR id = 1 LIMIT 1")
+                admin_row = cursor.fetchone()
+                if admin_row:
+                    user_id = admin_row[0]
+                    username = admin_row[1] or 'admin_rahul'
+                    role = admin_row[2] or 'admin'
+                else:
+                    user_id = 1
+                    username = 'admin_rahul'
+                    role = 'admin'
+                cursor.close()
+            except Exception as e:
+                logging.warning(f"Failed to get admin user for critical alarm log: {e}")
+                user_id = 1
+                username = 'admin_rahul'
+                role = 'admin'
+            finally:
+                if conn:
+                    conn.close()
+        else:
+            user_id = 1
+            username = 'admin_rahul'
+            role = 'admin'
+
+    # Get request data
+    data = request.get_json(silent=True) or {}
+    risk_score = data.get('risk_score', 0)
+    machine_id = data.get('machine_id', 'A')
+
+    # Log to audit_logs_v2
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO audit_logs_v2
+                (user_id, username, role, ip_address, user_agent,
+                 action_type, resource_type, resource_id, new_state)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                user_id,
+                username,
+                role,
+                request.remote_addr,
+                request.headers.get('User-Agent', ''),
+                'CRITICAL_ALARM_TRIGGERED',
+                'system_alarm',
+                f'machine_{machine_id}',
+                json.dumps({
+                    'risk_score': risk_score,
+                    'machine_id': machine_id,
+                    'triggered_at': datetime.utcnow().isoformat(),
+                    'severity': 'CRITICAL'
+                })
+            ))
+            conn.commit()
+            cursor.close()
+
+            # Also record to alerts table
+            record_alert('CRITICAL_ALARM', f'Risk score {risk_score:.1f}% exceeded threshold on Machine {machine_id}', severity='CRITICAL', source='system')
+
+            return jsonify({'success': True, 'message': 'Critical alarm logged'})
+        except Exception as e:
+            logging.error(f"Failed to log critical alarm: {e}")
+            if conn:
+                conn.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+        finally:
+            if conn:
+                conn.close()
+
+    return jsonify({'success': False, 'error': 'Database not connected'}), 500
 
 @app.route('/api/clear_data')
 @require_auth

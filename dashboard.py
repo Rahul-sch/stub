@@ -210,18 +210,60 @@ heartbeat_lock = threading.Lock()
 def get_db_connection():
     """Get PostgreSQL connection from pool."""
     global db_pool
+    # #region agent log
+    import json
+    import time
+    debug_log_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.cursor', 'debug.log')
+    try:
+        with open(debug_log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({'sessionId': 'debug-session', 'runId': 'run1', 'hypothesisId': 'DB1', 'location': 'dashboard.py:get_db_connection', 'message': 'get_db_connection called', 'data': {'db_pool_exists': db_pool is not None}, 'timestamp': int(time.time() * 1000)}) + '\n')
+    except: pass
+    # #endregion
+    
     if db_pool:
         try:
-            return db_pool.getconn()
+            conn = db_pool.getconn()
+            # #region agent log
+            try:
+                with open(debug_log_path, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps({'sessionId': 'debug-session', 'runId': 'run1', 'hypothesisId': 'DB1', 'location': 'dashboard.py:get_db_connection', 'message': 'Connection obtained from pool', 'data': {}, 'timestamp': int(time.time() * 1000)}) + '\n')
+            except: pass
+            # #endregion
+            return conn
         except Exception as e:
+            # #region agent log
+            try:
+                with open(debug_log_path, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps({'sessionId': 'debug-session', 'runId': 'run1', 'hypothesisId': 'DB1', 'location': 'dashboard.py:get_db_connection', 'message': 'ERROR getting connection from pool', 'data': {'error': str(e), 'error_type': type(e).__name__}, 'timestamp': int(time.time() * 1000)}) + '\n')
+            except: pass
+            # #endregion
             logger.error(f"Failed to get connection from pool: {e}")
             return None
     else:
+        # #region agent log
+        try:
+            with open(debug_log_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps({'sessionId': 'debug-session', 'runId': 'run1', 'hypothesisId': 'DB1', 'location': 'dashboard.py:get_db_connection', 'message': 'Pool not available, trying direct connection', 'data': {}, 'timestamp': int(time.time() * 1000)}) + '\n')
+        except: pass
+        # #endregion
         # Fallback to direct connection if pool not available
         try:
             import config
-            return psycopg2.connect(**config.DB_CONFIG)
+            conn = psycopg2.connect(**config.DB_CONFIG)
+            # #region agent log
+            try:
+                with open(debug_log_path, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps({'sessionId': 'debug-session', 'runId': 'run1', 'hypothesisId': 'DB1', 'location': 'dashboard.py:get_db_connection', 'message': 'Direct connection successful', 'data': {}, 'timestamp': int(time.time() * 1000)}) + '\n')
+            except: pass
+            # #endregion
+            return conn
         except Exception as e:
+            # #region agent log
+            try:
+                with open(debug_log_path, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps({'sessionId': 'debug-session', 'runId': 'run1', 'hypothesisId': 'DB1', 'location': 'dashboard.py:get_db_connection', 'message': 'ERROR direct connection failed', 'data': {'error': str(e), 'error_type': type(e).__name__}, 'timestamp': int(time.time() * 1000)}) + '\n')
+            except: pass
+            # #endregion
             logger.error(f"Failed to create direct database connection: {e}")
             return None
 

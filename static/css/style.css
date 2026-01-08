@@ -3,6 +3,11 @@
          ISA-101 / ASM Consortium Compliant
          Deviation-only color philosophy
          ============================================ */
+
+/* Google Fonts - Inter for UI, JetBrains Mono for numbers */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 :root {
   /* ============================================
            DEEP SPACE INDUSTRIAL THEME
@@ -47,10 +52,14 @@
   --space-xl: 24px;
   --space-2xl: 32px;
 
-  /* Typography */
-  --font-mono: "SF Mono", "Consolas", "Monaco", monospace;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
-    sans-serif;
+  /* Typography - Inter for UI, JetBrains Mono for numbers */
+  --font-mono: 'JetBrains Mono', "SF Mono", "Consolas", "Monaco", monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+  /* Layout - Zero Scroll 1080p */
+  --header-height: 60px;
+  --sidebar-collapsed: 60px;
+  --sidebar-expanded: 200px;
 
   /* Transitions */
   --transition-fast: 0.1s ease;
@@ -74,10 +83,21 @@ body {
   font-size: 14px;
   overflow: hidden;
 }
+
+/* Zero-Scroll Dashboard Container */
 .container {
   max-width: 100%;
   margin: 0;
   padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.dashboard-container {
+  display: grid;
+  grid-template-rows: var(--header-height) 1fr;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ============================================
@@ -88,7 +108,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  height: 50px;
+  height: var(--header-height);
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-default);
   display: flex;
@@ -624,22 +644,21 @@ body {
 }
 
 /* ============================================
-         SCADA MAIN LAYOUT - 50/50 Split
+         SCADA MAIN LAYOUT - Zero Scroll Grid
          ============================================ */
 .scada-main {
-  margin-top: 50px;
-  margin-left: 60px;
+  margin-top: var(--header-height);
+  margin-left: var(--sidebar-collapsed);
   margin-bottom: 0;
-  padding: var(--space-lg);
-  height: calc(100vh - 50px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  padding: var(--space-md);
+  height: calc(100vh - var(--header-height));
+  overflow: hidden;
   transition: margin-left var(--transition-normal);
   box-sizing: border-box;
 }
 
 .scada-main.sidebar-open {
-  margin-left: 200px;
+  margin-left: var(--sidebar-expanded);
 }
 
 .scada-left-panel {
@@ -659,10 +678,10 @@ body {
          ============================================ */
 .scada-left-sidebar {
   position: fixed;
-  top: 50px;
+  top: var(--header-height);
   left: 0;
-  width: 60px;
-  height: calc(100vh - 50px);
+  width: var(--sidebar-collapsed);
+  height: calc(100vh - var(--header-height));
   background: linear-gradient(
     180deg,
     var(--bg-primary) 0%,
@@ -678,12 +697,12 @@ body {
 }
 
 .scada-left-sidebar.expanded {
-  width: 200px;
+  width: var(--sidebar-expanded);
 }
 
 .scada-sidebar-hamburger {
   width: 100%;
-  height: 50px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -693,6 +712,7 @@ body {
   border-bottom: 1px solid var(--border-subtle);
   transition: all var(--transition-fast);
   background: var(--bg-primary);
+  flex-shrink: 0;
 }
 
 .scada-sidebar-hamburger:hover {
@@ -707,13 +727,12 @@ body {
   padding: var(--space-sm) 0;
   gap: var(--space-xs);
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: hidden;
 }
 
 .scada-sidebar-icon {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: var(--space-md);
   padding: var(--space-md);
   color: #9ca3af;
@@ -722,21 +741,31 @@ body {
   border-left: 3px solid transparent;
   position: relative;
   font-size: 18px;
-  min-height: 48px;
+  min-height: 44px;
   width: 100%;
+  flex-shrink: 0;
 }
 
+/* Collapsed state - icons always centered and visible */
 .scada-left-sidebar:not(.expanded) .scada-sidebar-icon {
-  padding: var(--space-md);
   justify-content: center;
+  padding: var(--space-md) 0;
+}
+
+/* Expanded state - icons left-aligned with text */
+.scada-left-sidebar.expanded .scada-sidebar-icon {
+  justify-content: flex-start;
+  padding-left: var(--space-lg);
 }
 
 .scada-sidebar-icon svg {
   width: 20px;
   height: 20px;
+  min-width: 20px;
   stroke: currentColor;
   fill: none;
   color: inherit;
+  flex-shrink: 0;
 }
 
 .scada-sidebar-icon:hover {
@@ -761,20 +790,24 @@ body {
   background: #ffffff;
 }
 
+/* Label visibility - hidden when collapsed, shown when expanded */
 .scada-sidebar-icon-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
   opacity: 0;
-  transition: opacity var(--transition-normal);
+  width: 0;
+  overflow: hidden;
+  transition: opacity var(--transition-normal), width var(--transition-normal);
   color: inherit;
 }
 
 .scada-left-sidebar.expanded .scada-sidebar-icon-label {
   opacity: 1;
+  width: auto;
 }
 
 .scada-sidebar-icon.active .scada-sidebar-icon-label {
@@ -1423,10 +1456,10 @@ body {
 /* Admin Sidebar */
 .scada-sidebar {
   position: fixed;
-  top: 50px;
+  top: var(--header-height);
   right: -400px;
   width: 400px;
-  height: calc(100vh - 50px);
+  height: calc(100vh - var(--header-height));
   background: var(--bg-secondary);
   border-left: 1px solid var(--border-default);
   z-index: 1500;
@@ -3469,203 +3502,565 @@ input:checked + .toggle-slider:before {
 }
 
 /* ============================================
-   NUCLEAR LAYOUT FIXES (Add to bottom of CSS)
+   ZERO-SCROLL 1080P MONITORING LAYOUT
+   3-Column Grid: Left (Controls) | Center (3D) | Right (Telemetry)
    ============================================ */
 
-/* 1. Main Grid Container */
+/* Main Monitoring Grid Container */
 .monitoring-layout-container {
   display: grid;
-  grid-template-columns: 320px 1fr; /* Fixed Left Sidebar, Flexible Right */
-  gap: 16px;
-  height: 100%;
-  overflow: hidden; /* Prevent double scrollbars */
+  grid-template-columns: 280px 1fr 320px;
+  gap: var(--space-md);
+  height: calc(100vh - var(--header-height) - var(--space-md) * 2);
+  overflow: hidden;
 }
 
-/* 2. Left Panel (Vertical Stack) */
+/* Left Panel - Command Deck (top) + Health Matrix (bottom with scroll) */
 .monitoring-left-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-md);
   height: 100%;
-  overflow: hidden; /* Disable main scroll */
-  padding-right: 4px;
+  overflow: hidden;
 }
 
-/* Health Matrix Container - scrollable area */
+/* Command Deck - stays at top, compact */
+.command-deck {
+  flex-shrink: 0;
+  height: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+}
+
+/* Health Matrix Container - scrollable, takes remaining space */
 #healthMatrixContainer {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
 }
 
-/* Force Health Matrix to be 2 Columns in the sidebar */
+/* Health Matrix Grid - 2 columns for left panel */
 .monitoring-left-panel .health-matrix {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* 2 Columns fit nicely in 320px */
-  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
 }
 
-/* Make Health Cards smaller to fit sidebar */
+/* Compact Health Cards for sidebar */
 .monitoring-left-panel .health-card {
-  padding: 10px;
-  min-height: 100px;
+  padding: var(--space-sm);
+  min-height: 90px;
 }
 .monitoring-left-panel .health-card-value {
-  font-size: 24px; /* Smaller font */
+  font-size: 20px;
+}
+.monitoring-left-panel .health-card-name {
+  font-size: 9px;
+}
+.monitoring-left-panel .health-card-meta {
+  font-size: 9px;
 }
 
-/* 3. Right Panel (Telemetry Grid) */
+/* Center Panel - 3D Digital Twin (60%) + Stats (40%) */
+.monitoring-center-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Digital Twin Card - 60% of center height */
+.digital-twin-card {
+  flex: 0 0 60%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.digital-twin-card .rig-card-body {
+  flex: 1;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+#rigCanvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Right Panel - Telemetry Rail (4x2 Grid) */
 .monitoring-right-panel {
-  overflow-y: auto;
-  background: #111;
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  padding: var(--space-sm);
 }
 
-/* Force Telemetry Grid to fill space */
+/* Telemetry Container fills the right panel */
+#telemetryContainer {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Telemetry Rail - 4 rows x 2 columns grid */
+.telemetry-rail {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: var(--space-sm);
+  height: 100%;
+}
+
+/* Telemetry Grid override for rail layout */
 .monitoring-right-panel .telemetry-grid {
   display: grid;
-  grid-template-columns: repeat(
-    auto-fill,
-    minmax(250px, 1fr)
-  ); /* Responsive Grid */
-  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
 }
 
-/* 4. Command Deck Styling */
-.command-deck {
-  flex-shrink: 0; /* Stay fixed at bottom */
-  height: auto !important; /* Shrink to fit content */
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
+/* Compact telemetry tiles */
+.monitoring-right-panel .telemetry-tile {
+  padding: var(--space-sm);
+}
+.monitoring-right-panel .telemetry-tile-value {
+  font-size: 24px;
+}
+.monitoring-right-panel .telemetry-tile-name {
+  font-size: 9px;
 }
 
-/* 5. Hide the scrollbar but allow scrolling */
-.monitoring-left-panel::-webkit-scrollbar {
+/* Scrollbar styling for internal scroll areas */
+.monitoring-left-panel::-webkit-scrollbar,
+#healthMatrixContainer::-webkit-scrollbar,
+#telemetryContainer::-webkit-scrollbar {
   width: 4px;
 }
-.monitoring-left-panel::-webkit-scrollbar-thumb {
-  background: #333;
+.monitoring-left-panel::-webkit-scrollbar-thumb,
+#healthMatrixContainer::-webkit-scrollbar-thumb,
+#telemetryContainer::-webkit-scrollbar-thumb {
+  background: var(--border-default);
   border-radius: 2px;
+}
+.monitoring-left-panel::-webkit-scrollbar-track,
+#healthMatrixContainer::-webkit-scrollbar-track,
+#telemetryContainer::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* ============================================
-   COMMAND DECK FILLER (Make it Seamless)
+   COMMAND DECK - Compact Layout with Solid Buttons
    ============================================ */
 
-/* 1. Command deck body - compact layout */
+/* Command deck body - compact stacked layout */
 .command-deck .rig-card-body {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start; /* Pack items at top */
-  gap: 12px;
+  justify-content: flex-start;
+  gap: var(--space-sm);
   height: auto !important;
-  padding: 16px;
+  padding: var(--space-md);
 }
-
-/* 2. Make the Start/Stop buttons taller/chonkier */
-.command-deck .rig-btn-start,
-.command-deck .rig-btn-stop {
-  padding: 24px 0; /* Taller buttons */
-  font-size: 16px; /* Bigger text */
-  letter-spacing: 1px;
-}
-
-/* 3. Make the Inject button stand out */
-.command-deck button[onclick="triggerAnomalyInjection()"] {
-  padding: 16px;
-  font-weight: 800;
-  font-size: 13px;
-}
-
-/* 4. Style the labels to be more visible */
-.command-deck label {
-  font-size: 11px;
-  margin-bottom: 8px;
-  color: var(--text-muted); /* Match theme */
-}
-
-/* ============================================
-   COMPACT COMMAND DECK STYLES
-   ============================================ */
 
 /* Match header style */
 .command-deck .rig-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: transparent;
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 12px 16px;
-  font-family: var(--font-mono);
+  background-color: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-default);
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
 /* Status indicator for command deck */
 .command-deck .status-indicator.status-nom {
   background: var(--status-normal);
   box-shadow: 0 0 4px var(--status-normal);
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 
-/* Command deck internal layout */
+/* Command button row - stacked vertically */
 .command-btn-row {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: var(--space-xs);
 }
 .command-btn-row .rig-btn {
   flex: 1;
-  padding: 12px;
+  padding: var(--space-md);
+  font-size: 13px;
+  font-weight: 700;
 }
 
+/* SOLID COLOR BUTTONS - No gradients */
+.rig-btn-start {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+.rig-btn-start:hover {
+  background: #059669 !important;
+  box-shadow: none !important;
+  opacity: 0.9;
+}
+
+.rig-btn-stop {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+.rig-btn-stop:hover {
+  background: #dc2626 !important;
+  box-shadow: none !important;
+  opacity: 0.9;
+}
+
+.rig-btn-warn {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+.rig-btn-warn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--status-warning);
+}
+
+/* Sampling speed slider */
 .command-slider-group {
   display: flex;
   flex-direction: column;
+  margin-top: var(--space-xs);
 }
 .command-slider-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .command-slider-header label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
+  margin: 0;
 }
 .command-slider-header span {
-  font-size: 11px;
-  font-weight: bold;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--text-primary);
+  font-family: var(--font-mono);
 }
 .command-slider-group input[type="range"] {
   width: 100%;
+  height: 4px;
 }
 
+/* Anomaly injection group */
+.command-anomaly-group {
+  margin-top: var(--space-xs);
+}
 .command-anomaly-group label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .command-anomaly-row {
   display: flex;
-  gap: 10px;
+  gap: var(--space-xs);
 }
 .command-anomaly-row .rig-select {
   flex: 2;
   background: var(--bg-tertiary);
   color: var(--text-primary);
   border: 1px solid var(--border-default);
-  padding: 8px;
+  padding: var(--space-xs) var(--space-sm);
   border-radius: 4px;
+  font-size: 11px;
 }
 .command-anomaly-row .rig-btn {
   flex: 1;
-  padding: 10px;
-  font-size: 13px;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 11px;
+}
+
+/* ============================================
+   MODULAR PAGES - Zero Scroll Layouts
+   ============================================ */
+
+/* Section container - fill available height */
+.scada-section {
+  display: none;
+  width: 100%;
+  height: calc(100vh - var(--header-height) - var(--space-md) * 2);
+  overflow: hidden;
+}
+
+.scada-section.active {
+  display: block;
+}
+
+/* ============================================
+   ALARMS PAGE - Fixed height table with sticky header
+   ============================================ */
+#section-alarms {
+  display: none;
+  height: 100%;
+  overflow: hidden;
+}
+
+#section-alarms.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.alarms-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+}
+
+.alarms-header {
+  flex-shrink: 0;
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alarms-table-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.alarms-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.alarms-table thead {
+  position: sticky;
+  top: 0;
+  background: var(--bg-tertiary);
+  z-index: 10;
+}
+
+.alarms-table th,
+.alarms-table td {
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.alarms-table th {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   CONFIG PAGE - Two-column layout
+   ============================================ */
+#section-configuration {
+  display: none;
+  height: 100%;
+  overflow: hidden;
+}
+
+#section-configuration.active {
+  display: block;
+}
+
+.config-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--space-md);
+  height: 100%;
+  overflow: hidden;
+}
+
+.config-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.config-sidebar-header {
+  flex-shrink: 0;
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-default);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.config-sensor-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
+}
+
+.config-main {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.config-main-header {
+  flex-shrink: 0;
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.config-main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+}
+
+/* ============================================
+   ANALYTICS PAGE - Chart (60%) + Reports (40%)
+   ============================================ */
+#section-analytics {
+  display: none;
+  height: 100%;
+  overflow: hidden;
+}
+
+#section-analytics.active {
+  display: block;
+}
+
+.analytics-layout {
+  display: grid;
+  grid-template-rows: 60% 40%;
+  gap: var(--space-md);
+  height: 100%;
+  overflow: hidden;
+}
+
+.analytics-chart {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.analytics-chart-header {
+  flex-shrink: 0;
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.analytics-chart-content {
+  flex: 1;
+  padding: var(--space-md);
+  min-height: 0;
+}
+
+.analytics-reports {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.analytics-reports-header {
+  flex-shrink: 0;
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.analytics-reports-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+}
+
+/* ============================================
+   CARD BORDERS - Dark grey, no neon blue
+   ============================================ */
+.rig-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.rig-card-header {
+  background: var(--bg-tertiary);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border-default);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.rig-card-body {
+  padding: var(--space-md);
+  flex: 1;
+  background: var(--bg-secondary);
+  overflow: hidden;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 1400px) {
+  .monitoring-layout-container {
+    grid-template-columns: 250px 1fr 280px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .monitoring-layout-container {
+    grid-template-columns: 220px 1fr;
+  }
+  .monitoring-right-panel {
+    display: none;
+  }
 }

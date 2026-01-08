@@ -7,14 +7,17 @@
     <!-- All CSS has been moved to static/css/style.css -->
     <!-- Three.js for 3D Digital Twin -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls for 3D rig interaction -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   </head>
   <body>
     <div id="boot-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:black;z-index:9999;color:#0f0;font-family:monospace;display:flex;align-items:center;justify-content:center;flex-direction:column;">
       <div id="boot-text">INITIALIZING...</div>
     </div>
-    <div class="container">
-      <h1>🚀 Sensor Data Pipeline</h1>
-      <div class="subtitle">Real-Time IoT Monitoring Dashboard</div>
+    <div class="container dashboard-container">
+      <!-- Hidden header - replaced by SCADA topbar -->
+      <h1 style="display:none;">Sensor Data Pipeline</h1>
+      <div class="subtitle" style="display:none;">Real-Time IoT Monitoring Dashboard</div>
 
       <!-- Login/Signup Form (shown when not authenticated) -->
       <div id="loginForm" style="display: none; max-width: 400px; margin: 100px auto; padding: 40px; background: rgba(30, 41, 59, 0.8); border-radius: 20px; border: 1px solid rgba(148, 163, 184, 0.2);">
@@ -117,20 +120,7 @@
               </svg>
               <span class="scada-sidebar-icon-label">ANALYTICS</span>
             </div>
-            <div class="scada-sidebar-icon" onclick="switchSection('injection')" data-section="injection" title="Anomaly Injection" id="sidebarInjectionIcon" style="display: none;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-              </svg>
-              <span class="scada-sidebar-icon-label">INJECTION</span>
-            </div>
-            <div class="scada-sidebar-icon" onclick="switchSection('export')" data-section="export" title="Export">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-              <span class="scada-sidebar-icon-label">EXPORT</span>
-            </div>
+            <!-- Injection and Export removed - merged into Config -->
             <div class="scada-sidebar-icon" onclick="switchSection('users')" data-section="users" title="Users" id="sidebarUsersIcon" style="display: none;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -260,20 +250,19 @@
 
       <!-- SCADA Main Content Area -->
       <div class="scada-main">
-        <!-- Monitoring Section (Default) -->
+        <!-- Monitoring Section (Default) - Zero Scroll 1080p Layout -->
         <div class="scada-section active" id="section-monitoring">
           <div class="monitoring-layout-container">
             
+            <!-- Left Panel: Command Deck (Top) + Health Matrix (Bottom with scroll) -->
             <div class="monitoring-left-panel">
-              <div id="healthMatrixContainer"></div>
-
+              <!-- Command Deck - Fixed at top -->
               <div class="rig-card command-deck">
                 <div class="rig-card-header">
-                  <span>SYSTEM COMMAND</span>
+                  <span>COMMAND DECK</span>
                   <span class="status-indicator status-nom"></span>
                 </div>
                 <div class="rig-card-body">
-
                   <div class="command-btn-row">
                     <button id="btn-start" class="rig-btn rig-btn-start" onclick="globalStartMachine()">START</button>
                     <button id="btn-stop" class="rig-btn rig-btn-stop" onclick="globalStopMachine()">STOP</button>
@@ -288,30 +277,32 @@
                   </div>
 
                   <div class="command-anomaly-group">
-                    <label>ANOMALY SIMULATION</label>
+                    <label>ANOMALY INJECT</label>
                     <div class="command-anomaly-row">
                       <select id="anomalyTypeSelect" class="rig-select">
-                        <option value="temperature_spike">Temperature Spike</option>
+                        <option value="temperature_spike">Temp Spike</option>
                         <option value="pressure_drop">Pressure Drop</option>
-                        <option value="vibration_surge">Sensor Noise</option>
+                        <option value="vibration_surge">Vibration</option>
                       </select>
                       <button class="rig-btn rig-btn-warn" onclick="triggerAnomalyInjection()">INJECT</button>
                     </div>
                   </div>
-
                 </div>
               </div>
+
+              <!-- Health Matrix - Scrollable area -->
+              <div id="healthMatrixContainer"></div>
             </div>
 
-            <!-- 3D Digital Twin Center Panel -->
-            <div class="monitoring-center-panel" style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: var(--space-md);">
-              <div class="rig-card digital-twin-card" style="flex: 1; min-height: 400px;">
+            <!-- Center Panel: 3D Digital Twin (60% height) -->
+            <div class="monitoring-center-panel">
+              <div class="rig-card digital-twin-card">
                 <div class="rig-card-header">
                   <span>3D DIGITAL TWIN</span>
                   <span class="status-indicator" id="digitalTwinStatus" style="background: var(--status-running);"></span>
                 </div>
-                <div class="rig-card-body" style="padding: 0; position: relative; height: calc(100% - 40px); overflow: hidden;">
-                  <canvas id="rigCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+                <div class="rig-card-body">
+                  <canvas id="rigCanvas"></canvas>
                   <div id="rigRiskIndicator" style="position: absolute; bottom: 10px; left: 10px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--status-running); text-transform: uppercase; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 4px;">
                     RIG STATUS: NOMINAL
                   </div>
@@ -319,6 +310,7 @@
               </div>
             </div>
 
+            <!-- Right Panel: Telemetry Rail (4x2 Grid) -->
             <div class="monitoring-right-panel">
               <div id="telemetryContainer"></div>
             </div>
@@ -4306,6 +4298,19 @@
 
             // Always display count from machine buffer (even when not collecting)
             document.getElementById("totalCount").textContent = currentMachine.totalCount;
+            
+            // ========== UPDATE 3D RIG TELEMETRY ==========
+            // Get latest reading for 3D Rig animation
+            if (currentMachine.recentReadings && currentMachine.recentReadings.length > 0) {
+              const latestReading = currentMachine.recentReadings[0];
+              if (latestReading) {
+                currentVibration = latestReading.vibration || 0;
+                currentRPM = latestReading.rpm || 0;
+                currentTemperature = latestReading.temperature || 0;
+              }
+            }
+            // ========== END 3D RIG TELEMETRY ==========
+            
             // Update pipeline health metrics
             updatePipelineHealth();
             // Update telemetry rail
@@ -8091,15 +8096,16 @@ Report generated by Sensor Data Pipeline Dashboard
               }
             }
 
-            // Update DB Latency
+            // Update DB Latency (fix negative values with Math.abs)
             const dbEl = document.getElementById('db-latency');
             if (dbEl) {
               if (data.db_latency_ms !== null) {
-                dbEl.textContent = data.db_latency_ms.toFixed(0) + 'ms';
+                const latency = Math.abs(data.db_latency_ms); // Fix negative latency
+                dbEl.textContent = latency.toFixed(0) + 'ms';
                 // Color based on latency
-                if (data.db_latency_ms >= 200) {
+                if (latency >= 200) {
                   dbEl.style.color = 'var(--status-error)';
-                } else if (data.db_latency_ms >= 100) {
+                } else if (latency >= 100) {
                   dbEl.style.color = 'var(--status-warning)';
                 } else {
                   dbEl.style.color = 'var(--status-info)';
@@ -8120,11 +8126,17 @@ Report generated by Sensor Data Pipeline Dashboard
       setTimeout(updateSystemMetrics, 1000);
 
       // ========== 3D DIGITAL TWIN (Three.js Neon Wireframe Drilling Rig) ==========
-      let rigScene, rigCamera, rigRenderer, rigGroup;
+      let rigScene, rigCamera, rigRenderer, rigGroup, rigControls;
       let rigIsHighRisk = false;
       let rigAnimationId;
       const NEON_CYAN = 0x00ffff;
       const NEON_RED = 0xff0040;
+      
+      // Telemetry values for 3D Rig animation
+      let currentVibration = 0;
+      let currentRPM = 0;
+      let currentTemperature = 0;
+      let drillBit = null; // Reference to drill bit for rotation
 
       function initDigitalTwin() {
         const canvas = document.getElementById('rigCanvas');
@@ -8148,6 +8160,19 @@ Report generated by Sensor Data Pipeline Dashboard
         rigRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
         rigRenderer.setSize(container.clientWidth, container.clientHeight);
         rigRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // OrbitControls for mouse interaction
+        if (typeof THREE.OrbitControls !== 'undefined') {
+          rigControls = new THREE.OrbitControls(rigCamera, rigRenderer.domElement);
+          rigControls.enableDamping = true;
+          rigControls.dampingFactor = 0.05;
+          rigControls.enableZoom = true;
+          rigControls.enablePan = false;
+          rigControls.minDistance = 5;
+          rigControls.maxDistance = 25;
+          rigControls.target.set(0, 2, 0);
+          rigControls.update();
+        }
 
         // Create rig group
         rigGroup = new THREE.Group();
@@ -8188,11 +8213,12 @@ Report generated by Sensor Data Pipeline Dashboard
         crownLine.position.set(0, 8.5, 0);
         rigGroup.add(crownLine);
 
-        // Drill string (cylinder going down)
+        // Drill string (cylinder going down) - store reference for RPM rotation
         const drillGeom = new THREE.CylinderGeometry(0.15, 0.15, 6, 8);
         const drillEdges = new THREE.EdgesGeometry(drillGeom);
         const drillLine = new THREE.LineSegments(drillEdges, neonMaterial.clone());
         drillLine.position.set(0, -2.7, 0);
+        drillBit = drillLine; // Store reference for RPM-driven rotation
         rigGroup.add(drillLine);
 
         // Traveling block
@@ -8247,28 +8273,74 @@ Report generated by Sensor Data Pipeline Dashboard
         if (!canvas || !rigRenderer || !rigCamera) return;
 
         const container = canvas.parentElement;
-        const width = container.clientWidth;
-        const height = container.clientHeight;
+        const width = container.clientWidth || 400;
+        const height = container.clientHeight || 300;
 
         rigCamera.aspect = width / height;
         rigCamera.updateProjectionMatrix();
         rigRenderer.setSize(width, height);
+        
+        // Update controls if available
+        if (rigControls) {
+          rigControls.update();
+        }
       }
 
       function animateRig() {
         rigAnimationId = requestAnimationFrame(animateRig);
 
-        if (rigGroup) {
-          // Slow rotation
-          rigGroup.rotation.y += 0.003;
+        // Update OrbitControls if available
+        if (rigControls) {
+          rigControls.update();
+        }
 
-          // Shake effect when high risk
+        if (rigGroup) {
+          // Slow auto-rotation of rig (disabled when OrbitControls is active)
+          if (!rigControls) {
+            rigGroup.rotation.y += 0.003;
+          }
+
+          // Vibration-based jitter effect (intensity based on vibration value)
+          // Normalize vibration (assuming range 0-10mm/s, scale to 0-0.15 jitter)
+          const vibrationIntensity = Math.min(currentVibration / 10, 1) * 0.15;
+          const jitterX = Math.sin(Date.now() * 0.05) * vibrationIntensity;
+          const jitterZ = Math.cos(Date.now() * 0.07) * vibrationIntensity * 0.8;
+          rigGroup.position.x = jitterX;
+          rigGroup.position.z = jitterZ;
+
+          // RPM-driven drill bit rotation (convert RPM to radians per frame)
+          // Assuming 60 FPS: rpm * (2π/60) / 60 = radians per frame
+          if (drillBit && currentRPM > 0) {
+            const rpmRadiansPerFrame = (currentRPM * Math.PI * 2) / (60 * 60); // Convert RPM to rad/frame at 60fps
+            drillBit.rotation.y += rpmRadiansPerFrame;
+          }
+
+          // Temperature-based color change (red if > 80°F, unless already set by risk state)
+          // Priority: High Risk > Temperature > Normal
           if (rigIsHighRisk) {
-            rigGroup.position.x = Math.sin(Date.now() * 0.05) * 0.1;
-            rigGroup.position.z = Math.cos(Date.now() * 0.07) * 0.08;
+            // High risk already sets color in setRigRiskState, don't override
+          } else if (currentTemperature > 80) {
+            // Temperature warning: change to red
+            const color = NEON_RED;
+            rigGroup.traverse((child) => {
+              if (child.isLineSegments && child.material) {
+                child.material.color.setHex(color);
+              }
+            });
           } else {
-            rigGroup.position.x = 0;
-            rigGroup.position.z = 0;
+            // Normal: reset to cyan
+            const color = NEON_CYAN;
+            rigGroup.traverse((child) => {
+              if (child.isLineSegments && child.material) {
+                child.material.color.setHex(color);
+              }
+            });
+          }
+
+          // Additional shake effect when high risk (on top of vibration)
+          if (rigIsHighRisk) {
+            rigGroup.position.x += Math.sin(Date.now() * 0.05) * 0.1;
+            rigGroup.position.z += Math.cos(Date.now() * 0.07) * 0.08;
           }
         }
 

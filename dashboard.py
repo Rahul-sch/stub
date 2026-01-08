@@ -158,6 +158,10 @@ processes = {
     'consumer': None
 }
 
+# Lock to prevent concurrent start/stop operations
+import threading
+component_lock = threading.Lock()
+
 # ============================================================================
 # MACHINE STATE MANAGEMENT (Phase 1 - In-Memory Only)
 # ============================================================================
@@ -1269,8 +1273,20 @@ def start_component(component):
     if component not in ['producer', 'consumer']:
         return jsonify({'success': False, 'error': 'Invalid component'})
 
-    # ALWAYS kill existing processes first to prevent duplicates
-    logger.info(f"Killing any existing {component} processes before starting...")
+    # Use lock to prevent concurrent starts (rapid clicking)
+    if not component_lock.acquire(blocking=False):
+        logger.warning(f"{component.capitalize()} start already in progress, ignoring duplicate request")
+        return jsonify({'success': False, 'error': f'{component.capitalize()} start already in progress'}), 409
+    
+    try:
+        # Check if already running AFTER acquiring lock
+        if is_component_running(component):
+            logger.warning(f"{component.capitalize()} is already running")
+            component_lock.release()
+            return jsonify({'success': False, 'error': f'{component.capitalize()} is already running'}), 409
+
+        # ALWAYS kill existing processes first to prevent duplicates
+        logger.info(f"Killing any existing {component} processes before starting...")
     try:
         script_name = f'{component}.py'
         if os.name == 'nt':
@@ -1345,9 +1361,14 @@ def start_component(component):
         proc = subprocess.Popen(popen_args, **popen_kwargs)
         processes[component] = proc  # Store the process object, not just PID
 
+        logger.info(f"{component.capitalize()} started successfully (PID: {proc.pid})")
         return jsonify({'success': True, 'pid': proc.pid})
     except Exception as e:
+        logger.error(f"Failed to start {component}: {e}")
         return jsonify({'success': False, 'error': str(e)})
+    finally:
+        # Always release the lock
+        component_lock.release()
 
 @app.route('/api/stop/<component>', methods=['POST'])
 @require_auth
@@ -2725,6 +2746,11 @@ def api_start_machine(machine_id):
     """Start a machine (set running state and start producer/consumer)"""
     if machine_id not in ['A', 'B', 'C']:
         return jsonify({'success': False, 'error': 'Invalid machine ID'}), 400
+    
+    # Check if machine is already running
+    with machine_state_lock:
+        if machine_state[machine_id]['running']:
+            return jsonify({'success': False, 'error': f'Machine {machine_id} is already running'}), 409
     
     # Start producer if not running
     if not is_component_running('producer'):

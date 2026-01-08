@@ -3879,6 +3879,10 @@
                   <div class="health-card-meta-label">UPTIME</div>
                   <div class="health-card-meta-value" data-uptime-category="${cat.key}">${uptime}</div>
                 </div>
+                <div class="health-card-meta-item" data-rul-machine="${selectedMachineId}">
+                  <div class="health-card-meta-label">EST. LIFE</div>
+                  <div class="health-card-meta-value rul-countdown" data-rul-machine="${selectedMachineId}" style="font-family: var(--font-mono); font-size: 10px; color: var(--status-running);">--</div>
+                </div>
               </div>
             </div>
           `;
@@ -4228,6 +4232,8 @@
             updatePipelineHealth();
             // Update telemetry rail
             updateTelemetryRail();
+            // Update RUL predictions
+            updateRULPredictions();
 
             // Update Statistics section with category tabs
             if (data.stats_by_category) {

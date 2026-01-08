@@ -841,6 +841,119 @@ def require_auth(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def log_action(action_type, resource_type=None, resource_id=None, capture_state=False):
+    """
+    Decorator to log actions to audit_logs_v2.
+    
+    Args:
+        action_type: 'CREATE', 'READ', 'UPDATE', 'DELETE', 'INGEST', 'PARSE', etc.
+        resource_type: Type of resource (e.g., 'sensor', 'user', 'sensor_file', 'ingest')
+        resource_id: ID of the resource (optional)
+        capture_state: If True, capture before/after state for UPDATE operations
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Get user info from session (if available)
+            user_id = session.get('user_id')
+            username = session.get('username', 'system')
+            role = session.get('role', 'system')
+            
+            # Get request metadata
+            ip_address = request.remote_addr
+            user_agent = request.headers.get('User-Agent', '')
+            
+            # Get request data for state capture
+            previous_state = None
+            new_state = None
+            if capture_state and request.method in ['POST', 'PUT', 'PATCH']:
+                new_state = request.get_json(silent=True)
+            
+            # Execute the function
+            try:
+                result = f(*args, **kwargs)
+                
+                # Extract resource_id from result or kwargs if not provided
+                final_resource_id = resource_id
+                if not final_resource_id and isinstance(result, tuple):
+                    # Try to extract from response
+                    response_data = result[0] if len(result) > 0 else None
+                    if hasattr(response_data, 'get_json'):
+                        try:
+                            json_data = response_data.get_json()
+                            if json_data and 'id' in json_data:
+                                final_resource_id = str(json_data['id'])
+                        except:
+                            pass
+                
+                # Log to audit_logs_v2
+                conn = get_db_connection()
+                if conn:
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute("""
+                            INSERT INTO audit_logs_v2 
+                            (user_id, username, role, ip_address, user_agent,
+                             action_type, resource_type, resource_id,
+                             previous_state, new_state)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (
+                            user_id,
+                            username,
+                            role,
+                            ip_address,
+                            user_agent,
+                            action_type,
+                            resource_type,
+                            final_resource_id,
+                            json.dumps(previous_state) if previous_state else None,
+                            json.dumps(new_state) if new_state else None
+                        ))
+                        conn.commit()
+                        cursor.close()
+                    except Exception as e:
+                        logging.warning(f"Failed to log audit action: {e}")
+                        if conn:
+                            conn.rollback()
+                    finally:
+                        if conn:
+                            conn.close()
+                
+                return result
+            except Exception as e:
+                # Log failed action
+                conn = get_db_connection()
+                if conn:
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute("""
+                            INSERT INTO audit_logs_v2 
+                            (user_id, username, role, ip_address, user_agent,
+                             action_type, resource_type, resource_id, new_state)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (
+                            user_id,
+                            username,
+                            role,
+                            ip_address,
+                            user_agent,
+                            f"{action_type}_FAILED",
+                            resource_type,
+                            resource_id,
+                            json.dumps({'error': str(e)})
+                        ))
+                        conn.commit()
+                        cursor.close()
+                    except:
+                        pass
+                    finally:
+                        if conn:
+                            conn.close()
+                raise
+            
+        return decorated_function
+    return decorator
+
 def require_admin(f):
     """Decorator to require admin role."""
     @wraps(f)
@@ -3012,6 +3125,7 @@ def api_update_custom_sensor(sensor_id):
 
 @app.route('/api/admin/parse-sensor-file', methods=['POST'])
 @require_admin
+@log_action('PARSE', resource_type='sensor_file', resource_id=None)
 def api_parse_sensor_file():
     """Parse uploaded file (PDF/TXT/CSV/JSON) and extract sensor specs using AI."""
     if 'file' not in request.files:
@@ -3246,6 +3360,7 @@ def check_custom_sensors_table():
 INGEST_API_KEY = os.environ.get('INGEST_API_KEY', 'rig-alpha-secret')
 
 @app.route('/api/v1/ingest', methods=['POST'])
+@log_action('INGEST', resource_type='ingest', resource_id=None)
 def api_v1_ingest():
     """
     External API endpoint for ingesting sensor data.

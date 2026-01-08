@@ -5,6 +5,7 @@ Contains all settings for Kafka, PostgreSQL, timing, and sensor parameters.
 
 import os
 import logging
+from urllib.parse import urlparse
 
 # Load environment variables from .env file (for development)
 # In production/Docker, environment variables are set via container config
@@ -51,14 +52,19 @@ DURATION_HOURS = DEFAULT_DURATION_HOURS
 INTERVAL_SECONDS = DEFAULT_INTERVAL_SECONDS
 
 # ============================================================================
-# KAFKA CONFIGURATION
+# KAFKA CONFIGURATION (Cloud-Aware)
 # ============================================================================
 
-# Kafka broker connection
-KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092'
+# Kafka broker connection - check environment variable first (for Upstash/Render)
+KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BROKER_URL', 'localhost:9092')
 KAFKA_TOPIC = 'sensor-data'
 
-# Producer configuration
+# Kafka SASL authentication (for cloud providers like Upstash)
+KAFKA_SASL_USERNAME = os.environ.get('KAFKA_SASL_USERNAME', '')
+KAFKA_SASL_PASSWORD = os.environ.get('KAFKA_SASL_PASSWORD', '')
+KAFKA_USE_SASL = bool(KAFKA_SASL_USERNAME and KAFKA_SASL_PASSWORD)
+
+# Producer configuration (with SASL support for cloud)
 KAFKA_PRODUCER_CONFIG = {
     'bootstrap_servers': KAFKA_BOOTSTRAP_SERVERS,
     'acks': 'all',  # Wait for all replicas to acknowledge (strongest durability)
@@ -70,7 +76,16 @@ KAFKA_PRODUCER_CONFIG = {
     'value_serializer': lambda v: v.encode('utf-8')  # Encode JSON strings to bytes
 }
 
-# Consumer configuration
+# Add SASL configuration if credentials are provided
+if KAFKA_USE_SASL:
+    KAFKA_PRODUCER_CONFIG.update({
+        'security_protocol': 'SASL_SSL',
+        'sasl_mechanism': 'SCRAM-SHA-256',
+        'sasl_plain_username': KAFKA_SASL_USERNAME,
+        'sasl_plain_password': KAFKA_SASL_PASSWORD
+    })
+
+# Consumer configuration (with SASL support for cloud)
 KAFKA_CONSUMER_CONFIG = {
     'bootstrap_servers': KAFKA_BOOTSTRAP_SERVERS,
     'group_id': 'sensor-consumer-group',
@@ -83,15 +98,46 @@ KAFKA_CONSUMER_CONFIG = {
     'value_deserializer': lambda v: v.decode('utf-8')  # Decode bytes to strings
 }
 
+# Add SASL configuration if credentials are provided
+if KAFKA_USE_SASL:
+    KAFKA_CONSUMER_CONFIG.update({
+        'security_protocol': 'SASL_SSL',
+        'sasl_mechanism': 'SCRAM-SHA-256',
+        'sasl_plain_username': KAFKA_SASL_USERNAME,
+        'sasl_plain_password': KAFKA_SASL_PASSWORD
+    })
+
 # ============================================================================
-# DATABASE CONFIGURATION
+# DATABASE CONFIGURATION (Cloud-Aware)
 # ============================================================================
 
-DB_HOST = 'localhost'
-DB_PORT = 5432
-DB_NAME = 'sensordb'
-DB_USER = 'sensoruser'
-DB_PASSWORD = 'sensorpass'
+# Check for DATABASE_URL environment variable (for Neon/Render)
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
+
+if DATABASE_URL:
+    # Parse DATABASE_URL (format: postgresql://user:password@host:port/dbname)
+    # Render/Neon compatibility: replace postgres:// with postgresql://
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    
+    # Parse the URL
+    parsed = urlparse(DATABASE_URL)
+    
+    DB_HOST = parsed.hostname or 'localhost'
+    DB_PORT = parsed.port or 5432
+    DB_NAME = parsed.path.lstrip('/') if parsed.path else 'sensordb'
+    DB_USER = parsed.username or 'sensoruser'
+    DB_PASSWORD = parsed.password or 'sensorpass'
+    
+    logging.info(f"Using cloud database: {DB_NAME} on {DB_HOST}:{DB_PORT}")
+else:
+    # Fallback to local defaults
+    DB_HOST = 'localhost'
+    DB_PORT = 5432
+    DB_NAME = 'sensordb'
+    DB_USER = 'sensoruser'
+    DB_PASSWORD = 'sensorpass'
+    logging.info("Using local database configuration")
 
 # Connection string for psycopg2
 DB_CONNECTION_STRING = f"host={DB_HOST} port={DB_PORT} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"

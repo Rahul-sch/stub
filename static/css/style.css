@@ -3608,14 +3608,21 @@ input:checked + .toggle-slider:before {
 
 .digital-twin-card {
   flex: 1.5;
-  min-height: 0;
+  min-height: 300px; /* Prevent collapse during re-renders */
   display: flex;
   flex-direction: column;
 }
 
 .digital-twin-card .rig-card-body {
   flex: 1;
-  min-height: 0;
+  min-height: 250px; /* Prevent canvas resize during DOM updates */
+}
+
+/* Telemetry container - prevent collapse */
+#telemetryContainer {
+  flex: 1;
+  min-height: 200px; /* Prevent collapse when innerHTML is replaced */
+  overflow-y: auto;
 }
 
 /* Live Readings Card in Monitoring */

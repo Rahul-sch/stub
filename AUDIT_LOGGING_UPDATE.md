@@ -9,11 +9,13 @@
 **Location:** `stub/dashboard.py` (lines 844-955)
 
 **Key Improvements:**
+
 - **Default User Handling:** When no session exists (e.g., API key auth for `/api/v1/ingest`), the decorator now automatically uses `admin_rahul` (ID: 1) as the default operator
 - **Resource ID Extraction:** Automatically extracts `resource_id` from URL parameters (`sensor_id`, `user_id`, `machine_id`, etc.)
 - **State Capture:** Supports capturing before/after state for UPDATE operations
 
 **Logic Flow:**
+
 1. Check if user session exists
 2. If no session → Query database for `admin_rahul` user (ID: 1)
 3. If `admin_rahul` not found → Fallback to `system` user
@@ -23,22 +25,22 @@
 
 All `/api/admin/` endpoints now have the `@log_action` decorator:
 
-| Endpoint | Method | Action Type | Resource Type | State Capture |
-|----------|--------|-------------|---------------|---------------|
-| `/api/admin/custom-sensors` | GET | `READ` | `custom_sensor` | No |
-| `/api/admin/custom-sensors` | POST | `CREATE` | `custom_sensor` | No |
-| `/api/admin/custom-sensors/<id>` | GET | `READ` | `custom_sensor` | No |
-| `/api/admin/custom-sensors/<id>` | PUT | `UPDATE` | `custom_sensor` | **Yes** |
-| `/api/admin/custom-sensors/<id>` | DELETE | `DELETE` | `custom_sensor` | No |
-| `/api/admin/parse-sensor-file` | POST | `PARSE` | `sensor_file` | No |
+| Endpoint                         | Method | Action Type | Resource Type   | State Capture |
+| -------------------------------- | ------ | ----------- | --------------- | ------------- |
+| `/api/admin/custom-sensors`      | GET    | `READ`      | `custom_sensor` | No            |
+| `/api/admin/custom-sensors`      | POST   | `CREATE`    | `custom_sensor` | No            |
+| `/api/admin/custom-sensors/<id>` | GET    | `READ`      | `custom_sensor` | No            |
+| `/api/admin/custom-sensors/<id>` | PUT    | `UPDATE`    | `custom_sensor` | **Yes**       |
+| `/api/admin/custom-sensors/<id>` | DELETE | `DELETE`    | `custom_sensor` | No            |
+| `/api/admin/parse-sensor-file`   | POST   | `PARSE`     | `sensor_file`   | No            |
 
 #### 3. **Ingest Endpoint Logging**
 
 The `/api/v1/ingest` endpoint (API key authentication) now logs with `admin_rahul` as the default operator:
 
-| Endpoint | Method | Action Type | Resource Type | Default User |
-|----------|--------|-------------|---------------|--------------|
-| `/api/v1/ingest` | POST | `INGEST` | `ingest` | `admin_rahul` (ID: 1) |
+| Endpoint         | Method | Action Type | Resource Type | Default User          |
+| ---------------- | ------ | ----------- | ------------- | --------------------- |
+| `/api/v1/ingest` | POST   | `INGEST`    | `ingest`      | `admin_rahul` (ID: 1) |
 
 ---
 
@@ -79,6 +81,7 @@ cd C:\Users\rahul\Desktop\stubby\stub
 ```
 
 This script:
+
 1. Tests the `/api/v1/ingest` endpoint
 2. Checks the `audit_logs_v2` table for recent entries
 3. Provides instructions for testing admin endpoints
@@ -86,6 +89,7 @@ This script:
 ### Manual Testing
 
 **Test Ingest Endpoint:**
+
 ```powershell
 Invoke-RestMethod -Uri "http://localhost:5000/api/v1/ingest" `
   -Method Post `
@@ -95,6 +99,7 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/v1/ingest" `
 ```
 
 **Check Audit Logs:**
+
 ```sql
 SELECT id, user_id, username, role, action_type, resource_type, resource_id, timestamp
 FROM audit_logs_v2
@@ -103,6 +108,7 @@ LIMIT 10;
 ```
 
 **Expected Results:**
+
 - All `/api/v1/ingest` calls should have `user_id = 1` (admin_rahul)
 - All `/api/admin/` calls should have the logged-in user's ID
 - `action_type` should match the operation (INGEST, CREATE, READ, UPDATE, DELETE, PARSE)
@@ -141,4 +147,3 @@ LIMIT 10;
 ---
 
 **Status:** ✅ **COMPLETE** - All endpoints are now logging to `audit_logs_v2` table in Neon.tech database.
-

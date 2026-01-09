@@ -1990,48 +1990,16 @@
     </div>
 
     <script>
-      // #region agent log
-      console.log('[DEBUG] Script starting execution');
-      console.log('[DEBUG] Document readyState:', document.readyState);
-      console.log('[DEBUG] Boot overlay exists:', !!document.getElementById('boot-overlay'));
-      try {
-        fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:1992',message:'Script tag execution started',data:{readyState:document.readyState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch((e)=>{console.error('[DEBUG] Log fetch failed:',e);});
-      } catch(e) { 
-        console.error('[DEBUG] Log error:',e);
-        console.error('[DEBUG] Error stack:',e.stack);
-      }
-      // #endregion
-      
-      // Global error handler to catch any syntax errors
-      window.addEventListener('error', function(e) {
-        console.error('[DEBUG] Global error caught:', e.message, 'at', e.filename, ':', e.lineno);
-        console.error('[DEBUG] Error details:', e.error);
-      });
       // ========== Authentication State ==========
       let currentUser = null;
       let accessibleMachines = [];
 
       // Check authentication on page load
       async function checkAuth() {
-        // #region agent log
-        console.log('[DEBUG] checkAuth called');
         try {
-          fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:1998',message:'checkAuth called',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch((e)=>{console.error('[DEBUG] Log fetch failed:',e);});
-        } catch(e) { console.error('[DEBUG] Log error:',e); }
-        // #endregion
-        try {
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2000',message:'checkAuth fetch starting',data:{url:'/api/auth/me'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
           const response = await fetch('/api/auth/me');
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2001',message:'checkAuth response received',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
           if (response.ok) {
             const data = await response.json();
-            // #region agent log
-            fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2008',message:'checkAuth data parsed',data:{success:data.success,hasUser:!!data.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-            // #endregion
             // Show/hide admin icon based on role
             const adminIcon = document.getElementById('sidebarAdminIcon');
             if (adminIcon) {
@@ -2040,13 +2008,7 @@
             if (data.success) {
               currentUser = data.user;
               accessibleMachines = data.user.accessible_machines || [];
-              // #region agent log
-              fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2011',message:'checkAuth success path - before showDashboard',data:{hasCurrentUser:!!currentUser},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-              // #endregion
               showDashboard();
-              // #region agent log
-              fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2012',message:'checkAuth success path - after showDashboard',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-              // #endregion
               filterMachineSelector();
               updateUserInfo();
               if (currentUser.role === 'admin') {
@@ -2093,21 +2055,12 @@
                 systemStartTime = Date.now();
               }
               updateSessionUptime();
-              // #region agent log
-              fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2058',message:'checkAuth success - returning early',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-              // #endregion
               return;
             }
           }
         } catch (e) {
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2061',message:'checkAuth catch block',data:{error:e.message,stack:e.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
           console.error('Auth check failed:', e);
         }
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2064',message:'checkAuth calling showLogin',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
         showLogin();
       }
 
@@ -2160,19 +2113,10 @@
       }
 
       function showDashboard() {
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2115',message:'showDashboard called',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         // Hide boot overlay
         const bootOverlay = document.getElementById('boot-overlay');
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2117',message:'showDashboard boot overlay check',data:{found:!!bootOverlay},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         if (bootOverlay) {
           bootOverlay.style.display = 'none';
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2119',message:'showDashboard boot overlay hidden',data:{display:bootOverlay.style.display},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
         }
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('mainDashboard').style.display = 'block';

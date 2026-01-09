@@ -2847,10 +2847,20 @@ def api_stop_machine(machine_id):
     
     # Stop producer if running
     if is_component_running('producer'):
-        stop_result = stop_component('producer')
-        stop_data = stop_result.get_json()
-        if not stop_data.get('success'):
-            logger.warning(f"Failed to stop producer: {stop_data.get('error')}")
+        try:
+            stop_result = stop_component('producer')
+            # Handle tuple response (response, status_code) from Flask
+            if isinstance(stop_result, tuple):
+                stop_response, _ = stop_result
+            else:
+                stop_response = stop_result
+            
+            stop_data = stop_response.get_json() if stop_response and hasattr(stop_response, 'get_json') else None
+            if stop_data and not stop_data.get('success'):
+                logger.warning(f"Failed to stop producer: {stop_data.get('error')}")
+            # Continue anyway - we'll still set the state
+        except Exception as e:
+            logger.warning(f"Error stopping producer: {e}")
             # Continue anyway - we'll still set the state
     
     with machine_state_lock:

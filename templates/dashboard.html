@@ -670,7 +670,7 @@
                   </div>
                       <div class="scada-upload-hint">PDF, CSV, or JSON</div>
                   <input type="file" id="sensorFileInput" accept=".pdf,.csv,.json" style="display: none;" onchange="handleSensorFileSelect(event)">
-                </div>
+                    </div>
                     <button onclick="aiParseSensorFile()" class="scada-btn" id="aiParseBtn" style="width: 100%; margin-top: var(--space-sm); background: var(--theme-status-info); border-color: var(--theme-status-info); font-weight: 700;">
                       AI PARSE
                   </button>
@@ -682,7 +682,7 @@
                       <div class="config-label" style="color: var(--theme-status-info); margin-bottom: var(--space-md); font-weight: 700; font-size: 14px;">REVIEW EXTRACTED SPECS</div>
                       <div id="aiParsePreview" class="config-value" style="font-weight: 700;"></div>
                       <button onclick="applyAIParseResults()" class="scada-btn" style="width: 100%; margin-top: var(--space-sm); background: var(--theme-status-info); border-color: var(--theme-status-info); font-weight: 700;">APPLY TO FORM</button>
-                </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -711,31 +711,31 @@
                             <div style="display: flex; align-items: center; gap: var(--space-xs);">
                               <div class="scada-status-dot-indicator" id="configProducerStatus"></div>
                               <span class="config-value" id="configProducerStatusText" style="font-size: 12px;">STOPPED</span>
-                    </div>
-                    </div>
+                  </div>
+                </div>
                           <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span class="config-label" style="font-weight: 700; font-size: 12px;">CONSUMER</span>
                             <div style="display: flex; align-items: center; gap: var(--space-xs);">
                               <div class="scada-status-dot-indicator" id="configConsumerStatus"></div>
                               <span class="config-value" id="configConsumerStatusText" style="font-size: 12px;">STOPPED</span>
-                  </div>
                 </div>
+                  </div>
                           <div style="display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-xs); border-top: 1px solid var(--border-subtle);">
                             <span class="config-label" style="font-weight: 700; font-size: 12px;">KAFKA</span>
                             <div style="display: flex; align-items: center; gap: var(--space-xs);">
                               <div class="scada-status-dot-indicator" id="configKafkaStatus"></div>
                               <span class="config-value" id="configKafkaStatusText" style="font-size: 12px;">Checking...</span>
                 </div>
-                </div>
+                  </div>
                 </div>
               </div>
             </div>
-
+            
                     <!-- Sensor Management Accordions (5 Categories) - Dense List -->
                     <div id="configSensorAccordions" style="flex: 1; overflow-y: auto;">
                       <!-- Populated by renderConfigSensorAccordions() -->
-                    </div>
-                    
+            </div>
+
                     <!-- Save Thresholds Button -->
                     <div style="padding: var(--space-sm); border-top: 1px solid var(--border-default);">
                       <button onclick="saveAllSensorThresholds()" class="scada-btn" style="width: 100%; background: var(--theme-interactive-primary); border-color: var(--theme-interactive-primary); font-weight: 700; color: var(--theme-bg-base);">
@@ -743,7 +743,7 @@
                       </button>
                       <div id="sensorThresholdSaveMessage" style="margin-top: var(--space-xs); text-align: center; font-size: 12px; color: var(--text-muted);"></div>
                     </div>
-                  </div>
+                    </div>
                 </div>
               </div>
             </div>
@@ -757,7 +757,7 @@
                   <div class="rig-card-header config-widget-header" style="background: var(--theme-bg-tertiary); color: var(--theme-text-primary);">
                     <span>CUSTOM SENSOR STUDIO</span>
                     <span class="status-indicator status-nom"></span>
-                  </div>
+              </div>
                   <div class="rig-card-body" style="flex: 1; overflow-y: auto; padding: var(--space-md);">
                     <p class="config-label" style="margin-bottom: var(--space-md); line-height: 1.4; font-weight: 700;">
                       Add custom sensor parameters. New sensors appear in producer messages and dashboard stats.
@@ -814,7 +814,7 @@
                 </div>
                 </div>
               </div>
-
+              
             <!-- Widget 3: Anomaly Simulation (Right Top) -->
             <div class="grid-stack-item" data-gs-x="8" data-gs-y="3" data-gs-width="4" data-gs-height="4">
               <div class="grid-stack-item-content">
@@ -830,14 +830,14 @@
                     </p>
                     
                     <div style="display: grid; gap: var(--space-sm);">
-                      <div>
+              <div>
                         <label class="config-label" style="font-weight: 700; font-size: 12px;">MACHINE</label>
                         <select id="injectionMachineId" class="scada-input" style="width: 100%; padding: var(--space-sm); margin-top: 2px; background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); color: var(--theme-text-primary);">
                           <option value="A">Machine A</option>
                           <option value="B">Machine B</option>
                           <option value="C">Machine C</option>
                         </select>
-                      </div>
+                </div>
                       
                       <div>
                         <label class="config-label" style="font-weight: 700; font-size: 12px;">ANOMALY TYPE</label>
@@ -847,16 +847,16 @@
                           <option value="rpm_spike">RPM Spike</option>
                           <option value="bearing_overheat">Bearing Overheat</option>
                         </select>
-                      </div>
-                
+              </div>
+
                       <button onclick="injectAnomalyNow()" class="scada-btn" style="width: 100%; margin-top: var(--space-sm); background: var(--theme-status-warning); border-color: var(--theme-status-warning); font-weight: 700; color: var(--theme-bg-base);">
                         INJECT ANOMALY
                       </button>
-                    </div>
+                  </div>
                   </div>
                 </div>
               </div>
-            </div>
+                </div>
                 
             <!-- Widget 4: Data Export (Right Bottom) -->
             <div class="grid-stack-item" data-gs-x="8" data-gs-y="7" data-gs-width="4" data-gs-height="3">
@@ -866,7 +866,7 @@
                   <div class="rig-card-header config-widget-header" style="background: var(--theme-bg-tertiary); color: var(--theme-text-primary);">
                     <span>DATA EXPORT</span>
                     <span class="status-indicator status-info"></span>
-                  </div>
+                </div>
                   <div class="rig-card-body" style="flex: 1; overflow-y: auto; padding: var(--space-md);">
                     <p class="config-label" style="margin-bottom: var(--space-md); font-weight: 700; font-size: 12px;">
                       Export sensor readings and ML metrics for external analysis.
@@ -884,10 +884,10 @@
                       <button onclick="exportLogsPDF()" class="scada-btn" style="width: 100%; background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); font-weight: 700; color: var(--theme-text-primary);">
                         EXPORT PDF
                       </button>
-                    </div>
                   </div>
                 </div>
-              </div>
+                  </div>
+                  </div>
             </div>
             
             <!-- Widget 5: Bulk Sensor Controls (Center Bottom) -->
@@ -4529,18 +4529,73 @@
       let configGrid = null;
       let layoutEditMode = false;
 
+      // ============================================
+      // GRIDSTACK LAYOUT PERSISTENCE
+      // ============================================
+      
+      /**
+       * Save Gridstack layout to localStorage
+       * @param {string} name - Grid name (e.g., 'monitoring', 'config', 'admin', 'alarms')
+       * @param {GridStack} grid - GridStack instance
+       */
+      function saveGridLayout(name, grid) {
+        if (!grid) {
+          console.warn(`Cannot save ${name} layout: grid is null`);
+          return;
+        }
+        try {
+          const layout = grid.save(false); // Get serialized layout (widgets only)
+          localStorage.setItem(`gridstack_layout_${name}`, JSON.stringify(layout));
+          console.log(`✅ Saved ${name} layout:`, layout);
+        } catch (e) {
+          console.error(`Failed to save ${name} layout:`, e);
+        }
+      }
+
+      /**
+       * Load Gridstack layout from localStorage
+       * @param {string} name - Grid name (e.g., 'monitoring', 'config', 'admin', 'alarms')
+       * @param {GridStack} grid - GridStack instance
+       * @returns {boolean} - True if layout was loaded, false if using default
+       */
+      function loadGridLayout(name, grid) {
+        if (!grid) {
+          console.warn(`Cannot load ${name} layout: grid is null`);
+          return false;
+        }
+        try {
+          const savedLayout = localStorage.getItem(`gridstack_layout_${name}`);
+          if (savedLayout) {
+            const layout = JSON.parse(savedLayout);
+            console.log(`📂 Loading ${name} layout:`, layout);
+            grid.load(layout);
+            console.log(`✅ Loaded ${name} layout from localStorage`);
+            return true;
+          }
+        } catch (e) {
+          console.warn(`Failed to load ${name} layout:`, e);
+        }
+        console.log(`📋 Using default ${name} layout`);
+        return false;
+      }
+
+      /**
+       * Clear saved layout for a specific grid
+       * @param {string} name - Grid name
+       */
+      function clearGridLayout(name) {
+        localStorage.removeItem(`gridstack_layout_${name}`);
+        console.log(`🗑️ Cleared ${name} layout`);
+      }
+
       function initGridstacks() {
         if (typeof GridStack === 'undefined') {
           console.warn('Gridstack.js not loaded');
           return;
         }
         
-        // Calculate proper cell height for 1080p layout (20 rows)
-        const viewportHeight = window.innerHeight;
-        const headerHeight = 60;
-        const padding = 32;
-        const availableHeight = viewportHeight - headerHeight - padding;
-        const cellHeight = Math.max(40, Math.floor(availableHeight / 20)); // Minimum 40px per cell
+        // FIXED cellHeight: 60px to prevent collapse/minimize bug during drags
+        const cellHeight = 60;
         
         const gridOptions = {
           column: 12,
@@ -4558,8 +4613,11 @@
         if (monitoringEl) {
           monitoringGrid = GridStack.init(gridOptions, '#monitoringGrid');
           
-          // Ensure widgets maintain their default sizes
-          monitoringGrid.batchUpdate();
+          // Try to load saved layout, fall back to default
+          if (!loadGridLayout('monitoring', monitoringGrid)) {
+            // Use default layout from HTML data-gs-* attributes
+            monitoringGrid.batchUpdate();
+          }
           
           // Handle resize events for Three.js canvas
           monitoringGrid.on('resizestop', function(event, items) {
@@ -4584,6 +4642,11 @@
           
           // Handle move events for Three.js canvas (when 3D rig is moved)
           monitoringGrid.on('change', function(event, items) {
+            // Auto-save layout on change (when in edit mode)
+            if (layoutEditMode) {
+              saveGridLayout('monitoring', monitoringGrid);
+            }
+            
             items.forEach(item => {
               if (item && item.el) {
                 const canvas = item.el.querySelector('#rigCanvas');
@@ -4602,8 +4665,10 @@
         if (configEl) {
           configGrid = GridStack.init(gridOptions, '#configGrid');
           
-          // Ensure widgets maintain their default sizes
-          configGrid.batchUpdate();
+          // Try to load saved layout, fall back to default
+          if (!loadGridLayout('config', configGrid)) {
+            configGrid.batchUpdate();
+          }
           
           // Handle resize events for config grid widgets
           configGrid.on('resizestop', function(event, items) {
@@ -4612,7 +4677,10 @@
           
           // Handle move events
           configGrid.on('change', function(event, items) {
-            // Any move handling if needed
+            // Auto-save layout on change (when in edit mode)
+            if (layoutEditMode) {
+              saveGridLayout('config', configGrid);
+            }
           });
         }
         
@@ -4630,12 +4698,8 @@
         const adminEl = document.getElementById('adminGrid');
         if (!adminEl) return;
         
-        // Calculate proper cell height for 1080p layout (20 rows)
-        const viewportHeight = window.innerHeight;
-        const headerHeight = 60;
-        const padding = 32;
-        const availableHeight = viewportHeight - headerHeight - padding;
-        const cellHeight = Math.max(40, Math.floor(availableHeight / 20)); // Minimum 40px per cell, 20 rows for 1080p
+        // FIXED cellHeight: 60px to prevent collapse/minimize bug during drags
+        const cellHeight = 60;
         
         const gridOptions = {
           column: 12,
@@ -4651,6 +4715,18 @@
         
         if (!adminGrid) {
           adminGrid = GridStack.init(gridOptions, '#adminGrid');
+          
+          // Try to load saved layout, fall back to default
+          if (!loadGridLayout('admin', adminGrid)) {
+            adminGrid.batchUpdate();
+            adminGrid.compact();
+          }
+          
+          // Auto-save on change
+          adminGrid.on('change', function(event, items) {
+            saveGridLayout('admin', adminGrid);
+          });
+          
           console.log('Admin grid initialized with drag/resize enabled, cellHeight:', cellHeight);
         } else {
           // Update existing grid
@@ -4817,12 +4893,8 @@
         const alarmsEl = document.getElementById('alarmsChartGrid');
         if (!alarmsEl) return;
         
-        // Calculate proper cell height for 1080p layout
-        const viewportHeight = window.innerHeight;
-        const headerHeight = 60;
-        const padding = 32;
-        const availableHeight = viewportHeight - headerHeight - padding;
-        const cellHeight = Math.max(40, Math.floor(availableHeight / 20));
+        // FIXED cellHeight: 60px to prevent collapse/minimize bug during drags
+        const cellHeight = 60;
         
         const gridOptions = {
           column: 12,
@@ -4833,12 +4905,37 @@
           disableResize: false, // Allow resizing
           staticGrid: false,
           minRow: 1,
-          animate: false
+          animate: false,
+          acceptWidgets: true, // Allow widget movement
+          removable: false // Prevent accidental deletion
         };
         
         if (!alarmsChartGrid) {
           alarmsChartGrid = GridStack.init(gridOptions, '#alarmsChartGrid');
-          alarmsChartGrid.batchUpdate();
+          
+          // Try to load saved layout, fall back to default
+          if (!loadGridLayout('alarms', alarmsChartGrid)) {
+            alarmsChartGrid.batchUpdate();
+          }
+          
+          // Auto-save on change
+          alarmsChartGrid.on('change', function(event, items) {
+            saveGridLayout('alarms', alarmsChartGrid);
+          });
+          
+          // Handle resize to update chart dimensions
+          alarmsChartGrid.on('resizestop', function(event, items) {
+            items.forEach(item => {
+              if (item.el) {
+                const category = item.el.getAttribute('data-category');
+                if (category) {
+                  // Re-render charts for this category
+                  setTimeout(() => renderCategorySensorCharts(category), 100);
+                }
+              }
+            });
+          });
+          
           console.log('Alarms chart grid initialized with cellHeight:', cellHeight);
         } else {
           alarmsChartGrid.batchUpdate();
@@ -5439,6 +5536,7 @@
           if (!grid) return;
           
           const gridEl = index === 0 ? monitoringGridEl : configGridEl;
+          const gridName = index === 0 ? 'monitoring' : 'config';
           
           if (layoutEditMode) {
             // Enable edit mode
@@ -5447,7 +5545,8 @@
             grid.enableResize(true);
             if (gridEl) gridEl.classList.add('edit-mode');
           } else {
-            // Disable edit mode (save layout)
+            // Disable edit mode and SAVE LAYOUT
+            saveGridLayout(gridName, grid);
             grid.setStatic(true);
             grid.enableMove(false);
             grid.enableResize(false);

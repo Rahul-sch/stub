@@ -184,7 +184,7 @@
           </div>
 
           <div class="scada-topbar-right">
-            <button id="editLayoutBtn" onclick="toggleLayoutEditMode()" class="scada-btn" style="padding: 6px 12px; font-size: 10px; margin-right: var(--space-md); background: var(--bg-secondary); border: 1px solid var(--border-default); color: var(--text-primary); font-family: var(--font-mono); cursor: pointer;">
+            <button id="editLayoutBtn" onclick="toggleLayoutEditMode()" class="scada-btn" style="padding: 6px 12px; font-size: 13px; margin-right: var(--space-md); background: var(--bg-secondary); border: 1px solid var(--border-default); color: var(--text-primary); font-family: var(--font-mono); cursor: pointer;">
               EDIT LAYOUT
             </button>
             <div class="scada-alerts-badge none" id="scadaAlertsBadge">
@@ -320,7 +320,7 @@
                     <span class="status-indicator status-nom"></span>
                   </div>
                   <div class="rig-card-body" style="overflow-y: auto; max-height: 250px;">
-                    <div id="liveSensorStreamWidget" style="font-family: var(--font-mono); font-size: 9px;">
+                    <div id="liveSensorStreamWidget" style="font-family: var(--font-mono); font-size: 12px;">
                       <!-- Populated by JS -->
                     </div>
                   </div>
@@ -339,10 +339,10 @@
                 </div>
                   <div class="rig-card-body" style="position: relative; flex: 1; min-height: 0;">
                     <canvas id="rigCanvas" style="cursor: grab; width: 100%; height: 100%;"></canvas>
-                    <button id="resetViewBtn" onclick="reset3DView()" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; background: rgba(0,0,0,0.8); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 9px; font-weight: 600; cursor: pointer; transition: background var(--transition-normal); z-index: 10;">
+                    <button id="resetViewBtn" onclick="reset3DView()" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; background: rgba(0,0,0,0.8); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; font-weight: 600; cursor: pointer; transition: background var(--transition-normal); z-index: 10;">
                       ↻ RESET VIEW
                     </button>
-                  <div id="rigRiskIndicator" style="position: absolute; bottom: 10px; left: 10px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--status-running); text-transform: uppercase; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 4px;">
+                  <div id="rigRiskIndicator" style="position: absolute; bottom: 10px; left: 10px; font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--status-running); text-transform: uppercase; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 4px;">
                     RIG STATUS: NOMINAL
                     </div>
                   </div>
@@ -376,7 +376,7 @@
                     <span class="status-indicator status-error"></span>
                   </div>
                   <div class="rig-card-body" style="overflow-y: auto; max-height: 300px;">
-                    <table id="criticalAlarmsWidget" style="width: 100%; font-size: 9px; font-family: var(--font-mono);">
+                    <table id="criticalAlarmsWidget" style="width: 100%; font-size: 12px; font-family: var(--font-mono);">
                       <thead>
                         <tr>
                           <th style="text-align: left; padding: 4px;">TIME</th>
@@ -459,8 +459,8 @@
                   <div class="rig-card-header config-widget-header" style="background: var(--theme-bg-tertiary); color: var(--theme-text-primary); cursor: pointer;" onclick="toggleAlarmsCategoryWidget('environmental')">
                     <span>ENVIRONMENTAL</span>
                     <span style="display: flex; align-items: center; gap: var(--space-xs);">
-                      <span id="alarmsEnvCount" style="font-size: 9px; color: var(--text-muted);">0 sensors</span>
-                      <span id="alarmsEnvChevron" style="font-family: var(--font-mono); font-size: 10px;">▼</span>
+                      <span id="alarmsEnvCount" style="font-size: 12px; color: var(--text-muted);">0 sensors</span>
+                      <span id="alarmsEnvChevron" style="font-family: var(--font-mono); font-size: 13px;">▼</span>
                     </span>
             </div>
                   <div class="rig-card-body" id="alarmsEnvContent" style="flex: 1; overflow-y: auto; padding: var(--space-sm); display: none;">
@@ -480,8 +480,8 @@
                   <div class="rig-card-header config-widget-header" style="background: var(--theme-bg-tertiary); color: var(--theme-text-primary); cursor: pointer;" onclick="toggleAlarmsCategoryWidget('mechanical')">
                     <span>MECHANICAL</span>
                     <span style="display: flex; align-items: center; gap: var(--space-xs);">
-                      <span id="alarmsMechCount" style="font-size: 9px; color: var(--text-muted);">0 sensors</span>
-                      <span id="alarmsMechChevron" style="font-family: var(--font-mono); font-size: 10px;">▼</span>
+                      <span id="alarmsMechCount" style="font-size: 12px; color: var(--text-muted);">0 sensors</span>
+                      <span id="alarmsMechChevron" style="font-family: var(--font-mono); font-size: 13px;">▼</span>
                     </span>
                   </div>
                   <div class="rig-card-body" id="alarmsMechContent" style="flex: 1; overflow-y: auto; padding: var(--space-sm); display: none;">
@@ -501,8 +501,8 @@
                   <div class="rig-card-header config-widget-header" style="background: var(--theme-bg-tertiary); color: var(--theme-text-primary); cursor: pointer;" onclick="toggleAlarmsCategoryWidget('thermal')">
                     <span>THERMAL</span>
                     <span style="display: flex; align-items: center; gap: var(--space-xs);">
-                      <span id="alarmsThermCount" style="font-size: 9px; color: var(--text-muted);">0 sensors</span>
-                      <span id="alarmsThermChevron" style="font-family: var(--font-mono); font-size: 10px;">▼</span>
+                      <span id="alarmsThermCount" style="font-size: 12px; color: var(--text-muted);">0 sensors</span>
+                      <span id="alarmsThermChevron" style="font-family: var(--font-mono); font-size: 13px;">▼</span>
                     </span>
                   </div>
                   <div class="rig-card-body" id="alarmsThermContent" style="flex: 1; overflow-y: auto; padding: var(--space-sm); display: none;">
@@ -522,8 +522,8 @@
                   <div class="rig-card-header config-widget-header" style="background: var(--theme-bg-tertiary); color: var(--theme-text-primary); cursor: pointer;" onclick="toggleAlarmsCategoryWidget('electrical')">
                     <span>ELECTRICAL</span>
                     <span style="display: flex; align-items: center; gap: var(--space-xs);">
-                      <span id="alarmsElecCount" style="font-size: 9px; color: var(--text-muted);">0 sensors</span>
-                      <span id="alarmsElecChevron" style="font-family: var(--font-mono); font-size: 10px;">▼</span>
+                      <span id="alarmsElecCount" style="font-size: 12px; color: var(--text-muted);">0 sensors</span>
+                      <span id="alarmsElecChevron" style="font-family: var(--font-mono); font-size: 13px;">▼</span>
                     </span>
                   </div>
                   <div class="rig-card-body" id="alarmsElecContent" style="flex: 1; overflow-y: auto; padding: var(--space-sm); display: none;">
@@ -543,8 +543,8 @@
                   <div class="rig-card-header config-widget-header" style="background: var(--theme-bg-tertiary); color: var(--theme-text-primary); cursor: pointer;" onclick="toggleAlarmsCategoryWidget('fluid')">
                     <span>FLUID</span>
                     <span style="display: flex; align-items: center; gap: var(--space-xs);">
-                      <span id="alarmsFluidCount" style="font-size: 9px; color: var(--text-muted);">0 sensors</span>
-                      <span id="alarmsFluidChevron" style="font-family: var(--font-mono); font-size: 10px;">▼</span>
+                      <span id="alarmsFluidCount" style="font-size: 12px; color: var(--text-muted);">0 sensors</span>
+                      <span id="alarmsFluidChevron" style="font-family: var(--font-mono); font-size: 13px;">▼</span>
                     </span>
                   </div>
                   <div class="rig-card-body" id="alarmsFluidContent" style="flex: 1; overflow-y: auto; padding: var(--space-sm); display: none;">
@@ -566,7 +566,7 @@
                     <span class="status-indicator status-error"></span>
                   </div>
                   <div class="rig-card-body" style="overflow-y: auto; max-height: 300px;">
-                    <table id="alarmsCriticalAlarmsWidget" style="width: 100%; font-size: 9px; font-family: var(--font-mono);">
+                    <table id="alarmsCriticalAlarmsWidget" style="width: 100%; font-size: 12px; font-family: var(--font-mono);">
                       <thead>
                         <tr>
                           <th style="text-align: left; padding: 4px;">TIME</th>
@@ -600,7 +600,7 @@
                   </div>
                   <div style="display: flex; align-items: center; gap: var(--space-xs);">
                     <div class="scada-status-dot-indicator" id="sectionProducerStatus"></div>
-                    <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);" id="sectionProducerStatusText">STOPPED</span>
+                    <span style="font-family: var(--font-mono); font-size: 13px; color: var(--text-muted);" id="sectionProducerStatusText">STOPPED</span>
                   </div>
                 </div>
                 <div style="display: flex; gap: var(--space-sm);">
@@ -617,7 +617,7 @@
                   </div>
                   <div style="display: flex; align-items: center; gap: var(--space-xs);">
                     <div class="scada-status-dot-indicator" id="sectionConsumerStatus"></div>
-                    <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);" id="sectionConsumerStatusText">STOPPED</span>
+                    <span style="font-family: var(--font-mono); font-size: 13px; color: var(--text-muted);" id="sectionConsumerStatusText">STOPPED</span>
                   </div>
                 </div>
                 <div style="display: flex; gap: var(--space-sm);">
@@ -628,12 +628,12 @@
               
               <!-- Kafka Status -->
               <div style="padding: var(--space-md); background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 4px;">
-                <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
+                <div style="font-family: var(--font-mono); font-size: 14px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
                   KAFKA BROKER
                 </div>
                 <div style="display: flex; align-items: center; gap: var(--space-sm);">
                   <div class="scada-status-dot-indicator" id="sectionKafkaStatus"></div>
-                  <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);" id="sectionKafkaStatusText">Checking...</span>
+                  <span style="font-family: var(--font-mono); font-size: 14px; color: var(--text-primary);" id="sectionKafkaStatusText">Checking...</span>
                 </div>
               </div>
             </div>
@@ -670,7 +670,7 @@
                       <div class="config-label" style="margin-top: var(--space-sm); font-weight: 700;">Analyzing...</div>
                   </div>
                     <div id="aiParseResults" style="display: none; margin-top: var(--space-sm); padding: var(--space-md); border: 2px solid var(--theme-status-info); border-radius: 4px; background: var(--bg-tertiary);">
-                      <div class="config-label" style="color: var(--theme-status-info); margin-bottom: var(--space-md); font-weight: 700; font-size: 11px;">REVIEW EXTRACTED SPECS</div>
+                      <div class="config-label" style="color: var(--theme-status-info); margin-bottom: var(--space-md); font-weight: 700; font-size: 14px;">REVIEW EXTRACTED SPECS</div>
                       <div id="aiParsePreview" class="config-value" style="font-weight: 700;"></div>
                       <button onclick="applyAIParseResults()" class="scada-btn" style="width: 100%; margin-top: var(--space-sm); background: var(--theme-status-info); border-color: var(--theme-status-info); font-weight: 700;">APPLY TO FORM</button>
                 </div>
@@ -692,30 +692,30 @@
                     <!-- Connection Status (Compact) -->
                     <div class="rig-card" style="margin-bottom: var(--space-sm); background: var(--theme-bg-tertiary);">
                       <div class="rig-card-header" style="background: var(--theme-bg-tertiary); padding: var(--space-xs) var(--space-sm);">
-                        <span style="font-size: 10px;">CONNECTION STATUS</span>
+                        <span style="font-size: 13px;">CONNECTION STATUS</span>
                         <span class="status-indicator status-nom"></span>
             </div>
                       <div class="rig-card-body" style="padding: var(--space-sm);">
                         <div style="display: grid; gap: var(--space-xs);">
                           <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span class="config-label" style="font-weight: 700; font-size: 9px;">PRODUCER</span>
+                            <span class="config-label" style="font-weight: 700; font-size: 12px;">PRODUCER</span>
                             <div style="display: flex; align-items: center; gap: var(--space-xs);">
                               <div class="scada-status-dot-indicator" id="configProducerStatus"></div>
-                              <span class="config-value" id="configProducerStatusText" style="font-size: 9px;">STOPPED</span>
+                              <span class="config-value" id="configProducerStatusText" style="font-size: 12px;">STOPPED</span>
                     </div>
                     </div>
                           <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span class="config-label" style="font-weight: 700; font-size: 9px;">CONSUMER</span>
+                            <span class="config-label" style="font-weight: 700; font-size: 12px;">CONSUMER</span>
                             <div style="display: flex; align-items: center; gap: var(--space-xs);">
                               <div class="scada-status-dot-indicator" id="configConsumerStatus"></div>
-                              <span class="config-value" id="configConsumerStatusText" style="font-size: 9px;">STOPPED</span>
+                              <span class="config-value" id="configConsumerStatusText" style="font-size: 12px;">STOPPED</span>
                   </div>
                 </div>
                           <div style="display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-xs); border-top: 1px solid var(--border-subtle);">
-                            <span class="config-label" style="font-weight: 700; font-size: 9px;">KAFKA</span>
+                            <span class="config-label" style="font-weight: 700; font-size: 12px;">KAFKA</span>
                             <div style="display: flex; align-items: center; gap: var(--space-xs);">
                               <div class="scada-status-dot-indicator" id="configKafkaStatus"></div>
-                              <span class="config-value" id="configKafkaStatusText" style="font-size: 9px;">Checking...</span>
+                              <span class="config-value" id="configKafkaStatusText" style="font-size: 12px;">Checking...</span>
                 </div>
                 </div>
                 </div>
@@ -732,7 +732,7 @@
                       <button onclick="saveAllSensorThresholds()" class="scada-btn" style="width: 100%; background: var(--theme-interactive-primary); border-color: var(--theme-interactive-primary); font-weight: 700; color: var(--theme-bg-base);">
                         SAVE THRESHOLDS
                       </button>
-                      <div id="sensorThresholdSaveMessage" style="margin-top: var(--space-xs); text-align: center; font-size: 9px; color: var(--text-muted);"></div>
+                      <div id="sensorThresholdSaveMessage" style="margin-top: var(--space-xs); text-align: center; font-size: 12px; color: var(--text-muted);"></div>
                     </div>
                   </div>
                 </div>
@@ -816,13 +816,13 @@
                     <span class="status-indicator status-warning"></span>
                   </div>
                   <div class="rig-card-body" style="flex: 1; overflow-y: auto; padding: var(--space-md);">
-                    <p class="config-label" style="margin-bottom: var(--space-md); font-weight: 700; font-size: 9px;">
+                    <p class="config-label" style="margin-bottom: var(--space-md); font-weight: 700; font-size: 12px;">
                       Inject synthetic anomalies for testing ML detection and alert workflows.
                     </p>
                     
                     <div style="display: grid; gap: var(--space-sm);">
                       <div>
-                        <label class="config-label" style="font-weight: 700; font-size: 9px;">MACHINE</label>
+                        <label class="config-label" style="font-weight: 700; font-size: 12px;">MACHINE</label>
                         <select id="injectionMachineId" class="scada-input" style="width: 100%; padding: var(--space-sm); margin-top: 2px; background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); color: var(--theme-text-primary);">
                           <option value="A">Machine A</option>
                           <option value="B">Machine B</option>
@@ -831,7 +831,7 @@
                       </div>
                       
                       <div>
-                        <label class="config-label" style="font-weight: 700; font-size: 9px;">ANOMALY TYPE</label>
+                        <label class="config-label" style="font-weight: 700; font-size: 12px;">ANOMALY TYPE</label>
                         <select id="injectionAnomalyType" class="scada-input" style="width: 100%; padding: var(--space-sm); margin-top: 2px; background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); color: var(--theme-text-primary);">
                           <option value="high_vibration">High Vibration</option>
                           <option value="high_temperature">High Temperature</option>
@@ -859,7 +859,7 @@
                     <span class="status-indicator status-info"></span>
                   </div>
                   <div class="rig-card-body" style="flex: 1; overflow-y: auto; padding: var(--space-md);">
-                    <p class="config-label" style="margin-bottom: var(--space-md); font-weight: 700; font-size: 9px;">
+                    <p class="config-label" style="margin-bottom: var(--space-md); font-weight: 700; font-size: 12px;">
                       Export sensor readings and ML metrics for external analysis.
                     </p>
                     
@@ -893,12 +893,12 @@
                   <div class="rig-card-body" style="flex: 1; overflow-y: auto; padding: var(--space-md);">
                     <!-- Global Controls -->
                     <div style="margin-bottom: var(--space-md);">
-                      <label class="config-label" style="font-weight: 900; margin-bottom: var(--space-sm); display: block; font-size: 10px;">GLOBAL</label>
+                      <label class="config-label" style="font-weight: 900; margin-bottom: var(--space-sm); display: block; font-size: 13px;">GLOBAL</label>
                       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm);">
-                        <button onclick="enableAllSensors()" class="scada-btn" style="width: 100%; background: var(--theme-interactive-primary); border-color: var(--theme-interactive-primary); font-weight: 700; font-size: 10px; padding: var(--space-sm);">
+                        <button onclick="enableAllSensors()" class="scada-btn" style="width: 100%; background: var(--theme-interactive-primary); border-color: var(--theme-interactive-primary); font-weight: 700; font-size: 13px; padding: var(--space-sm);">
                           ENABLE ALL
                         </button>
-                        <button onclick="disableAllSensors()" class="scada-btn" style="width: 100%; background: var(--theme-bg-tertiary); border-color: var(--border-default); font-weight: 700; font-size: 10px; padding: var(--space-sm);">
+                        <button onclick="disableAllSensors()" class="scada-btn" style="width: 100%; background: var(--theme-bg-tertiary); border-color: var(--border-default); font-weight: 700; font-size: 13px; padding: var(--space-sm);">
                           DISABLE ALL
                   </button>
                       </div>
@@ -906,27 +906,27 @@
                     
                     <!-- Category Toggles -->
                     <div>
-                      <label class="config-label" style="font-weight: 900; margin-bottom: var(--space-sm); display: block; font-size: 10px;">CATEGORIES</label>
+                      <label class="config-label" style="font-weight: 900; margin-bottom: var(--space-sm); display: block; font-size: 13px;">CATEGORIES</label>
                       <div style="display: grid; gap: var(--space-xs);">
                         <label style="display: flex; align-items: center; gap: var(--space-sm); cursor: pointer; padding: var(--space-xs) var(--space-sm); background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px;">
                           <input type="checkbox" id="bulkToggleEnvironmental" onchange="toggleCategorySensors('environmental', this.checked)" style="cursor: pointer; accent-color: var(--theme-interactive-primary);">
-                          <span style="font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: var(--theme-text-primary);">ENVIRONMENTAL</span>
+                          <span style="font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--theme-text-primary);">ENVIRONMENTAL</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: var(--space-sm); cursor: pointer; padding: var(--space-xs) var(--space-sm); background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px;">
                           <input type="checkbox" id="bulkToggleMechanical" onchange="toggleCategorySensors('mechanical', this.checked)" style="cursor: pointer; accent-color: var(--theme-interactive-primary);">
-                          <span style="font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: var(--theme-text-primary);">MECHANICAL</span>
+                          <span style="font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--theme-text-primary);">MECHANICAL</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: var(--space-sm); cursor: pointer; padding: var(--space-xs) var(--space-sm); background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px;">
                           <input type="checkbox" id="bulkToggleThermal" onchange="toggleCategorySensors('thermal', this.checked)" style="cursor: pointer; accent-color: var(--theme-interactive-primary);">
-                          <span style="font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: var(--theme-text-primary);">THERMAL</span>
+                          <span style="font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--theme-text-primary);">THERMAL</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: var(--space-sm); cursor: pointer; padding: var(--space-xs) var(--space-sm); background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px;">
                           <input type="checkbox" id="bulkToggleElectrical" onchange="toggleCategorySensors('electrical', this.checked)" style="cursor: pointer; accent-color: var(--theme-interactive-primary);">
-                          <span style="font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: var(--theme-text-primary);">ELECTRICAL</span>
+                          <span style="font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--theme-text-primary);">ELECTRICAL</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: var(--space-sm); cursor: pointer; padding: var(--space-xs) var(--space-sm); background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px;">
                           <input type="checkbox" id="bulkToggleFluid" onchange="toggleCategorySensors('fluid', this.checked)" style="cursor: pointer; accent-color: var(--theme-interactive-primary);">
-                          <span style="font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: var(--theme-text-primary);">FLUID</span>
+                          <span style="font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--theme-text-primary);">FLUID</span>
                         </label>
                       </div>
                 </div>
@@ -956,7 +956,7 @@
                     GENERATE FULL SESSION REPORT
                   </button>
                 </div>
-                    <div id="lstmReportStatus" style="margin-top: var(--space-sm); font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-align: center;"></div>
+                    <div id="lstmReportStatus" style="margin-top: var(--space-sm); font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); text-align: center;"></div>
               </div>
             </div>
           </div>
@@ -1009,21 +1009,21 @@
                           id="cyberModeToggle" 
                           onclick="setTheme('default')" 
                           class="scada-btn" 
-                          style="width: 100%; background: var(--theme-interactive-primary); border-color: var(--theme-interactive-primary); font-weight: 900; font-size: 11px; padding: var(--space-sm); color: var(--text-primary);">
+                          style="width: 100%; background: var(--theme-interactive-primary); border-color: var(--theme-interactive-primary); font-weight: 900; font-size: 14px; padding: var(--space-sm); color: var(--text-primary);">
                           CYBER
               </button>
                         <button 
                           id="barbieModeToggle" 
                           onclick="toggleBarbieModeButton()" 
                           class="scada-btn" 
-                          style="width: 100%; background: var(--theme-interactive-primary); border-color: var(--theme-interactive-primary); font-weight: 900; font-size: 11px; padding: var(--space-sm); color: var(--text-primary);">
+                          style="width: 100%; background: var(--theme-interactive-primary); border-color: var(--theme-interactive-primary); font-weight: 900; font-size: 14px; padding: var(--space-sm); color: var(--text-primary);">
                           BARBIE MODE: <span id="barbieModeStatus">OFF</span>
                         </button>
                         <button 
                           id="matrixModeToggle" 
                           onclick="toggleMatrixModeButton()" 
                           class="scada-btn" 
-                          style="width: 100%; background: var(--theme-interactive-primary); border-color: var(--theme-interactive-primary); font-weight: 900; font-size: 11px; padding: var(--space-sm); color: var(--text-primary);">
+                          style="width: 100%; background: var(--theme-interactive-primary); border-color: var(--theme-interactive-primary); font-weight: 900; font-size: 14px; padding: var(--space-sm); color: var(--text-primary);">
                           MATRIX MODE: <span id="matrixModeStatus">OFF</span>
               </button>
                       </div>
@@ -1066,21 +1066,21 @@
                   <div style="display: flex; gap: var(--space-md);">
                     <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
                       <input type="checkbox" value="A" class="admin-machine-checkbox" style="cursor: pointer;">
-                      <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">A</span>
+                      <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-primary);">A</span>
                     </label>
                     <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
                       <input type="checkbox" value="B" class="admin-machine-checkbox" style="cursor: pointer;">
-                      <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">B</span>
+                      <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-primary);">B</span>
                     </label>
                     <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
                       <input type="checkbox" value="C" class="admin-machine-checkbox" style="cursor: pointer;">
-                      <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">C</span>
+                      <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-primary);">C</span>
                     </label>
                   </div>
                 </div>
                 <button type="submit" class="rig-btn rig-btn-start" style="width: 100%;">CREATE USER</button>
-                <div id="adminCreateUserError" style="display: none; color: var(--status-error); font-family: var(--font-mono); font-size: 11px; text-align: center; font-weight: 700;"></div>
-                <div id="adminCreateUserSuccess" style="display: none; color: var(--status-running); font-family: var(--font-mono); font-size: 11px; text-align: center; font-weight: 700;"></div>
+                <div id="adminCreateUserError" style="display: none; color: var(--status-error); font-family: var(--font-mono); font-size: 14px; text-align: center; font-weight: 700;"></div>
+                <div id="adminCreateUserSuccess" style="display: none; color: var(--status-running); font-family: var(--font-mono); font-size: 14px; text-align: center; font-weight: 700;"></div>
               </form>
                     
                     <!-- User List -->
@@ -1104,11 +1104,11 @@
                     <span style="font-weight: 900;">LOGIN & AUDIT LOGS</span>
                     <span class="status-indicator status-nom"></span>
                   </div>
-                  <div class="rig-card-body" style="flex: 1; overflow-y: auto; padding: 0; font-family: var(--font-mono); font-size: 9px; background: var(--bg-base); color: var(--text-primary);">
+                  <div class="rig-card-body" style="flex: 1; overflow-y: auto; padding: 0; font-family: var(--font-mono); font-size: 12px; background: var(--bg-base); color: var(--text-primary);">
                     <div style="padding: var(--space-sm); background: var(--bg-secondary); border-bottom: 1px solid var(--border-default);">
                       <div style="color: var(--theme-status-running);">SYSTEM LOGS - SCROLLABLE TERMINAL</div>
                     </div>
-                    <table class="scada-admin-table" style="width: 100%; border-collapse: collapse; font-size: 9px;">
+                    <table class="scada-admin-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
                       <thead style="position: sticky; top: 0; background: var(--bg-secondary); z-index: 10;">
                         <tr>
                           <th class="config-table-header" style="font-weight: 900; padding: var(--space-xs);">TIMESTAMP</th>
@@ -1119,7 +1119,7 @@
                       </thead>
                       <tbody id="adminAuditLogsBody">
                         <tr>
-                          <td colspan="4" style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 10px;">Loading audit logs...</td>
+                          <td colspan="4" style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 13px;">Loading audit logs...</td>
                         </tr>
                       </tbody>
                     </table>
@@ -2050,7 +2050,7 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: var(--space-xs);">
                   <div class="scada-status-dot-indicator" id="modalProducerStatus"></div>
-                  <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);" id="modalProducerStatusText">STOPPED</span>
+                  <span style="font-family: var(--font-mono); font-size: 13px; color: var(--text-muted);" id="modalProducerStatusText">STOPPED</span>
                 </div>
               </div>
               <div style="display: flex; gap: var(--space-sm);">
@@ -2067,7 +2067,7 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: var(--space-xs);">
                   <div class="scada-status-dot-indicator" id="modalConsumerStatus"></div>
-                  <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);" id="modalConsumerStatusText">STOPPED</span>
+                  <span style="font-family: var(--font-mono); font-size: 13px; color: var(--text-muted);" id="modalConsumerStatusText">STOPPED</span>
                 </div>
               </div>
               <div style="display: flex; gap: var(--space-sm);">
@@ -2078,12 +2078,12 @@
             
             <!-- Kafka Status -->
             <div style="padding: var(--space-md); background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 4px;">
-              <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
+              <div style="font-family: var(--font-mono); font-size: 14px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
                 KAFKA BROKER
               </div>
               <div style="display: flex; align-items: center; gap: var(--space-sm);">
                 <div class="scada-status-dot-indicator" id="modalKafkaStatus"></div>
-                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);" id="modalKafkaStatusText">Checking...</span>
+                <span style="font-family: var(--font-mono); font-size: 14px; color: var(--text-primary);" id="modalKafkaStatusText">Checking...</span>
               </div>
             </div>
           </div>
@@ -2103,7 +2103,7 @@
           <div style="display: grid; gap: var(--space-lg);">
             <!-- Manual Injection -->
             <div>
-              <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: var(--space-md); text-transform: uppercase;">
+              <div style="font-family: var(--font-mono); font-size: 14px; color: var(--text-muted); margin-bottom: var(--space-md); text-transform: uppercase;">
                 MANUAL INJECTION
               </div>
               <button onclick="injectAnomalyNow(this); closeAnomalyInjectionModal();" class="scada-btn critical" style="width: 100%;">
@@ -2113,16 +2113,16 @@
             
             <!-- Scheduled Injection -->
             <div style="padding: var(--space-lg); background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 4px;">
-              <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: var(--space-md); text-transform: uppercase;">
+              <div style="font-family: var(--font-mono); font-size: 14px; color: var(--text-muted); margin-bottom: var(--space-md); text-transform: uppercase;">
                 SCHEDULED INJECTION
               </div>
               <div style="display: grid; gap: var(--space-md);">
                 <label style="display: flex; align-items: center; gap: var(--space-sm); cursor: pointer;">
                   <input type="checkbox" id="modalInjectionEnabled" onchange="toggleInjection()" style="cursor: pointer; width: 18px; height: 18px;">
-                  <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);">ENABLE SCHEDULED INJECTION</span>
+                  <span style="font-family: var(--font-mono); font-size: 14px; color: var(--text-primary);">ENABLE SCHEDULED INJECTION</span>
                 </label>
                 <div>
-                  <label style="display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
+                  <label style="display: block; font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
                     INTERVAL (MINUTES)
                   </label>
                   <input type="number" id="modalInjectionInterval" value="30" min="1" max="1440" 
@@ -4206,14 +4206,14 @@
           // Format anomaly history
           let anomalyHistoryHtml = '';
           if (categoryAnomalies.length === 0) {
-            anomalyHistoryHtml = '<div style="font-family: var(--font-mono); font-size: 9px; color: var(--status-running); font-weight: 700;">No Recent Anomalies</div>';
+            anomalyHistoryHtml = '<div style="font-family: var(--font-mono); font-size: 12px; color: var(--status-running); font-weight: 700;">No Recent Anomalies</div>';
           } else {
             anomalyHistoryHtml = categoryAnomalies.map(anomaly => {
               const time = new Date(anomaly.created_at);
               const timeStr = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`;
               const sensor = (anomaly.detected_sensors || [])[0] || 'Unknown';
               const sensorName = sensor.replace(/_/g, ' ').substring(0, 15);
-              return `<div style="font-family: var(--font-mono); font-size: 9px; color: var(--text-primary); margin-bottom: 2px;">${sensorName} @ ${timeStr}</div>`;
+              return `<div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); margin-bottom: 2px;">${sensorName} @ ${timeStr}</div>`;
             }).join('');
           }
           
@@ -4234,7 +4234,7 @@
               <div class="health-card-meta">
                 <div class="health-card-meta-item" style="grid-column: 1 / -1; margin-top: var(--space-xs); padding-top: var(--space-xs); border-top: 1px solid var(--border-subtle);">
                   <div class="health-card-meta-label" style="margin-bottom: var(--space-xs);">ANOMALY LOG</div>
-                  <div style="font-family: var(--font-mono); font-size: 9px; color: var(--text-secondary);">
+                  <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary);">
                     ${anomalyHistoryHtml}
                   </div>
                 </div>
@@ -4244,7 +4244,7 @@
                 </div>
                 <div class="health-card-meta-item" data-rul-machine="${selectedMachineId}">
                   <div class="health-card-meta-label">EST. LIFE</div>
-                  <div class="health-card-meta-value rul-countdown" data-rul-machine="${selectedMachineId}" style="font-family: var(--font-mono); font-size: 10px; color: var(--status-running);">--</div>
+                  <div class="health-card-meta-value rul-countdown" data-rul-machine="${selectedMachineId}" style="font-family: var(--font-mono); font-size: 13px; color: var(--status-running);">--</div>
                 </div>
               </div>
             </div>
@@ -4310,7 +4310,7 @@
         if (!container) return;
         
         if (!alerts || alerts.length === 0) {
-          container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px; font-family: var(--font-mono); font-size: 11px;">NO ALARMS</div>';
+          container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px; font-family: var(--font-mono); font-size: 14px;">NO ALARMS</div>';
           return;
         }
         
@@ -4699,10 +4699,10 @@
             if (data.logs && data.logs.length > 0) {
               tbody.innerHTML = data.logs.map(log => `
                 <tr style="border-bottom: 1px solid var(--border-subtle);">
-                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-primary);">${new Date(log.timestamp).toLocaleString()}</td>
-                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-primary); font-weight: 700;">${log.username || 'N/A'}</td>
-                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-primary);">${log.action || 'N/A'}</td>
-                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);">${log.details || 'N/A'}</td>
+                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">${new Date(log.timestamp).toLocaleString()}</td>
+                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); font-weight: 700;">${log.username || 'N/A'}</td>
+                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">${log.action || 'N/A'}</td>
+                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">${log.details || 'N/A'}</td>
                 </tr>
               `).join('');
             } else {
@@ -4779,10 +4779,10 @@
               container.innerHTML = data.users.map(user => `
                 <div style="padding: var(--space-sm); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
                   <div>
-                    <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">${user.username}</span>
-                    <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-left: var(--space-sm);">${user.role}</span>
+                    <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-primary);">${user.username}</span>
+                    <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); margin-left: var(--space-sm);">${user.role}</span>
                   </div>
-                  <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);">Machines: ${(user.accessible_machines || []).join(', ') || 'None'}</span>
+                  <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">Machines: ${(user.accessible_machines || []).join(', ') || 'None'}</span>
                 </div>
               `).join('');
             } else {
@@ -4941,7 +4941,7 @@
         
         const currentMachine = machineData[selectedMachineId];
         if (!currentMachine || !currentMachine.statsData) {
-          chartsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 9px;">No sensor data</div>';
+          chartsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 12px;">No sensor data</div>';
           return;
         }
         
@@ -4949,7 +4949,7 @@
         const catData = statsData.stats_by_category && statsData.stats_by_category[category];
         
         if (!catData || !catData.sensors) {
-          chartsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 9px;">No sensors in this category</div>';
+          chartsContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 12px;">No sensors in this category</div>';
           return;
         }
         
@@ -4983,13 +4983,13 @@
           
           html += `
             <div class="alarms-sensor-chart-tile ${statusClass}" data-sensor="${sensorName}" style="background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px; padding: var(--space-xs); display: flex; flex-direction: column; gap: 2px;">
-              <div style="font-family: var(--font-mono); font-size: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</div>
+              <div style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</div>
               <div style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: ${statusClass === 'crit' ? 'var(--status-error)' : statusClass === 'wrn' ? 'var(--status-warning)' : 'var(--theme-text-primary)'}; line-height: 1;">
                 ${value !== null && value !== undefined && !isNaN(value) ? value.toFixed(1) : '--'}
-                ${unit ? `<span style="font-size: 8px; color: var(--text-muted); margin-left: 2px;">${unit}</span>` : ''}
+                ${unit ? `<span style="font-size: 14px; color: var(--text-muted); margin-left: 2px;">${unit}</span>` : ''}
               </div>
               <div style="height: 30px; width: 100%; margin-top: 2px;">
-                ${recentValues.length > 0 ? generateSparkline(recentValues, 120, 30, null, statusClass) : '<div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 7px;">No data</div>'}
+                ${recentValues.length > 0 ? generateSparkline(recentValues, 120, 30, null, statusClass) : '<div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 10px;">No data</div>'}
               </div>
             </div>
           `;
@@ -5040,7 +5040,7 @@
         
         const currentMachine = machineData[selectedMachineId];
         if (!currentMachine) {
-          alarmsTbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 9px;">No data</td></tr>';
+          alarmsTbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 12px;">No data</td></tr>';
           return;
         }
         
@@ -5089,14 +5089,14 @@
         criticalAlarms = criticalAlarms.slice(0, 10);
         
         if (criticalAlarms.length === 0) {
-          alarmsTbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 9px;">No critical alarms</td></tr>';
+          alarmsTbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 12px;">No critical alarms</td></tr>';
           return;
         }
         
         alarmsTbody.innerHTML = criticalAlarms.map(alarm => `
           <tr style="border-bottom: 1px solid var(--border-subtle);">
-            <td style="padding: var(--space-xs); color: var(--text-muted); font-size: 8px;">${alarm.time}</td>
-            <td style="padding: var(--space-xs); color: var(--status-error); font-size: 8px; font-weight: 700;">${alarm.sensor}</td>
+            <td style="padding: var(--space-xs); color: var(--text-muted); font-size: 14px;">${alarm.time}</td>
+            <td style="padding: var(--space-xs); color: var(--status-error); font-size: 14px; font-weight: 700;">${alarm.sensor}</td>
           </tr>
         `).join('');
       }
@@ -5409,11 +5409,11 @@
                                'var(--status-info)';
           return `
             <tr style="border-bottom: 1px solid var(--border-subtle);">
-              <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-primary);">${alarm.time}</td>
-              <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-primary); font-weight: 700;">${alarm.sensor}</td>
-              <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-primary);">${alarm.value}</td>
-              <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);">${alarm.threshold}</td>
-              <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: ${severityColor}; font-weight: 700;">${alarm.severity}</td>
+              <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">${alarm.time}</td>
+              <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); font-weight: 700;">${alarm.sensor}</td>
+              <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 12px; color: var(--text-primary);">${alarm.value}</td>
+              <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">${alarm.threshold}</td>
+              <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 12px; color: ${severityColor}; font-weight: 700;">${alarm.severity}</td>
             </tr>
           `;
         }).join('');
@@ -6669,13 +6669,13 @@
 
                 if (sensor.predicted_failure_reading) {
                   const failure = document.createElement("div");
-                  failure.style.cssText = "font-size: 11px; color: #f59e0b; margin-top: 4px;";
+                  failure.style.cssText = "font-size: 14px; color: #f59e0b; margin-top: 4px;";
                   failure.textContent = `WARNING: Predicted failure at reading: ${sensor.predicted_failure_reading}`;
                   item.appendChild(failure);
                 }
 
                 const trendInfo = document.createElement("div");
-                trendInfo.style.cssText = "font-size: 11px; color: #94a3b8; margin-top: 4px;";
+                trendInfo.style.cssText = "font-size: 14px; color: #94a3b8; margin-top: 4px;";
                 const trendEmoji = sensor.trend === 'increasing' ? '📈' : sensor.trend === 'decreasing' ? '📉' : '➡️';
                 trendInfo.textContent = `${trendEmoji} Trend: ${sensor.trend} (${sensor.trend_rate > 0 ? '+' : ''}${sensor.trend_rate.toFixed(2)} per reading) | Current: ${sensor.current_value.toFixed(2)}`;
                 item.appendChild(trendInfo);
@@ -7345,7 +7345,7 @@ Report generated by Sensor Data Pipeline Dashboard
                   ${formatNumber(currentValue, 2)} ${unit}
                 </div>
               </div>
-              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">
+              <div style="font-size: 13px; color: var(--text-muted); font-family: var(--font-mono);">
                 Threshold: ${formatNumber(threshold.min, 2)} - ${formatNumber(threshold.max, 2)} ${unit}
               </div>
             </div>
@@ -7914,7 +7914,7 @@ Report generated by Sensor Data Pipeline Dashboard
         const isAdmin = currentUser && currentUser.role === 'admin';
         
         if (allSensors.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 11px;">No sensors available</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 14px;">No sensors available</td></tr>';
           return;
         }
         
@@ -7928,7 +7928,7 @@ Report generated by Sensor Data Pipeline Dashboard
           
           html += `
             <tr style="border-bottom: 1px solid var(--border-subtle);">
-              <td style="padding: var(--space-sm); font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">
+              <td style="padding: var(--space-sm); font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-primary);">
                 ${displayName}
               </td>
               <td style="padding: var(--space-sm); text-align: center;">
@@ -7943,14 +7943,14 @@ Report generated by Sensor Data Pipeline Dashboard
                 <input type="number" step="any" 
                        value="${minThreshold}" 
                        placeholder="Min"
-                       style="width: 80px; padding: 4px 6px; background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 11px;"
+                       style="width: 80px; padding: 4px 6px; background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 14px;"
                        onchange="updateSensorThreshold('${name}', 'low', this.value)">
               </td>
               <td style="padding: var(--space-sm); text-align: center;">
                 <input type="number" step="any" 
                        value="${maxThreshold}" 
                        placeholder="Max"
-                       style="width: 80px; padding: 4px 6px; background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 11px;"
+                       style="width: 80px; padding: 4px 6px; background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 14px;"
                        onchange="updateSensorThreshold('${name}', 'high', this.value)">
               </td>
             </tr>
@@ -8087,7 +8087,7 @@ Report generated by Sensor Data Pipeline Dashboard
         
         const customSensors = Object.values(unifiedSensorRegistry).filter(s => s.source === 'custom');
         if (customSensors.length === 0) {
-          container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 11px;">No custom sensors</div>';
+          container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 14px;">No custom sensors</div>';
           return;
         }
         
@@ -8108,20 +8108,20 @@ Report generated by Sensor Data Pipeline Dashboard
           html += `
             <div class="rig-accordion">
               <div class="rig-accordion-header" onclick="toggleAccordion('${cat}')">
-                <span style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary); text-transform: uppercase;">${catLabel}</span>
-                <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);">(${byCategory[cat].length})</span>
+                <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: uppercase;">${catLabel}</span>
+                <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">(${byCategory[cat].length})</span>
                 <span class="rig-accordion-chevron" id="chevron-${cat}">▼</span>
               </div>
               <div class="rig-accordion-content" id="accordion-${cat}" style="display: none;">
                 ${byCategory[cat].map(sensor => `
                   <div style="padding: var(--space-sm); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                      <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">${sensor.name.replace(/_/g, ' ').toUpperCase()}</span>
-                      <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-left: var(--space-sm);">${sensor.unit || ''}</span>
+                      <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-primary);">${sensor.name.replace(/_/g, ' ').toUpperCase()}</span>
+                      <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); margin-left: var(--space-sm);">${sensor.unit || ''}</span>
                     </div>
                     <div style="display: flex; gap: var(--space-sm);">
-                      <button onclick="editCustomSensor(${sensor.id})" class="rig-btn rig-btn-secondary" style="padding: 4px 8px; font-size: 9px;">EDIT</button>
-                      <button onclick="deleteCustomSensor(${sensor.id})" class="rig-btn rig-btn-stop" style="padding: 4px 8px; font-size: 9px;">DELETE</button>
+                      <button onclick="editCustomSensor(${sensor.id})" class="rig-btn rig-btn-secondary" style="padding: 4px 8px; font-size: 12px;">EDIT</button>
+                      <button onclick="deleteCustomSensor(${sensor.id})" class="rig-btn rig-btn-stop" style="padding: 4px 8px; font-size: 12px;">DELETE</button>
                     </div>
                   </div>
                 `).join('')}
@@ -8351,7 +8351,7 @@ Report generated by Sensor Data Pipeline Dashboard
                   : 'Not set';
                 
                 previewEl.innerHTML = `
-                  <div style="display: grid; gap: var(--space-xs); font-size: 10px; font-family: var(--font-mono);">
+                  <div style="display: grid; gap: var(--space-xs); font-size: 13px; font-family: var(--font-mono);">
                     <div style="font-weight: 700; color: var(--text-primary);"><strong>NAME:</strong> <span style="color: var(--theme-status-info);">${aiParsedData.name}</span></div>
                     <div style="font-weight: 700; color: var(--text-primary);"><strong>CATEGORY:</strong> <span style="color: var(--theme-status-info);">${aiParsedData.category.toUpperCase()}</span></div>
                     <div style="font-weight: 700; color: var(--text-primary);"><strong>UNIT:</strong> <span style="color: var(--theme-status-info);">${aiParsedData.unit}</span></div>
@@ -8529,23 +8529,23 @@ Report generated by Sensor Data Pipeline Dashboard
               <div class="rig-accordion-header" onclick="toggleConfigAccordion('${cat}')" style="padding: var(--space-sm);">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                   <div style="display: flex; align-items: center; gap: var(--space-sm);">
-                    <span style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary); text-transform: uppercase;">${catLabel}</span>
-                    <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);">(${sensors.length})</span>
+                    <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: uppercase;">${catLabel}</span>
+                    <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">(${sensors.length})</span>
                   </div>
                   <div style="display: flex; align-items: center; gap: var(--space-xs);">
                     <button 
                       onclick="event.stopPropagation(); enableAllInCategory('${cat}', true)" 
                       class="scada-btn" 
-                      style="padding: 2px 6px; font-size: 8px; background: var(--status-running); border-color: var(--status-running); font-weight: 700;">
+                      style="padding: 2px 6px; font-size: 14px; background: var(--status-running); border-color: var(--status-running); font-weight: 700;">
                       ENABLE ALL
                     </button>
                     <button 
                       onclick="event.stopPropagation(); enableAllInCategory('${cat}', false)" 
                       class="scada-btn" 
-                      style="padding: 2px 6px; font-size: 8px; background: var(--status-error); border-color: var(--status-error); font-weight: 700;">
+                      style="padding: 2px 6px; font-size: 14px; background: var(--status-error); border-color: var(--status-error); font-weight: 700;">
                       DISABLE ALL
                     </button>
-                    <span class="rig-accordion-chevron" id="chevron-config-${cat}" style="font-size: 10px;">▼</span>
+                    <span class="rig-accordion-chevron" id="chevron-config-${cat}" style="font-size: 13px;">▼</span>
                   </div>
                 </div>
               </div>
@@ -8567,10 +8567,10 @@ Report generated by Sensor Data Pipeline Dashboard
                           onchange="toggleSensorEnabledFromAccordion('${sensorName}', this.checked)">
                         <span class="toggle-slider"></span>
                       </label>
-                      <span style="font-family: var(--font-mono); font-weight: 700; color: var(--theme-text-primary); font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</span>
-                      <input type="number" step="any" value="${currentMin}" placeholder="Min" data-sensor-min="${sensorName}" class="scada-input sensor-threshold-input" style="width: 100%; padding: 3px 4px; font-size: 9px; background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); color: var(--theme-text-primary); text-align: center;">
-                      <input type="number" step="any" value="${currentMax}" placeholder="Max" data-sensor-max="${sensorName}" class="scada-input sensor-threshold-input" style="width: 100%; padding: 3px 4px; font-size: 9px; background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); color: var(--theme-text-primary); text-align: center;">
-                      <span style="font-family: var(--font-mono); font-size: 7px; color: var(--text-muted); font-weight: 700;">DEF: ${defaultRange.min}-${defaultRange.max}</span>
+                      <span style="font-family: var(--font-mono); font-weight: 700; color: var(--theme-text-primary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</span>
+                      <input type="number" step="any" value="${currentMin}" placeholder="Min" data-sensor-min="${sensorName}" class="scada-input sensor-threshold-input" style="width: 100%; padding: 3px 4px; font-size: 12px; background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); color: var(--theme-text-primary); text-align: center;">
+                      <input type="number" step="any" value="${currentMax}" placeholder="Max" data-sensor-max="${sensorName}" class="scada-input sensor-threshold-input" style="width: 100%; padding: 3px 4px; font-size: 12px; background: var(--theme-bg-tertiary); border: 1px solid var(--border-default); color: var(--theme-text-primary); text-align: center;">
+                      <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); font-weight: 700;">DEF: ${defaultRange.min}-${defaultRange.max}</span>
                     </div>
                   `;
                 }).join('')}
@@ -8580,7 +8580,7 @@ Report generated by Sensor Data Pipeline Dashboard
         });
         
         if (html === '') {
-          html = '<div style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 11px; font-weight: 700;">No sensors found</div>';
+          html = '<div style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 14px; font-weight: 700;">No sensors found</div>';
         }
         
         container.innerHTML = html;
@@ -8782,7 +8782,7 @@ Report generated by Sensor Data Pipeline Dashboard
         if (!tbody) return;
         
         if (operatorLogs.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 11px;">No logs available</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: var(--space-lg); font-family: var(--font-mono); font-size: 14px;">No logs available</td></tr>';
           return;
         }
         
@@ -8801,9 +8801,9 @@ Report generated by Sensor Data Pipeline Dashboard
         
         tbody.innerHTML = filteredLogs.map(log => `
           <tr>
-            <td style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">${log.operatorName}</td>
-            <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);">${log.action}</td>
-            <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${new Date(log.timestamp).toLocaleString()}</td>
+            <td style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-primary);">${log.operatorName}</td>
+            <td style="font-family: var(--font-mono); font-size: 14px; color: var(--text-primary);">${log.action}</td>
+            <td style="font-family: var(--font-mono); font-size: 14px; color: var(--text-muted);">${new Date(log.timestamp).toLocaleString()}</td>
           </tr>
         `).join('');
       }
@@ -9446,7 +9446,7 @@ Report generated by Sensor Data Pipeline Dashboard
                     <div>
                       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                         <strong style="color: #60a5fa; font-size: 16px;">${sensor.sensor_name}</strong>
-                        <span style="padding: 2px 8px; background: ${statusColor}; color: white; border-radius: 4px; font-size: 11px; font-weight: 600;">${statusText}</span>
+                        <span style="padding: 2px 8px; background: ${statusColor}; color: white; border-radius: 4px; font-size: 14px; font-weight: 600;">${statusText}</span>
                         <span style="color: #94a3b8; font-size: 12px;">${sensor.category}</span>
                       </div>
                       <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">

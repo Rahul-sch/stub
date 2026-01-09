@@ -87,7 +87,7 @@ body {
   margin: 0;
   height: 100vh;
   line-height: 1.5;
-  font-size: 14px;
+  font-size: 16px; /* Increased from 14px for better readability */
   overflow: hidden !important;
 }
 
@@ -201,7 +201,7 @@ body {
   border-radius: 4px;
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -226,12 +226,12 @@ body {
 }
 
 .scada-global-btn-icon {
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1;
 }
 
 .scada-global-btn-label {
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .scada-pipeline-health {
@@ -252,7 +252,7 @@ body {
 
 .scada-pipeline-label {
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 14px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -363,7 +363,7 @@ body {
 
 .scada-frequency-value {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-primary);
   min-width: 40px;
   text-align: center;
@@ -397,7 +397,7 @@ body {
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   white-space: nowrap;
   transition: all var(--transition-fast);
 }
@@ -423,7 +423,7 @@ body {
   align-items: center;
   gap: var(--space-xs);
   color: var(--text-primary);
-  font-size: 8px;
+  font-size: 14px;
 }
 
 .scada-telemetry-reading {
@@ -433,18 +433,18 @@ body {
 .scada-telemetry-cat-value {
   color: var(--status-running);
   font-weight: 600;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .scada-telemetry-cat-count {
   color: var(--text-muted);
-  font-size: 8px;
+  font-size: 14px;
   margin-left: var(--space-xs);
 }
 
 .scada-telemetry-cat-mps {
   color: var(--status-running);
-  font-size: 8px;
+  font-size: 14px;
   font-weight: 600;
   margin-left: var(--space-xs);
   text-shadow: 0 0 4px var(--status-running);
@@ -465,7 +465,7 @@ body {
   padding: 2px 6px;
   border-radius: 4px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
@@ -491,7 +491,7 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .scada-status-dot-label {
@@ -554,7 +554,7 @@ body {
   color: white;
   border-radius: 4px;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .scada-alerts-badge.none {
@@ -565,7 +565,7 @@ body {
 .scada-utc-time {
   color: var(--text-secondary);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.5px;
 }
 
@@ -581,7 +581,7 @@ body {
   border: 1px solid var(--border-default);
   border-radius: 4px;
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: 14px;
   cursor: pointer;
   font-family: var(--font-mono);
   text-transform: uppercase;
@@ -802,7 +802,7 @@ body {
 /* Label visibility - hidden when collapsed, shown when expanded */
 .scada-sidebar-icon-label {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -937,7 +937,7 @@ body {
 
 .health-card-name {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -949,7 +949,7 @@ body {
   align-items: center;
   gap: var(--space-xs);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .health-card-status-dot {
@@ -1003,7 +1003,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-sm);
-  font-size: 11px;
+  font-size: 14px;
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
@@ -1015,7 +1015,7 @@ body {
 }
 
 .health-card-meta-label {
-  font-size: 9px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1068,7 +1068,7 @@ body {
 
 .telemetry-tile-name {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -1077,7 +1077,7 @@ body {
 
 .telemetry-tile-unit {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -1154,7 +1154,7 @@ body {
 
 .telemetry-tile-lstm-label {
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 14px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1188,7 +1188,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  font-size: 9px;
+  font-size: 12px;
   color: var(--text-muted);
   font-family: var(--font-mono);
   margin-top: var(--space-xs);
@@ -1204,13 +1204,13 @@ body {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-size: 8px;
+  font-size: 14px;
 }
 
 .telemetry-tile-footer-value {
   color: var(--text-primary);
   font-weight: 600;
-  font-size: 9px;
+  font-size: 12px;
 }
 
 /* ============================================
@@ -1220,7 +1220,7 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .scada-admin-table thead {
@@ -1235,7 +1235,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .scada-admin-table tbody tr {
@@ -1250,7 +1250,7 @@ body {
 .scada-admin-table td {
   padding: var(--space-md);
   color: var(--text-primary);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 /* ============================================
@@ -1304,7 +1304,7 @@ body {
 
 .scada-upload-hint {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -1331,7 +1331,7 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .alarm-console-table thead {
@@ -1346,7 +1346,7 @@ body {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .alarm-console-table td {
@@ -1367,7 +1367,7 @@ body {
   display: inline-block;
   padding: 2px 6px;
   border-radius: 3px;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1395,7 +1395,7 @@ body {
 
 .alarm-time {
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .alarm-message {
@@ -1634,7 +1634,7 @@ h3 {
 }
 
 .dashboard-subtitle {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1691,7 +1691,7 @@ h3 {
   padding: var(--space-md) var(--space-lg);
   border-bottom: 1px solid var(--border-strong);
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
   text-transform: uppercase;
@@ -1816,7 +1816,7 @@ h3 {
 
 .rig-accordion-chevron {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-muted);
   transition: transform var(--transition-fast);
 }
@@ -1929,7 +1929,7 @@ h3 {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
 }
 /* ============================================
@@ -2056,7 +2056,7 @@ input[type="number"]:focus {
   background: rgba(30, 41, 59, 0.9);
   padding: 0 8px;
   color: #60a5fa;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -2129,7 +2129,7 @@ label {
 
 /* Status text labels */
 .status-text {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -2181,7 +2181,7 @@ label {
 }
 .history-timestamp {
   color: #94a3b8;
-  font-size: 11px;
+  font-size: 14px;
   margin-bottom: 14px;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -2257,7 +2257,7 @@ label {
 
 .alert-meta {
   text-align: right;
-  font-size: 11px;
+  font-size: 14px;
   color: var(--text-muted);
   flex-shrink: 0;
 }
@@ -2271,7 +2271,7 @@ label {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 3px;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -2313,7 +2313,7 @@ label {
   background-clip: text;
 }
 .metric-label {
-  font-size: 10px;
+  font-size: 13px;
   color: #94a3b8;
   margin-top: 6px;
   text-transform: uppercase;
@@ -2418,7 +2418,7 @@ label {
 
 .sensor-name {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: var(--space-sm);
@@ -2442,7 +2442,7 @@ label {
 
 .sensor-unit {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 14px;
   margin-left: 2px;
 }
 
@@ -2470,7 +2470,7 @@ label {
          ============================================ */
 .threshold-toggle {
   color: var(--interactive-primary);
-  font-size: 11px;
+  font-size: 14px;
   cursor: pointer;
   margin-top: var(--space-sm);
   display: flex;
@@ -2532,7 +2532,7 @@ label {
 }
 
 .threshold-label {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -2577,7 +2577,7 @@ label {
 }
 
 .threshold-default {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-muted);
   margin-top: var(--space-sm);
   padding: var(--space-sm);
@@ -2780,14 +2780,14 @@ label {
   color: white;
   padding: 2px 8px;
   border-radius: 3px;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   font-family: var(--font-mono);
 }
 
 .anomaly-method {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -2813,7 +2813,7 @@ label {
   border-radius: 3px;
   margin-right: var(--space-xs);
   margin-top: var(--space-xs);
-  font-size: 10px;
+  font-size: 13px;
   font-family: var(--font-mono);
 }
 
@@ -2830,7 +2830,7 @@ label {
   padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--border-default);
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-normal);
@@ -2860,7 +2860,7 @@ label {
 }
 
 .report-status {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-muted);
   text-align: center;
 }
@@ -2970,7 +2970,7 @@ label {
 }
 .report-meta-label {
   color: #94a3b8;
-  font-size: 11px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 4px;
@@ -3097,7 +3097,7 @@ label {
 
 .machine-selector label {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -3158,7 +3158,7 @@ label {
 
 .mode-toggle label {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -3354,7 +3354,7 @@ input:checked + .toggle-slider:before {
   background: var(--bg-elevated);
   border-bottom: 1px solid var(--border-subtle);
   font-weight: 600;
-  font-size: 11px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-muted);
@@ -3419,7 +3419,7 @@ input:checked + .toggle-slider:before {
   background: var(--bg-elevated);
   padding: 1px 6px;
   border-radius: 3px;
-  font-size: 10px;
+  font-size: 13px;
   font-family: var(--font-mono);
 }
 
@@ -3505,7 +3505,7 @@ input:checked + .toggle-slider:before {
 }
 
 .sensor-info .sensor-category {
-  font-size: 11px;
+  font-size: 14px;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
 }
@@ -3631,10 +3631,10 @@ input:checked + .toggle-slider:before {
   font-size: 20px;
 }
 .monitoring-left-panel .health-card-name {
-  font-size: 9px;
+  font-size: 12px;
 }
 .monitoring-left-panel .health-card-meta {
-  font-size: 9px;
+  font-size: 12px;
 }
 
 /* Center Panel - 3D Digital Twin (60%) + Stats (40%) */
@@ -3716,7 +3716,7 @@ input:checked + .toggle-slider:before {
   border-radius: 4px;
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   padding: 4px 8px;
   cursor: pointer;
   text-transform: uppercase;
@@ -3763,7 +3763,7 @@ input:checked + .toggle-slider:before {
 
 .history-timestamp {
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 14px;
   color: var(--text-muted);
   margin-bottom: var(--space-xs);
   text-transform: uppercase;
@@ -3781,7 +3781,7 @@ input:checked + .toggle-slider:before {
 
 .history-metric .metric-value {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -3795,7 +3795,7 @@ input:checked + .toggle-slider:before {
 }
 
 .history-metric .sensor-unit {
-  font-size: 8px;
+  font-size: 14px;
   color: var(--text-muted);
   margin-left: 2px;
 }
@@ -3839,7 +3839,7 @@ input:checked + .toggle-slider:before {
   font-size: 24px;
 }
 .monitoring-right-panel .telemetry-tile-name {
-  font-size: 9px;
+  font-size: 12px;
 }
 
 /* Scrollbar styling for internal scroll areas */
@@ -3898,7 +3898,7 @@ input:checked + .toggle-slider:before {
 
 .config-section-title {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
   text-transform: uppercase;
@@ -3908,7 +3908,7 @@ input:checked + .toggle-slider:before {
 
 .config-label {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
   text-transform: uppercase;
@@ -3917,13 +3917,13 @@ input:checked + .toggle-slider:before {
 
 .config-value {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-primary);
 }
 
 .config-table-header {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
   text-transform: uppercase;
@@ -3933,7 +3933,7 @@ input:checked + .toggle-slider:before {
 
 .config-section-title {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
   text-transform: uppercase;
@@ -3945,7 +3945,7 @@ input:checked + .toggle-slider:before {
 
 .config-label {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
   text-transform: uppercase;
@@ -3954,14 +3954,14 @@ input:checked + .toggle-slider:before {
 
 .config-value {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-primary);
 }
 
 .config-table-header {
   padding: var(--space-sm);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
   text-transform: uppercase;
@@ -3977,7 +3977,7 @@ input:checked + .toggle-slider:before {
   border-radius: 4px;
   color: var(--text-primary) !important;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   transition: border-color var(--theme-transition-normal),
     box-shadow var(--theme-transition-normal);
 }
@@ -4030,7 +4030,7 @@ input:checked + .toggle-slider:before {
   border-bottom: 1px solid var(--border-default);
   padding: var(--space-sm) var(--space-md);
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -4120,12 +4120,12 @@ input:checked + .toggle-slider:before {
   margin-bottom: 4px;
 }
 .command-slider-header label {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-muted);
   margin: 0;
 }
 .command-slider-header span {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
   font-family: var(--font-mono);
@@ -4140,7 +4140,7 @@ input:checked + .toggle-slider:before {
   margin-top: var(--space-xs);
 }
 .command-anomaly-group label {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-muted);
   display: block;
   margin-bottom: 4px;
@@ -4156,12 +4156,12 @@ input:checked + .toggle-slider:before {
   border: 1px solid var(--border-default);
   padding: var(--space-xs) var(--space-sm);
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 14px;
 }
 .command-anomaly-row .rig-btn {
   flex: 1;
   padding: var(--space-xs) var(--space-sm);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 /* ============================================
@@ -4239,7 +4239,7 @@ input:checked + .toggle-slider:before {
 }
 
 .alarms-table th {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -4281,7 +4281,7 @@ input:checked + .toggle-slider:before {
   padding: var(--space-md);
   border-bottom: 1px solid var(--border-default);
   font-weight: 600;
-  font-size: 11px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-muted);
@@ -4395,7 +4395,7 @@ input:checked + .toggle-slider:before {
   padding: var(--space-sm) var(--space-md);
   border-bottom: 1px solid var(--border-default);
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -4550,7 +4550,7 @@ input:checked + .toggle-slider:before {
 }
 
 .rig-accordion-chevron {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--text-muted);
   transition: transform var(--theme-transition-normal);
 }
@@ -4637,7 +4637,7 @@ input:checked + .toggle-slider:before {
 
 .scada-upload-text {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   color: var(--text-primary);
   font-weight: 700;
   margin-bottom: var(--space-xs);
@@ -4645,7 +4645,7 @@ input:checked + .toggle-slider:before {
 
 .scada-upload-hint {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   color: var(--text-muted);
   font-weight: 700;
 }

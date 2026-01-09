@@ -1,0 +1,75 @@
+2026-01-08 16:26:08.098311: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-01-08 16:26:09.548690: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+C:\Users\rahul\Desktop\stubby\stub\venv\Lib\site-packages\keras\src\export\tf2onnx_lib.py:8: FutureWarning: In the future `np.object` will be defined as the corresponding NumPy scalar.
+  if not hasattr(np, "object"):
+C:\Users\rahul\Desktop\stubby\stub\venv\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator ExtraTreeRegressor from version 1.3.2 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+C:\Users\rahul\Desktop\stubby\stub\venv\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator IsolationForest from version 1.3.2 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+C:\Users\rahul\Desktop\stubby\stub\venv\Lib\site-packages\sklearn\base.py:463: InconsistentVersionWarning: Trying to unpickle estimator StandardScaler from version 1.3.2 when using version 1.8.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+2026-01-08 16:26:13.985422: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0160): core_temp, harmonic_distortion, fluid_pressure
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0166): air_quality_index, gear_wear, exhaust_temp, core_temp, pump_efficiency
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0788): noise_level, torque, gear_wear, thermal_efficiency, harmonic_distortion
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0867): particle_count, shaft_alignment, thermal_efficiency, voltage, frequency
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0857): thermal_efficiency, outlet_temp, surface_temp, voltage, frequency
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.2071): temperature, thermal_efficiency, inlet_temp, outlet_temp, surface_temp
+WARNING:__main__:HYBRID anomaly detected (score: 0.6085): thermal_efficiency, cavitation_index, inlet_temp, surface_temp, harmonic_distortion
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1411): ambient_temp, air_quality_index, thermal_efficiency, inlet_temp, outlet_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.2963): temperature, ambient_temp, air_quality_index, bearing_temp, motor_current
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.2401): temperature, humidity, ambient_temp, air_quality_index, vibration
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1885): temperature, humidity, ambient_temp, air_quality_index, thermal_efficiency
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1340): ambient_temp, shaft_alignment, thermal_efficiency, inlet_temp, outlet_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0929): humidity, ambient_temp, shaft_alignment, thermal_efficiency, inlet_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1544): humidity, ambient_temp, particle_count, shaft_alignment, motor_current
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0649): ambient_temp, air_quality_index, coupling_temp, exhaust_temp, radiator_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1166): ambient_temp, dew_point, air_quality_index, torque, exhaust_temp
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0156): pressure, air_quality_index, coolant_temp, radiator_temp, harmonic_distortion
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0041): core_temp, power_factor
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0002): multiple parameters
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0768): light_intensity, vibration, bearing_temp, belt_tension, exhaust_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1711): temperature, light_intensity, vibration, bearing_temp, belt_tension
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1606): humidity, belt_tension, lubrication_pressure, exhaust_temp, radiator_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.2093): temperature, humidity, vibration, belt_tension, lubrication_pressure
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1017): vibration, bearing_temp, belt_tension, exhaust_temp, radiator_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1076): light_intensity, bearing_temp, belt_tension, exhaust_temp, radiator_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0767): humidity, light_intensity, bearing_temp, radiator_temp, inductance
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0015): multiple parameters
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0647): bearing_temp, belt_tension, gear_wear, thermal_efficiency, core_temp
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0097): turbulence
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0788): air_quality_index, co2_level, gear_wear, coolant_temp, oil_temp
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0255): air_quality_index, noise_level, harmonic_distortion, turbulence
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0237): air_quality_index, inlet_temp, outlet_temp, harmonic_distortion, pipe_pressure_drop
+WARNING:__main__:HYBRID anomaly detected (score: 0.6050): thermal_efficiency, oil_temp, belt_tension, inlet_temp, pump_efficiency
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0858): pressure, light_intensity, coolant_temp, oil_temp, thermal_efficiency
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0851): ambient_temp, dew_point, particle_count, belt_tension, inlet_temp
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0025): radiator_temp, surface_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1079): pressure, humidity, noise_level, torque, belt_tension
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1202): pressure, humidity, air_quality_index, noise_level, torque
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0062): power_factor, turbulence
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0787): noise_level, shaft_alignment, core_temp, voltage, current
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0947): humidity, noise_level, shaft_alignment, belt_tension, thermal_efficiency
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0018): surface_temp, harmonic_distortion
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1295): temperature, vibration, bearing_temp, radiator_temp, thermal_efficiency
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1168): temperature, vibration, torque, bearing_temp, radiator_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1752): temperature, noise_level, vibration, torque, bearing_temp
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0888): noise_level, rpm, torque, bearing_temp, motor_current
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1340): temperature, noise_level, torque, bearing_temp, motor_current
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1735): temperature, noise_level, torque, bearing_temp, motor_current
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1258): temperature, noise_level, torque, bearing_temp, motor_current
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.1638): noise_level, torque, bearing_temp, motor_current, belt_tension
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0286): noise_level, oil_temp, thermal_efficiency, power_factor, turbulence
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0121): exhaust_temp, oil_temp, surface_temp, power_factor
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0646): light_intensity, shaft_alignment, oil_temp, radiator_temp, voltage
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0733): light_intensity, oil_temp, radiator_temp, core_temp, voltage
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0781): light_intensity, oil_temp, radiator_temp, voltage, power_factor
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0046): power_factor, harmonic_distortion
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0071): surface_temp, fluid_pressure, reynolds_number, pump_efficiency, valve_position
+WARNING:__main__:HYBRID anomaly detected (score: 0.5373): capacitance, pipe_pressure_drop, frequency, pump_efficiency, harmonic_distortion
+WARNING:__main__:LSTM AUTOENCODER anomaly detected (score: 1.0616): ambient_temp, noise_level, torque, inlet_temp, frequency
+WARNING:__main__:ISOLATION FOREST anomaly detected (score: -0.0025): multiple parameters

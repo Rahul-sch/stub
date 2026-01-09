@@ -4483,6 +4483,55 @@
         }
       }
       
+      // Admin Create User Function
+      async function adminCreateUser(event) {
+        event.preventDefault();
+        
+        const username = document.getElementById('adminNewUsername').value;
+        const password = document.getElementById('adminNewPassword').value;
+        const role = document.getElementById('adminNewRole').value;
+        const machines = Array.from(document.querySelectorAll('.admin-machine-checkbox:checked')).map(cb => cb.value);
+        
+        const errorEl = document.getElementById('adminCreateUserError');
+        const successEl = document.getElementById('adminCreateUserSuccess');
+        
+        try {
+          const response = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ username, password, role, accessible_machines: machines })
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok && data.success) {
+            if (errorEl) errorEl.style.display = 'none';
+            if (successEl) {
+              successEl.style.display = 'block';
+              successEl.textContent = '✓ User created successfully';
+            }
+            document.getElementById('adminCreateUserForm').reset();
+            loadAdminUserList();
+            setTimeout(() => {
+              if (successEl) successEl.style.display = 'none';
+            }, 3000);
+          } else {
+            if (successEl) successEl.style.display = 'none';
+            if (errorEl) {
+              errorEl.style.display = 'block';
+              errorEl.textContent = '✗ ' + (data.error || 'Failed to create user');
+            }
+          }
+        } catch (e) {
+          if (successEl) successEl.style.display = 'none';
+          if (errorEl) {
+            errorEl.style.display = 'block';
+            errorEl.textContent = '✗ Network error: ' + e.message;
+          }
+        }
+      }
+      
       // Load Admin User List
       async function loadAdminUserList() {
         const container = document.getElementById('adminUserListContent');
@@ -4623,11 +4672,9 @@
             </div>
           `;
           
-          gridEl.appendChild(widget);
+          // Add widget to grid
+          alarmsGrid.addWidget(widget);
         });
-        
-        // Add widgets to grid
-        alarmsGrid.addWidget(widget);
         
         // Update chart values from live data
         updateAlarmsChartValues();

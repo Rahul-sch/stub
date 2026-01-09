@@ -2267,23 +2267,12 @@
       }
 
       async function handleLogout() {
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2050',message:'handleLogout: Starting logout',data:{currentUser:currentUser?.username},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
-        
         try {
-          const logoutResponse = await fetch('/api/auth/logout', { 
+          const logoutResponse = await fetch('/api/auth/logout', {
             method: 'POST',
             credentials: 'include'
           });
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2052',message:'handleLogout: Logout API response',data:{status:logoutResponse.status,ok:logoutResponse.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
         } catch (e) {
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:2054',message:'handleLogout: Logout error',data:{error:e.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
           console.error('Logout error:', e);
         }
         currentUser = null;

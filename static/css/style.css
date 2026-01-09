@@ -1030,7 +1030,7 @@ body {
          ============================================ */
 .telemetry-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: calc(var(--space-lg) * 0.85);
 }
 
@@ -1128,10 +1128,14 @@ body {
 }
 
 /* Graph/Canvas scaling fix */
-.telemetry-tile canvas {
-  max-height: 40px !important;
-  width: 100% !important;
+.telemetry-tile canvas,
+.grid-stack-item canvas,
+.telemetry-tile-sparkline svg,
+.grid-stack-item-content svg {
+  aspect-ratio: 2 / 1 !important;
   height: auto !important;
+  width: 100% !important;
+  max-height: 40px !important;
 }
 
 .telemetry-tile-lstm {

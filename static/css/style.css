@@ -1737,8 +1737,6 @@ h3 {
 .config-widget input[type="checkbox"]:checked {
   accent-color: var(--theme-interactive-primary);
 }
-  letter-spacing: 0.5px;
-}
 
 .rig-card-body {
   padding: var(--space-lg);

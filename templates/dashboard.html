@@ -4983,9 +4983,23 @@
         updateCriticalAlarms();
       }
       
-      // Update Critical Alarms Widget (for Alarms page)
+      // Update Critical Alarms Widget (for both Monitoring and Alarms pages)
       function updateCriticalAlarms() {
-        const tbody = document.getElementById('alarmsCriticalAlarmsWidget')?.querySelector('tbody');
+        // Update Monitoring page widget
+        const monitoringTbody = document.getElementById('criticalAlarmsWidget')?.querySelector('tbody');
+        if (monitoringTbody) {
+          updateCriticalAlarmsTable(monitoringTbody);
+        }
+        
+        // Update Alarms page widget
+        const alarmsTbody = document.getElementById('alarmsCriticalAlarmsWidget')?.querySelector('tbody');
+        if (alarmsTbody) {
+          updateCriticalAlarmsTable(alarmsTbody);
+        }
+      }
+      
+      // Helper function to update a critical alarms table
+      function updateCriticalAlarmsTable(tbody) {
         if (!tbody) return;
         
         const currentMachine = machineData[selectedMachineId];
@@ -5050,6 +5064,9 @@
           </tr>
         `).join('');
       }
+      
+      // Update Critical Alarms in main update loop (called from updateStats)
+      // This ensures both widgets stay in sync
       
       // Render Category Filter Bar for Alarms (deprecated - kept for compatibility)
       function renderAlarmsCategoryToggles() {

@@ -3913,20 +3913,21 @@ input:checked + .toggle-slider:before {
 
 /* SCADA Input Styling for Config Forms */
 .scada-input {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-default);
+  background: var(--theme-bg-secondary) !important;
+  border: 1px solid var(--border-default) !important;
   border-radius: 4px;
-  color: var(--text-primary);
+  color: var(--text-primary) !important;
   font-family: var(--font-mono);
   font-size: 11px;
-  transition: border-color var(--transition-normal),
-    box-shadow var(--transition-normal);
+  transition: border-color var(--theme-transition-normal),
+    box-shadow var(--theme-transition-normal);
 }
 
 .scada-input:focus {
-  outline: none;
-  border-color: var(--interactive-primary);
-  box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.1);
+  outline: none !important;
+  border-color: var(--theme-interactive-primary) !important;
+  box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.2) !important;
+  background: var(--theme-bg-secondary) !important;
 }
 
 .scada-input::placeholder {
@@ -4555,7 +4556,8 @@ input:checked + .toggle-slider:before {
   padding: var(--space-xl);
   text-align: center;
   cursor: pointer;
-  transition: border-color var(--theme-transition-normal), background var(--theme-transition-normal);
+  transition: border-color var(--theme-transition-normal),
+    background var(--theme-transition-normal);
   background: var(--bg-secondary);
 }
 

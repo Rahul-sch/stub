@@ -192,6 +192,9 @@
           </div>
 
           <div class="scada-topbar-right">
+            <button id="editLayoutBtn" onclick="toggleLayoutEditMode()" class="scada-btn" style="padding: 6px 12px; font-size: 10px; margin-right: var(--space-md); background: var(--bg-secondary); border: 1px solid var(--border-default); color: var(--text-primary); font-family: var(--font-mono); cursor: pointer;">
+              ⚙️ EDIT LAYOUT
+            </button>
             <div class="scada-alerts-badge none" id="scadaAlertsBadge">
               <span>ALERTS</span>
               <span id="scadaAlertsCount">0</span>
@@ -258,88 +261,139 @@
       <div class="scada-main">
         <!-- Monitoring Section (Default) - Zero Scroll 1080p Layout -->
         <div class="scada-section active" id="section-monitoring">
-          <div class="monitoring-layout-container">
+          <div class="grid-stack" id="monitoringGrid">
             
-            <!-- Left Panel: Command Deck (Top) + Health Matrix (Bottom with scroll) -->
-            <div class="monitoring-left-panel">
-              <!-- Command Deck - Fixed at top -->
-              <div class="rig-card command-deck">
-                <div class="rig-card-header">
-                  <span>COMMAND DECK</span>
-                  <span class="status-indicator status-nom"></span>
-                </div>
-                <div class="rig-card-body">
-                  <div class="command-btn-row">
-                    <button id="btn-start" class="rig-btn rig-btn-start" onclick="globalStartMachine()">START</button>
-                    <button id="btn-stop" class="rig-btn rig-btn-stop" onclick="globalStopMachine()">STOP</button>
+            <!-- Command Deck (top-left) -->
+            <div class="grid-stack-item" data-gs-x="0" data-gs-y="0" data-gs-width="3" data-gs-height="3">
+              <div class="grid-stack-item-content">
+                <div class="rig-card command-deck">
+                  <div class="rig-card-header">
+                    <span>COMMAND DECK</span>
+                    <span class="status-indicator status-nom"></span>
                   </div>
-
-                  <div class="command-slider-group">
-                    <div class="command-slider-header">
-                      <label for="commandSamplingRate">SAMPLING SPEED</label>
-                      <span id="commandMPSDisplay">10 MPS</span>
+                  <div class="rig-card-body">
+                    <div class="command-btn-row">
+                      <button id="btn-start" class="rig-btn rig-btn-start" onclick="globalStartMachine()">START</button>
+                      <button id="btn-stop" class="rig-btn rig-btn-stop" onclick="globalStopMachine()">STOP</button>
                     </div>
-                    <input type="range" id="commandSamplingRate" min="1" max="20" value="10" step="1" onchange="updateTargetMPS(this.value)">
-                  </div>
 
-                  <div class="command-anomaly-group">
-                    <label>ANOMALY INJECT</label>
-                    <div class="command-anomaly-row">
-                      <select id="anomalyTypeSelect" class="rig-select">
-                        <option value="temperature_spike">Temp Spike</option>
-                        <option value="pressure_drop">Pressure Drop</option>
-                        <option value="vibration_surge">Vibration</option>
-                      </select>
-                      <button class="rig-btn rig-btn-warn" onclick="triggerAnomalyInjection()">INJECT</button>
+                    <div class="command-slider-group">
+                      <div class="command-slider-header">
+                        <label for="commandSamplingRate">SAMPLING SPEED</label>
+                        <span id="commandMPSDisplay">10 MPS</span>
+                      </div>
+                      <input type="range" id="commandSamplingRate" min="1" max="20" value="10" step="1" onchange="updateTargetMPS(this.value)">
+                    </div>
+
+                    <div class="command-anomaly-group">
+                      <label>ANOMALY INJECT</label>
+                      <div class="command-anomaly-row">
+                        <select id="anomalyTypeSelect" class="rig-select">
+                          <option value="temperature_spike">Temp Spike</option>
+                          <option value="pressure_drop">Pressure Drop</option>
+                          <option value="vibration_surge">Vibration</option>
+                        </select>
+                        <button class="rig-btn rig-btn-warn" onclick="triggerAnomalyInjection()">INJECT</button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <!-- Health Matrix - Scrollable area -->
-              <div id="healthMatrixContainer"></div>
-              
-              <!-- Live Sensor Readings - Fills dead space -->
-              <div class="rig-card live-readings-card" style="flex-shrink: 0; margin-top: var(--space-lg);">
-                <div class="rig-card-header">
-                  <span>📡 LIVE SENSOR READINGS</span>
-                  <select id="historyCategory" onchange="changeHistoryCategory()" class="history-category-select">
-                    <option value="environmental">🌍 ENVIRON</option>
-                    <option value="mechanical">⚙️ MECH</option>
-                    <option value="thermal">🔥 THERMAL</option>
-                    <option value="electrical">⚡ ELECTRIC</option>
-                    <option value="fluid">💧 FLUID</option>
-                  </select>
-                </div>
-                <div class="rig-card-body live-readings-scroll" style="max-height: 200px;">
-                  <div class="history-container" id="readingsHistory"></div>
                 </div>
               </div>
             </div>
-
-            <!-- Right Panel: 3D Rig (60%) + Telemetry Grid (40%, 4x2) -->
-            <div class="monitoring-right-panel">
-              <!-- 3D Digital Twin (60% height) -->
-              <div class="rig-card digital-twin-card" style="flex: 1.5; min-height: 0; display: flex; flex-direction: column;">
-                <div class="rig-card-header">
-                  <span>3D DIGITAL TWIN</span>
-                  <span class="status-indicator" id="digitalTwinStatus" style="background: var(--status-running);"></span>
-                </div>
-                <div class="rig-card-body" style="position: relative; flex: 1; min-height: 0;">
-                  <canvas id="rigCanvas" style="cursor: grab; width: 100%; height: 100%;"></canvas>
-                  <button id="resetViewBtn" onclick="reset3DView()" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; background: rgba(0,0,0,0.8); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 9px; font-weight: 600; cursor: pointer; transition: background var(--transition-normal); z-index: 10;">
-                    ↻ RESET VIEW
-                  </button>
-                  <div id="rigRiskIndicator" style="position: absolute; bottom: 10px; left: 10px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--status-running); text-transform: uppercase; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 4px;">
-                    RIG STATUS: NOMINAL
+            
+            <!-- Health Matrix (left-center) -->
+            <div class="grid-stack-item" data-gs-x="0" data-gs-y="3" data-gs-width="3" data-gs-height="5">
+              <div class="grid-stack-item-content">
+                <div class="rig-card">
+                  <div class="rig-card-header">
+                    <span>HEALTH MATRIX</span>
+                    <span class="status-indicator status-nom"></span>
+                  </div>
+                  <div class="rig-card-body" style="overflow-y: auto;">
+                    <div id="healthMatrixContainer"></div>
                   </div>
                 </div>
               </div>
-              
-              <!-- Telemetry Grid (40% height, 4-column x 2-row) -->
-              <div id="telemetryContainer"></div>
             </div>
-
+            
+            <!-- NEW: Live Sensor Stream (left-bottom) -->
+            <div class="grid-stack-item" data-gs-x="0" data-gs-y="8" data-gs-width="3" data-gs-height="4">
+              <div class="grid-stack-item-content">
+                <div class="rig-card">
+                  <div class="rig-card-header">
+                    <span>LIVE SENSOR STREAM</span>
+                    <span class="status-indicator status-nom"></span>
+                  </div>
+                  <div class="rig-card-body" style="overflow-y: auto; max-height: 250px;">
+                    <div id="liveSensorStreamWidget" style="font-family: var(--font-mono); font-size: 9px;">
+                      <!-- Populated by JS -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 3D Digital Twin (center-top) -->
+            <div class="grid-stack-item" data-gs-x="3" data-gs-y="0" data-gs-width="9" data-gs-height="7">
+              <div class="grid-stack-item-content">
+                <div class="rig-card digital-twin-card">
+                  <div class="rig-card-header">
+                    <span>3D DIGITAL TWIN</span>
+                    <span class="status-indicator" id="digitalTwinStatus" style="background: var(--status-running);"></span>
+                  </div>
+                  <div class="rig-card-body" style="position: relative; flex: 1; min-height: 0;">
+                    <canvas id="rigCanvas" style="cursor: grab; width: 100%; height: 100%;"></canvas>
+                    <button id="resetViewBtn" onclick="reset3DView()" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; background: rgba(0,0,0,0.8); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 9px; font-weight: 600; cursor: pointer; transition: background var(--transition-normal); z-index: 10;">
+                      ↻ RESET VIEW
+                    </button>
+                    <div id="rigRiskIndicator" style="position: absolute; bottom: 10px; left: 10px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--status-running); text-transform: uppercase; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 4px;">
+                      RIG STATUS: NOMINAL
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Telemetry Grid (center-bottom) -->
+            <div class="grid-stack-item" data-gs-x="3" data-gs-y="7" data-gs-width="6" data-gs-height="5">
+              <div class="grid-stack-item-content">
+                <div class="rig-card">
+                  <div class="rig-card-header">
+                    <span>TELEMETRY RAIL</span>
+                    <span class="status-indicator status-nom"></span>
+                  </div>
+                  <div class="rig-card-body" style="overflow-y: auto;">
+                    <div id="telemetryContainer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- NEW: Critical Alarms (right-bottom) -->
+            <div class="grid-stack-item" data-gs-x="9" data-gs-y="7" data-gs-width="3" data-gs-height="5">
+              <div class="grid-stack-item-content">
+                <div class="rig-card">
+                  <div class="rig-card-header">
+                    <span>CRITICAL ALARMS</span>
+                    <span class="status-indicator status-error"></span>
+                  </div>
+                  <div class="rig-card-body" style="overflow-y: auto; max-height: 300px;">
+                    <table id="criticalAlarmsWidget" style="width: 100%; font-size: 9px; font-family: var(--font-mono);">
+                      <thead>
+                        <tr>
+                          <th style="text-align: left; padding: 4px;">TIME</th>
+                          <th style="text-align: left; padding: 4px;">SENSOR</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <!-- Populated by JS -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
           </div>
         </div>
 
@@ -4192,6 +4246,149 @@
         container.innerHTML = html;
       }
 
+      // ============================================
+      // GRIDSTACK INITIALIZATION & LAYOUT EDIT MODE
+      // ============================================
+      let monitoringGrid = null;
+      let configGrid = null;
+      let layoutEditMode = false;
+
+      function initGridstacks() {
+        if (typeof GridStack === 'undefined') {
+          console.warn('Gridstack.js not loaded');
+          return;
+        }
+        
+        const gridOptions = {
+          column: 12,
+          cellHeight: 60,
+          margin: 8,
+          float: false,
+          disableDrag: true,  // Fixed layout by default
+          disableResize: true,
+          staticGrid: true
+        };
+        
+        const monitoringEl = document.getElementById('monitoringGrid');
+        if (monitoringEl) {
+          monitoringGrid = GridStack.init(gridOptions, '#monitoringGrid');
+          
+          // Handle resize events for Three.js canvas
+          monitoringGrid.on('resizestop', function(event, items) {
+            const item = items[0];
+            if (item && item.el) {
+              const canvas = item.el.querySelector('#rigCanvas');
+              if (canvas && rigRenderer && rigCamera) {
+                // Resize Three.js canvas
+                const container = canvas.parentElement;
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                rigCamera.aspect = width / height;
+                rigCamera.updateProjectionMatrix();
+                rigRenderer.setSize(width, height);
+              }
+            }
+          });
+        }
+        
+        const configEl = document.getElementById('configGrid');
+        if (configEl) {
+          configGrid = GridStack.init(gridOptions, '#configGrid');
+        }
+        
+        console.log('Gridstack initialized');
+      }
+
+      function toggleLayoutEditMode() {
+        layoutEditMode = !layoutEditMode;
+        const btn = document.getElementById('editLayoutBtn');
+        
+        if (monitoringGrid) {
+          monitoringGrid.enableMove(!layoutEditMode);
+          monitoringGrid.enableResize(!layoutEditMode);
+        }
+        
+        if (configGrid) {
+          configGrid.enableMove(!layoutEditMode);
+          configGrid.enableResize(!layoutEditMode);
+        }
+        
+        if (btn) {
+          btn.textContent = layoutEditMode ? '✓ SAVE LAYOUT' : '⚙️ EDIT LAYOUT';
+          btn.style.background = layoutEditMode ? 'var(--status-running)' : 'var(--bg-secondary)';
+        }
+      }
+
+      // ============================================
+      // LIVE SENSOR STREAM WIDGET
+      // ============================================
+      function updateLiveSensorStreamWidget() {
+        const container = document.getElementById('liveSensorStreamWidget');
+        if (!container) return;
+        
+        const currentMachine = machineData[selectedMachineId];
+        if (!currentMachine || !currentMachine.recentReadings || currentMachine.recentReadings.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-muted); padding: 8px;">No data</div>';
+          return;
+        }
+        
+        // Show last 20 readings
+        const readings = currentMachine.recentReadings.slice(-20).reverse();
+        
+        let html = '<div style="display: flex; flex-direction: column; gap: 2px;">';
+        readings.forEach(reading => {
+          const timestamp = new Date(reading.timestamp || reading.created_at).toLocaleTimeString();
+          const rpm = reading.rpm?.toFixed(0) || 'N/A';
+          const temp = reading.temperature?.toFixed(1) || 'N/A';
+          const vib = reading.vibration?.toFixed(2) || 'N/A';
+          
+          html += `
+            <div style="padding: 4px; background: var(--bg-tertiary); border-left: 2px solid var(--status-running); display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">${timestamp}</span>
+              <span style="color: var(--text-primary);">RPM: ${rpm} | T: ${temp}°F | V: ${vib}</span>
+            </div>
+          `;
+        });
+        html += '</div>';
+        
+        container.innerHTML = html;
+      }
+
+      // ============================================
+      // CRITICAL ALARMS WIDGET
+      // ============================================
+      function updateCriticalAlarmsWidget() {
+        const tbody = document.querySelector('#criticalAlarmsWidget tbody');
+        if (!tbody) return;
+        
+        fetch('/api/anomalies?limit=10&only_anomalies=true')
+          .then(r => r.json())
+          .then(data => {
+            if (!data.anomalies || data.anomalies.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted); padding: 8px;">No critical alarms</td></tr>';
+              return;
+            }
+            
+            let html = '';
+            data.anomalies.slice(0, 10).forEach(anomaly => {
+              const time = new Date(anomaly.timestamp).toLocaleTimeString();
+              const sensors = anomaly.detected_sensors?.join(', ') || 'Unknown';
+              
+              html += `
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                  <td style="padding: 4px; color: var(--text-muted);">${time}</td>
+                  <td style="padding: 4px; color: var(--status-error);">${sensors}</td>
+                </tr>
+              `;
+            });
+            
+            tbody.innerHTML = html;
+          })
+          .catch(err => {
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--status-error); padding: 8px;">Error loading alarms</td></tr>';
+          });
+      }
+
       function updateStats() {
         fetch("/api/stats")
           .then((r) => r.json())
@@ -4208,6 +4405,10 @@
             
             // Render telemetry tiles
             renderTelemetryTiles(data, currentMachine.recentReadings, currentMachine.lstmPredictions);
+            
+            // Update new widgets
+            updateLiveSensorStreamWidget();
+            updateCriticalAlarmsWidget();
 
             // ========== GUARD: Only collect data if producer + machine are running ==========
             if (canCollectData()) {
@@ -8492,6 +8693,14 @@ Report generated by Sensor Data Pipeline Dashboard
       // Monitor risk score every 3 seconds
       setInterval(monitorRiskScore, 3000);
       setTimeout(monitorRiskScore, 2000);
+
+      // Initialize Gridstack on page load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGridstacks);
+      } else {
+        // DOM already loaded
+        setTimeout(initGridstacks, 100);
+      }
 
     </script>
   </body>

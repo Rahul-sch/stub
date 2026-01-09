@@ -4993,6 +4993,29 @@
         }
       }
       
+      // Matrix Mode Toggle Button
+      let matrixModeEnabled = false;
+      function toggleMatrixModeButton() {
+        matrixModeEnabled = !matrixModeEnabled;
+        toggleMatrixMode(matrixModeEnabled);
+        const statusEl = document.getElementById('matrixModeStatus');
+        if (statusEl) {
+          statusEl.textContent = matrixModeEnabled ? 'ON' : 'OFF';
+        }
+        const btn = document.getElementById('matrixModeToggle');
+        if (btn) {
+          if (matrixModeEnabled) {
+            btn.style.background = '#00ff00';
+            btn.style.borderColor = '#00ff00';
+            btn.style.color = '#000000';
+          } else {
+            btn.style.background = 'var(--theme-interactive-primary)';
+            btn.style.borderColor = 'var(--theme-interactive-primary)';
+            btn.style.color = 'var(--text-primary)';
+          }
+        }
+      }
+      
       // Matrix Mode Toggle
       function toggleMatrixMode(enabled) {
         if (enabled) {

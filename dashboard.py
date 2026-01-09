@@ -1027,7 +1027,7 @@ def api_signup():
         if conn:
             conn.rollback()
             if cursor:
-            cursor.close()
+                cursor.close()
             return_db_connection(conn)
         logging.error(f"Signup error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -2300,12 +2300,12 @@ def api_ml_stats():
         
         # Reports generated (check if table exists)
         try:
-        cursor.execute("""
-            SELECT 
-                COUNT(*) as total_reports,
-                COUNT(*) FILTER (WHERE status = 'completed') as completed_reports
-            FROM analysis_reports
-        """)
+            cursor.execute("""
+                SELECT 
+                    COUNT(*) as total_reports,
+                    COUNT(*) FILTER (WHERE status = 'completed') as completed_reports
+                FROM analysis_reports
+            """)
         report_stats = cursor.fetchone()
         except:
             report_stats = (0, 0)

@@ -4114,6 +4114,63 @@ def api_db_info():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/admin/emergency-stop', methods=['POST'])
+@require_admin
+@log_action('EMERGENCY_STOP', resource_type='system', resource_id=None)
+def api_emergency_stop():
+    """Emergency stop - freeze all systems."""
+    try:
+        # Stop producer and consumer
+        stop_component('producer')
+        stop_component('consumer')
+        
+        # Log the emergency stop
+        logging.critical("EMERGENCY STOP ACTIVATED by user")
+        
+        return jsonify({
+            'success': True,
+            'message': 'All systems frozen. Producer and Consumer stopped.'
+        }), 200
+    except Exception as e:
+        logging.error(f"Error during emergency stop: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/users', methods=['GET'])
+@require_admin
+@log_action('READ', resource_type='user', resource_id=None)
+def api_list_users():
+    """List all users (admin only)."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, username, role, accessible_machines, created_at
+            FROM users
+            ORDER BY created_at DESC
+        """)
+        
+        rows = cursor.fetchall()
+        cursor.close()
+        
+        users = []
+        for row in rows:
+            users.append({
+                'id': row[0],
+                'username': row[1],
+                'role': row[2],
+                'accessible_machines': row[3] if row[3] else [],
+                'created_at': row[4].isoformat() if row[4] else None
+            })
+        
+        return_db_connection(conn)
+        return jsonify({'users': users}), 200
+    except Exception as e:
+        return_db_connection(conn)
+        logging.error(f"Error listing users: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 # Bootstrap admin user on module load
 bootstrap_admin_user()
 

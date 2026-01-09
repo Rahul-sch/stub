@@ -120,21 +120,13 @@
               </svg>
               <span class="scada-sidebar-icon-label">CONFIG</span>
             </div>
-            <div class="scada-sidebar-icon" onclick="switchSection('analytics')" data-section="analytics" title="Analytics" id="sidebarAnalyticsIcon" style="display: none;">
+            <!-- Admin War Room (Admin Only) -->
+            <div class="scada-sidebar-icon" onclick="switchSection('admin')" data-section="admin" title="Admin War Room" id="sidebarAdminIcon" style="display: none;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="M9 12l2 2 4-4"></path>
               </svg>
-              <span class="scada-sidebar-icon-label">ANALYTICS</span>
-            </div>
-            <!-- Injection and Export removed - merged into Config -->
-            <div class="scada-sidebar-icon" onclick="switchSection('users')" data-section="users" title="Users" id="sidebarUsersIcon" style="display: none;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-              <span class="scada-sidebar-icon-label">USERS</span>
+              <span class="scada-sidebar-icon-label">ADMIN</span>
             </div>
           </div>
         </div>
@@ -824,26 +816,125 @@
           <!-- END GRIDSTACK -->
         </div>
         
-        <!-- Analytics Section (Admin Only) -->
-        <div class="scada-section" id="section-analytics" style="display: none;">
-          <div style="display: grid; gap: var(--space-lg);">
-            <!-- LSTM Reports Card -->
-            <div class="rig-card">
-              <div class="rig-card-header">LSTM REPORTS</div>
-              <div class="rig-card-body">
-                <div style="display: grid; gap: var(--space-md);">
-                  <button onclick="generateFutureReport(this)" class="rig-btn rig-btn-secondary" style="width: 100%;">
-                    GENERATE FUTURE REPORT
-                  </button>
-                  <button onclick="generateFullSessionReport(this)" class="rig-btn rig-btn-secondary" style="width: 100%;">
-                    GENERATE FULL SESSION REPORT
-                  </button>
+        <!-- Admin War Room Section -->
+        <div class="scada-section" id="section-admin" style="display: none;">
+          <div class="grid-stack" id="adminGrid">
+            
+            <!-- Widget 1: E-STOP Button -->
+            <div class="grid-stack-item" data-gs-x="0" data-gs-y="0" data-gs-width="4" data-gs-height="4">
+              <div class="grid-stack-item-content">
+                <div class="grid-item-drag-handle" style="display: none; position: absolute; top: 4px; right: 4px; color: var(--theme-interactive-primary); font-size: 12px; font-weight: bold; z-index: 1000; background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); pointer-events: none;">⋮⋮ DRAG</div>
+                <div class="rig-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--bg-primary); border: 3px solid var(--theme-status-error); box-shadow: 0 0 40px rgba(255, 23, 68, 0.6);">
+                  <div class="rig-card-header" style="border-bottom: 1px solid var(--theme-status-error); width: 100%;">
+                    <span style="color: var(--theme-status-error); font-weight: 700; font-size: 14px;">EMERGENCY STOP</span>
+                    <span class="status-indicator" style="background: var(--theme-status-error);"></span>
+                  </div>
+                  <div class="rig-card-body" style="flex: 1; display: flex; justify-content: center; align-items: center; padding: var(--space-xl);">
+                    <button 
+                      onclick="triggerEmergencyStop()" 
+                      class="rig-btn" 
+                      style="width: 90%; height: 90%; font-size: 24px; font-weight: 900; background: var(--theme-status-error); border: 4px solid var(--theme-status-critical); color: white; box-shadow: 0 0 30px rgba(255, 0, 0, 0.8); cursor: pointer; text-transform: uppercase; letter-spacing: 4px;">
+                      E-STOP
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+            
+            <!-- Widget 2: User Management -->
+            <div class="grid-stack-item" data-gs-x="4" data-gs-y="0" data-gs-width="8" data-gs-height="6">
+              <div class="grid-stack-item-content">
+                <div class="grid-item-drag-handle" style="display: none; position: absolute; top: 4px; right: 4px; color: var(--theme-interactive-primary); font-size: 12px; font-weight: bold; z-index: 1000; background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); pointer-events: none;">⋮⋮ DRAG</div>
+                <div class="rig-card" style="height: 100%; display: flex; flex-direction: column;">
+                  <div class="rig-card-header">
+                    <span>USER MANAGEMENT</span>
+                    <span class="status-indicator status-nom"></span>
+                  </div>
+                  <div class="rig-card-body" style="flex: 1; overflow-y: auto; padding: var(--space-md);">
+                    <form id="adminCreateUserForm" onsubmit="adminCreateUser(event)" style="display: grid; gap: var(--space-md); margin-bottom: var(--space-lg);">
+                      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-sm);">
+                        <div>
+                          <label class="config-label" style="font-weight: 700;">USERNAME</label>
+                          <input type="text" id="adminNewUsername" required class="scada-input" style="width: 100%; padding: var(--space-sm); margin-top: 2px;">
+                        </div>
+                        <div>
+                          <label class="config-label" style="font-weight: 700;">PASSWORD</label>
+                          <input type="password" id="adminNewPassword" required class="scada-input" style="width: 100%; padding: var(--space-sm); margin-top: 2px;">
+                        </div>
+                        <div>
+                          <label class="config-label" style="font-weight: 700;">ROLE</label>
+                          <select id="adminNewRole" required class="scada-input" style="width: 100%; padding: var(--space-sm); margin-top: 2px; cursor: pointer;">
+                            <option value="operator">Operator</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="config-label" style="font-weight: 700;">ASSIGNED MACHINES</label>
+                        <div style="display: flex; gap: var(--space-md);">
+                          <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
+                            <input type="checkbox" value="A" class="admin-machine-checkbox" style="cursor: pointer;">
+                            <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">A</span>
+                          </label>
+                          <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
+                            <input type="checkbox" value="B" class="admin-machine-checkbox" style="cursor: pointer;">
+                            <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">B</span>
+                          </label>
+                          <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer;">
+                            <input type="checkbox" value="C" class="admin-machine-checkbox" style="cursor: pointer;">
+                            <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">C</span>
+                          </label>
+                        </div>
+                      </div>
+                      <button type="submit" class="rig-btn rig-btn-start" style="width: 100%;">CREATE USER</button>
+                      <div id="adminCreateUserError" style="display: none; color: var(--status-error); font-family: var(--font-mono); font-size: 11px; text-align: center; font-weight: 700;"></div>
+                      <div id="adminCreateUserSuccess" style="display: none; color: var(--status-running); font-family: var(--font-mono); font-size: 11px; text-align: center; font-weight: 700;"></div>
+                    </form>
+                    
+                    <!-- User List -->
+                    <div id="adminUserList" style="margin-top: var(--space-lg);">
+                      <div class="config-label" style="font-weight: 700; margin-bottom: var(--space-sm);">EXISTING USERS</div>
+                      <div id="adminUserListContent" style="max-height: 300px; overflow-y: auto;">
+                        <div class="config-value" style="text-align: center; padding: var(--space-lg);">Loading users...</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Widget 3: Audit Logs -->
+            <div class="grid-stack-item" data-gs-x="0" data-gs-y="4" data-gs-width="12" data-gs-height="4">
+              <div class="grid-stack-item-content">
+                <div class="grid-item-drag-handle" style="display: none; position: absolute; top: 4px; right: 4px; color: var(--theme-interactive-primary); font-size: 12px; font-weight: bold; z-index: 1000; background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); pointer-events: none;">⋮⋮ DRAG</div>
+                <div class="rig-card" style="height: 100%; display: flex; flex-direction: column;">
+                  <div class="rig-card-header">
+                    <span>AUDIT LOGS</span>
+                    <span class="status-indicator status-nom"></span>
+                  </div>
+                  <div class="rig-card-body" style="flex: 1; overflow-y: auto; padding: 0;">
+                    <table class="scada-admin-table" style="width: 100%; border-collapse: collapse; font-size: 9px;">
+                      <thead style="position: sticky; top: 0; background: var(--bg-secondary); z-index: 10;">
+                        <tr>
+                          <th class="config-table-header" style="font-weight: 700;">TIMESTAMP</th>
+                          <th class="config-table-header" style="font-weight: 700;">USER</th>
+                          <th class="config-table-header" style="font-weight: 700;">ACTION</th>
+                          <th class="config-table-header" style="font-weight: 700;">DETAILS</th>
+                        </tr>
+                      </thead>
+                      <tbody id="adminAuditLogsBody">
+                        <tr>
+                          <td colspan="4" style="text-align: center; color: var(--text-muted); padding: var(--space-md); font-size: 10px;">Loading audit logs...</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
           </div>
         </div>
-        
         
         <!-- Old Users Section (to be removed) -->
         <div id="sectionUsersContent" style="display: none;">
@@ -1864,6 +1955,11 @@
           const response = await fetch('/api/auth/me');
           if (response.ok) {
             const data = await response.json();
+            // Show/hide admin icon based on role
+            const adminIcon = document.getElementById('sidebarAdminIcon');
+            if (adminIcon) {
+              adminIcon.style.display = (data.role === 'admin') ? 'flex' : 'none';
+            }
             if (data.success) {
               currentUser = data.user;
               accessibleMachines = data.user.accessible_machines || [];
@@ -1897,10 +1993,10 @@
               const configIcon = document.getElementById('sidebarConfigIcon');
               if (configIcon) configIcon.style.display = 'flex';
               
-              // Show Users icon for admins
-              const usersIcon = document.getElementById('sidebarUsersIcon');
-              if (usersIcon && currentUser.role === 'admin') {
-                usersIcon.style.display = 'flex';
+              // Show Admin icon for admins
+              const adminIcon = document.getElementById('sidebarAdminIcon');
+              if (adminIcon && currentUser.role === 'admin') {
+                adminIcon.style.display = 'flex';
               }
               
               // Initialize left sidebar
@@ -4263,6 +4359,118 @@
         }
         
         console.log('Gridstack initialized (monitoring + config)');
+      }
+      
+      // Initialize Admin Grid
+      let adminGrid = null;
+      function initAdminGrid() {
+        if (typeof GridStack === 'undefined') {
+          console.warn('Gridstack.js not loaded');
+          return;
+        }
+        
+        const gridOptions = {
+          column: 12,
+          cellHeight: 60,
+          margin: 8,
+          float: false,
+          disableDrag: true,
+          disableResize: true,
+          staticGrid: true
+        };
+        
+        const adminEl = document.getElementById('adminGrid');
+        if (adminEl && !adminGrid) {
+          adminGrid = GridStack.init(gridOptions, '#adminGrid');
+          console.log('Admin grid initialized');
+        }
+      }
+      
+      // E-STOP Function
+      async function triggerEmergencyStop() {
+        if (!confirm('⚠️ EMERGENCY STOP: This will freeze all systems. Continue?')) {
+          return;
+        }
+        
+        try {
+          const response = await fetch('/api/admin/emergency-stop', {
+            method: 'POST',
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            alert('✓ System freeze activated: ' + (data.message || 'All systems stopped'));
+            // Refresh page state
+            location.reload();
+          } else {
+            const error = await response.json();
+            alert('✗ Failed to activate E-STOP: ' + (error.error || 'Unknown error'));
+          }
+        } catch (e) {
+          alert('✗ Network error: ' + e.message);
+        }
+      }
+      
+      // Load Admin Audit Logs
+      async function loadAdminAuditLogs() {
+        const tbody = document.getElementById('adminAuditLogsBody');
+        if (!tbody) return;
+        
+        try {
+          const response = await fetch('/api/audit-logs?limit=100', {
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.logs && data.logs.length > 0) {
+              tbody.innerHTML = data.logs.map(log => `
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-primary);">${new Date(log.timestamp).toLocaleString()}</td>
+                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-primary); font-weight: 700;">${log.username || 'N/A'}</td>
+                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-primary);">${log.action || 'N/A'}</td>
+                  <td style="padding: var(--space-xs); font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);">${log.details || 'N/A'}</td>
+                </tr>
+              `).join('');
+            } else {
+              tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: var(--space-md);">No audit logs</td></tr>';
+            }
+          }
+        } catch (e) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--status-error); padding: var(--space-md);">Error loading logs</td></tr>';
+        }
+      }
+      
+      // Load Admin User List
+      async function loadAdminUserList() {
+        const container = document.getElementById('adminUserListContent');
+        if (!container) return;
+        
+        try {
+          const response = await fetch('/api/admin/users', {
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.users && data.users.length > 0) {
+              container.innerHTML = data.users.map(user => `
+                <div style="padding: var(--space-sm); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary);">${user.username}</span>
+                    <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-left: var(--space-sm);">${user.role}</span>
+                  </div>
+                  <span style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);">Machines: ${(user.accessible_machines || []).join(', ') || 'None'}</span>
+                </div>
+              `).join('');
+            } else {
+              container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: var(--space-lg);">No users found</div>';
+            }
+          }
+        } catch (e) {
+          container.innerHTML = '<div style="text-align: center; color: var(--status-error); padding: var(--space-lg);">Error loading users</div>';
+        }
       }
 
       function toggleLayoutEditMode() {
@@ -7661,6 +7869,14 @@ Report generated by Sensor Data Pipeline Dashboard
       // ============================================
       
       function switchSection(sectionName) {
+        // Security check for admin section
+        if (sectionName === 'admin') {
+          if (!currentUser || currentUser.role !== 'admin') {
+            alert('Access denied. Admin privileges required.');
+            return;
+          }
+        }
+        
         // Hide all sections
         document.querySelectorAll('.scada-section').forEach(section => {
           section.style.display = 'none';
@@ -7672,6 +7888,15 @@ Report generated by Sensor Data Pipeline Dashboard
         if (targetSection) {
           targetSection.style.display = 'block';
           targetSection.classList.add('active');
+          
+          // Initialize admin grid if needed
+          if (sectionName === 'admin') {
+            if (typeof adminGrid === 'undefined') {
+              initAdminGrid();
+            }
+            loadAdminAuditLogs();
+            loadAdminUserList();
+          }
           
           // Load config when opening configuration section
           if (sectionName === 'configuration') {

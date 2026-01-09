@@ -765,6 +765,71 @@
                 </div>
               </div>
 
+              <!-- Anomaly Simulation Widget -->
+              <div class="rig-card" style="margin-bottom: var(--space-lg);">
+                <div class="rig-card-header">
+                  <span>ANOMALY SIMULATION</span>
+                  <span class="status-indicator status-warning"></span>
+                </div>
+                <div class="rig-card-body" style="padding: var(--space-md);">
+                  <p class="config-label" style="margin-bottom: var(--space-md);">
+                    Inject synthetic anomalies for testing ML detection and alert workflows.
+                  </p>
+                  
+                  <div style="display: grid; gap: var(--space-sm);">
+                    <div style="display: flex; align-items: center; gap: var(--space-md);">
+                      <label class="config-label" style="min-width: 100px;">Machine:</label>
+                      <select id="injectionMachineId" class="scada-input" style="flex: 1; padding: var(--space-sm);">
+                        <option value="A">Machine A</option>
+                        <option value="B">Machine B</option>
+                        <option value="C">Machine C</option>
+                      </select>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: var(--space-md);">
+                      <label class="config-label" style="min-width: 100px;">Anomaly Type:</label>
+                      <select id="injectionAnomalyType" class="scada-input" style="flex: 1; padding: var(--space-sm);">
+                        <option value="high_vibration">High Vibration</option>
+                        <option value="high_temperature">High Temperature</option>
+                        <option value="rpm_spike">RPM Spike</option>
+                        <option value="bearing_overheat">Bearing Overheat</option>
+                      </select>
+                    </div>
+                    
+                    <button onclick="injectAnomalyNow()" class="rig-btn-primary" style="width: 100%; margin-top: var(--space-sm);">
+                      <span style="margin-right: var(--space-xs);">⚠️</span>INJECT ANOMALY
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Data Export Widget -->
+              <div class="rig-card" style="margin-bottom: var(--space-lg);">
+                <div class="rig-card-header">
+                  <span>DATA EXPORT</span>
+                  <span class="status-indicator status-info"></span>
+                </div>
+                <div class="rig-card-body" style="padding: var(--space-md);">
+                  <p class="config-label" style="margin-bottom: var(--space-md);">
+                    Export sensor readings and ML metrics for external analysis.
+                  </p>
+                  
+                  <div style="display: grid; gap: var(--space-sm);">
+                    <button onclick="exportData('csv')" class="rig-btn-secondary" style="width: 100%;">
+                      <span style="margin-right: var(--space-xs);">📄</span>EXPORT AS CSV
+                    </button>
+                    
+                    <button onclick="exportData('json')" class="rig-btn-secondary" style="width: 100%;">
+                      <span style="margin-right: var(--space-xs);">📋</span>EXPORT AS JSON
+                    </button>
+                    
+                    <button onclick="exportLogsPDF()" class="rig-btn-secondary" style="width: 100%;">
+                      <span style="margin-right: var(--space-xs);">📕</span>EXPORT LOGS (PDF)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
             </div>
             <!-- END RIGHT COLUMN -->
           </div>
@@ -787,67 +852,6 @@
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Anomaly Injection Section (Admin Only) -->
-        <div class="scada-section" id="section-injection">
-          <div style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 6px; padding: var(--space-xl);">
-            <h2 style="font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--space-lg);">
-              ANOMALY INJECTION
-            </h2>
-            <div style="display: grid; gap: var(--space-lg);">
-              <!-- Manual Injection -->
-              <div>
-                <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: var(--space-md); text-transform: uppercase;">
-                  MANUAL INJECTION
-                </div>
-                <button onclick="injectAnomalyNow(this)" class="scada-btn critical" style="width: 100%;">
-                  INJECT ANOMALY NOW
-                </button>
-              </div>
-              
-              <!-- Scheduled Injection -->
-              <div style="padding: var(--space-lg); background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 4px;">
-                <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: var(--space-md); text-transform: uppercase;">
-                  SCHEDULED INJECTION
-                </div>
-                <div style="display: grid; gap: var(--space-md);">
-                  <label style="display: flex; align-items: center; gap: var(--space-sm); cursor: pointer;">
-                    <input type="checkbox" id="sectionInjectionEnabled" onchange="toggleInjection()" style="cursor: pointer; width: 18px; height: 18px;">
-                    <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);">ENABLE SCHEDULED INJECTION</span>
-                  </label>
-                  <div>
-                    <label style="display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-bottom: var(--space-xs); text-transform: uppercase;">
-                      INTERVAL (MINUTES)
-                    </label>
-                    <input type="number" id="sectionInjectionInterval" value="30" min="1" max="1440" 
-                           style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;"
-                           onchange="updateInjectionInterval()">
-                  </div>
-                  <button onclick="updateInjectionSettings()" class="scada-btn" style="width: 100%;">
-                    SAVE SETTINGS
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Export Section -->
-        <div class="scada-section" id="section-export">
-          <div style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 6px; padding: var(--space-xl);">
-            <h2 style="font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--space-lg);">
-              EXPORT DATA
-            </h2>
-            <div style="display: grid; gap: var(--space-sm);">
-              <button onclick="exportData()" class="scada-btn" style="width: 100%;">
-                EXPORT CSV
-              </button>
-              <button onclick="generateFullSessionReport(this)" class="scada-btn" style="width: 100%;">
-                GENERATE SESSION REPORT
-              </button>
             </div>
           </div>
         </div>

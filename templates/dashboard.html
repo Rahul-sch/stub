@@ -2191,14 +2191,21 @@
             body: JSON.stringify({ username, password })
           });
 
-          const data = await response.json();
-          if (data.success) {
-            currentUser = data.user;
-            accessibleMachines = data.user.accessible_machines || [];
-            showDashboard();
-            filterMachineSelector();
-            updateUserInfo();
-            if (currentUser.role === 'admin') {
+            const data = await response.json();
+            if (data.success) {
+              currentUser = data.user;
+              accessibleMachines = data.user.accessible_machines || [];
+              showDashboard();
+              filterMachineSelector();
+              updateUserInfo();
+              
+              // Show/hide Admin icon based on role
+              const adminIcon = document.getElementById('sidebarAdminIcon');
+              if (adminIcon) {
+                adminIcon.style.display = (currentUser.role === 'admin') ? 'flex' : 'none';
+              }
+              
+              if (currentUser.role === 'admin') {
               // Hide mode toggle for admins (they only see admin panel)
               const modeToggle = document.querySelector('.mode-toggle');
               if (modeToggle) {

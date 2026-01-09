@@ -86,8 +86,8 @@ body {
   padding: 0;
   margin: 0;
   height: 100vh;
-  line-height: 1.5;
-  font-size: 16px; /* Increased from 14px for better readability */
+  line-height: var(--line-height-normal, 1.5);
+  font-size: var(--font-size-base, 16px);
   overflow: hidden !important;
 }
 
@@ -659,11 +659,36 @@ body {
   margin-bottom: 0;
   padding: var(--space-md);
   height: calc(100vh - var(--header-height));
-  overflow-y: auto;
+  overflow-y: auto !important;
   overflow-x: hidden;
-  overflow: hidden;
   transition: margin-left var(--transition-normal);
   box-sizing: border-box;
+}
+
+/* Custom Scrollbar Styling for Dark Theme */
+.scada-main::-webkit-scrollbar {
+  width: 12px;
+}
+
+.scada-main::-webkit-scrollbar-track {
+  background: var(--bg-base);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.scada-main::-webkit-scrollbar-thumb {
+  background: var(--interactive-primary);
+  border-radius: 6px;
+  border: 2px solid var(--bg-base);
+}
+
+.scada-main::-webkit-scrollbar-thumb:hover {
+  background: var(--interactive-hover);
+}
+
+/* Firefox Scrollbar */
+.scada-main {
+  scrollbar-width: thin;
+  scrollbar-color: var(--interactive-primary) var(--bg-base);
 }
 
 .scada-main.sidebar-open {
@@ -1578,22 +1603,21 @@ body {
          TYPOGRAPHY - Clean, Professional
          ============================================ */
 h1 {
-  font-size: 18px;
+  font-size: var(--font-size-4xl, 40px);
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.3px;
 }
 
 h2 {
-  font-size: 13px;
+  font-size: var(--font-size-xl, 22px);
   font-weight: 600;
   color: var(--text-secondary);
-  text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 h3 {
-  font-size: 14px;
+  font-size: var(--font-size-lg, 18px);
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -1916,7 +1940,7 @@ h3 {
 
 .big-stat-value {
   font-family: var(--font-mono);
-  font-size: 36px;
+  font-size: var(--font-size-3xl, 32px) !important;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: var(--space-xs);

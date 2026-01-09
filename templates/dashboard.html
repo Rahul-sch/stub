@@ -2113,6 +2113,11 @@
       }
 
       function showDashboard() {
+        // Hide boot overlay
+        const bootOverlay = document.getElementById('boot-overlay');
+        if (bootOverlay) {
+          bootOverlay.style.display = 'none';
+        }
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('mainDashboard').style.display = 'block';
       }

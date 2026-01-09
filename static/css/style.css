@@ -4408,22 +4408,9 @@ input:checked + .toggle-slider:before {
   position: relative;
 }
 
-/* Drag handle indicator in edit mode */
-.grid-stack.edit-mode .grid-stack-item-content::before {
-  content: "⋮⋮";
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  color: var(--theme-interactive-primary);
-  font-size: 16px;
-  font-weight: bold;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 2px 6px;
-  border-radius: 3px;
-  pointer-events: none;
-  font-family: var(--font-mono);
-  line-height: 1;
+/* Drag handle indicator in edit mode (now using HTML element) */
+.grid-stack.edit-mode .grid-item-drag-handle {
+  display: block !important;
 }
 
 /* Hover effect in edit mode */

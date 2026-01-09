@@ -266,6 +266,7 @@
             <!-- Command Deck (top-left) -->
             <div class="grid-stack-item" data-gs-x="0" data-gs-y="0" data-gs-width="3" data-gs-height="3">
               <div class="grid-stack-item-content">
+                <div class="grid-item-drag-handle" style="display: none; position: absolute; top: 4px; right: 4px; color: var(--theme-interactive-primary); font-size: 12px; font-weight: bold; z-index: 1000; background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); pointer-events: none;">⋮⋮ DRAG</div>
                 <div class="rig-card command-deck">
                   <div class="rig-card-header">
                     <span>COMMAND DECK</span>
@@ -304,6 +305,7 @@
             <!-- Health Matrix (left-center) -->
             <div class="grid-stack-item" data-gs-x="0" data-gs-y="3" data-gs-width="3" data-gs-height="5">
               <div class="grid-stack-item-content">
+                <div class="grid-item-drag-handle" style="display: none; position: absolute; top: 4px; right: 4px; color: var(--theme-interactive-primary); font-size: 12px; font-weight: bold; z-index: 1000; background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); pointer-events: none;">⋮⋮ DRAG</div>
                 <div class="rig-card">
                   <div class="rig-card-header">
                     <span>HEALTH MATRIX</span>
@@ -319,6 +321,7 @@
             <!-- NEW: Live Sensor Stream (left-bottom) -->
             <div class="grid-stack-item" data-gs-x="0" data-gs-y="8" data-gs-width="3" data-gs-height="4">
               <div class="grid-stack-item-content">
+                <div class="grid-item-drag-handle" style="display: none; position: absolute; top: 4px; right: 4px; color: var(--theme-interactive-primary); font-size: 12px; font-weight: bold; z-index: 1000; background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); pointer-events: none;">⋮⋮ DRAG</div>
                 <div class="rig-card">
                   <div class="rig-card-header">
                     <span>LIVE SENSOR STREAM</span>
@@ -336,6 +339,7 @@
             <!-- 3D Digital Twin (center-top) - Hero Element -->
             <div class="grid-stack-item" data-gs-x="3" data-gs-y="0" data-gs-width="9" data-gs-height="8">
               <div class="grid-stack-item-content">
+                <div class="grid-item-drag-handle" style="display: none; position: absolute; top: 4px; right: 4px; color: var(--theme-interactive-primary); font-size: 12px; font-weight: bold; z-index: 1000; background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); pointer-events: none;">⋮⋮ DRAG</div>
                 <div class="rig-card digital-twin-card">
                   <div class="rig-card-header">
                     <span>3D DIGITAL TWIN</span>
@@ -357,6 +361,7 @@
             <!-- Telemetry Grid (center-bottom) -->
             <div class="grid-stack-item" data-gs-x="3" data-gs-y="8" data-gs-width="6" data-gs-height="4">
               <div class="grid-stack-item-content">
+                <div class="grid-item-drag-handle" style="display: none; position: absolute; top: 4px; right: 4px; color: var(--theme-interactive-primary); font-size: 12px; font-weight: bold; z-index: 1000; background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); pointer-events: none;">⋮⋮ DRAG</div>
                 <div class="rig-card">
                   <div class="rig-card-header">
                     <span>TELEMETRY RAIL</span>
@@ -372,6 +377,7 @@
             <!-- NEW: Critical Alarms (right-bottom) -->
             <div class="grid-stack-item" data-gs-x="9" data-gs-y="8" data-gs-width="3" data-gs-height="4">
               <div class="grid-stack-item-content">
+                <div class="grid-item-drag-handle" style="display: none; position: absolute; top: 4px; right: 4px; color: var(--theme-interactive-primary); font-size: 12px; font-weight: bold; z-index: 1000; background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); pointer-events: none;">⋮⋮ DRAG</div>
                 <div class="rig-card">
                   <div class="rig-card-header">
                     <span>CRITICAL ALARMS</span>
@@ -4334,12 +4340,20 @@
             monitoringGrid.enableMove(true);
             monitoringGrid.enableResize(true);
             if (gridEl) gridEl.classList.add('edit-mode');
+            // Show drag handles
+            document.querySelectorAll('.grid-item-drag-handle').forEach(handle => {
+              handle.style.display = 'block';
+            });
           } else {
             // Disable edit mode (save layout)
             monitoringGrid.setStatic(true);
             monitoringGrid.enableMove(false);
             monitoringGrid.enableResize(false);
             if (gridEl) gridEl.classList.remove('edit-mode');
+            // Hide drag handles
+            document.querySelectorAll('.grid-item-drag-handle').forEach(handle => {
+              handle.style.display = 'none';
+            });
           }
         }
         

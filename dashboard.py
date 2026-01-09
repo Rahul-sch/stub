@@ -69,6 +69,42 @@ except ImportError as e:
 app = Flask(__name__)
 
 # ============================================================================
+# ERROR HANDLERS - Ensure API routes always return JSON
+# ============================================================================
+@app.errorhandler(500)
+def handle_500_error(e):
+    """Handle 500 errors and return JSON for API routes"""
+    if request.path.startswith('/api/'):
+        try:
+            logger.error(f"500 error on API route {request.path}: {e}", exc_info=True)
+        except:
+            pass  # Logger might not be initialized yet
+        return jsonify({'success': False, 'error': f'Internal server error: {str(e)}'}), 500
+    # For non-API routes, return default Flask error page
+    return e
+
+@app.errorhandler(404)
+def handle_404_error(e):
+    """Handle 404 errors and return JSON for API routes"""
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'error': 'Endpoint not found'}), 404
+    return e
+
+@app.errorhandler(403)
+def handle_403_error(e):
+    """Handle 403 errors and return JSON for API routes"""
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'error': 'Access forbidden'}), 403
+    return e
+
+@app.errorhandler(401)
+def handle_401_error(e):
+    """Handle 401 errors and return JSON for API routes"""
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+    return e
+
+# ============================================================================
 # STRUCTURED LOGGING CONFIGURATION
 # ============================================================================
 logging.basicConfig(

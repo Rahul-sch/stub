@@ -5128,6 +5128,12 @@
               }
             }
             
+            // Update alarms page if visible
+            const alarmsSection = document.getElementById('section-alarms');
+            if (alarmsSection && alarmsSection.style.display !== 'none') {
+              renderAlarmsChartMatrix();
+            }
+            
             // Update RUL predictions
             updateRULPredictions();
 

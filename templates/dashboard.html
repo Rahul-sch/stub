@@ -4514,6 +4514,158 @@
         }
       }
 
+      // Initialize Alarms Grid
+      let alarmsGrid = null;
+      function initAlarmsGrid() {
+        if (typeof GridStack === 'undefined') {
+          console.warn('Gridstack.js not loaded');
+          return;
+        }
+        
+        const gridOptions = {
+          column: 12,
+          cellHeight: Math.floor((window.innerHeight - 60 - 32) / 20),
+          margin: 4,
+          float: false,
+          disableDrag: true,
+          disableResize: true,
+          staticGrid: true
+        };
+        
+        const alarmsEl = document.getElementById('alarmsGrid');
+        if (alarmsEl && !alarmsGrid) {
+          alarmsGrid = GridStack.init(gridOptions, '#alarmsGrid');
+          console.log('Alarms grid initialized');
+        }
+      }
+      
+      // Render Category Toggles for Alarms
+      function renderAlarmsCategoryToggles() {
+        const container = document.getElementById('alarmsCategoryToggles');
+        if (!container) return;
+        
+        const categories = ['environmental', 'mechanical', 'thermal', 'electrical', 'fluid'];
+        let html = '';
+        
+        categories.forEach(cat => {
+          const catLabel = cat.charAt(0).toUpperCase() + cat.slice(1);
+          html += `
+            <label style="display: flex; align-items: center; gap: var(--space-xs); cursor: pointer; padding: var(--space-xs); border-radius: 4px; transition: background var(--theme-transition-normal);">
+              <input 
+                type="checkbox" 
+                class="alarms-category-toggle" 
+                data-category="${cat}" 
+                checked 
+                onchange="toggleAlarmsCategory('${cat}', this.checked)"
+                style="cursor: pointer;">
+              <span style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--text-primary);">${catLabel}</span>
+            </label>
+          `;
+        });
+        
+        container.innerHTML = html;
+      }
+      
+      // Render Chart Matrix for All Sensors
+      function renderAlarmsChartMatrix() {
+        if (!alarmsGrid) {
+          initAlarmsGrid();
+        }
+        
+        const gridEl = document.getElementById('alarmsGrid');
+        if (!gridEl) return;
+        
+        // Get all sensors from unified registry
+        let allSensors = [];
+        if (typeof unifiedSensorRegistry !== 'undefined') {
+          allSensors = Object.values(unifiedSensorRegistry);
+        }
+        
+        // Get visible categories
+        const visibleCategories = new Set();
+        document.querySelectorAll('.alarms-category-toggle:checked').forEach(checkbox => {
+          visibleCategories.add(checkbox.dataset.category);
+        });
+        
+        // Filter sensors by visible categories
+        const visibleSensors = allSensors.filter(sensor => {
+          const category = sensor.category || 'custom';
+          return visibleCategories.has(category);
+        });
+        
+        // Clear existing widgets
+        alarmsGrid.removeAll();
+        
+        // Generate chart widgets (3 columns, auto rows)
+        visibleSensors.forEach((sensor, index) => {
+          const sensorName = sensor.sensor_name || sensor.name;
+          const displayName = sensorName.replace(/_/g, ' ').toUpperCase();
+          const unit = sensor.unit || '';
+          const x = (index % 3) * 4;
+          const y = Math.floor(index / 3) * 3;
+          
+          const widget = document.createElement('div');
+          widget.className = 'grid-stack-item';
+          widget.setAttribute('data-gs-x', x);
+          widget.setAttribute('data-gs-y', y);
+          widget.setAttribute('data-gs-width', '4');
+          widget.setAttribute('data-gs-height', '3');
+          widget.setAttribute('data-sensor', sensorName);
+          
+          widget.innerHTML = `
+            <div class="grid-stack-item-content">
+              <div class="rig-card" style="height: 100%; display: flex; flex-direction: column; padding: var(--space-sm);">
+                <div style="font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-xs);">${displayName}</div>
+                <div style="font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: var(--theme-interactive-primary); margin-bottom: var(--space-xs);" id="alarmsChartValue-${sensorName}">--</div>
+                <div style="font-family: var(--font-mono); font-size: 8px; color: var(--text-muted); margin-bottom: var(--space-xs);">${unit}</div>
+                <div id="alarmsChartSparkline-${sensorName}" style="height: 30px; width: 100%;"></div>
+              </div>
+            </div>
+          `;
+          
+          gridEl.appendChild(widget);
+        });
+        
+        // Add widgets to grid
+        alarmsGrid.addWidget(widget);
+        
+        // Update chart values from live data
+        updateAlarmsChartValues();
+      }
+      
+      // Toggle Category Visibility
+      function toggleAlarmsCategory(category, visible) {
+        renderAlarmsChartMatrix();
+      }
+      
+      // Update Chart Values from Live Data
+      function updateAlarmsChartValues() {
+        const currentMachine = machineData[selectedMachineId];
+        if (!currentMachine || !currentMachine.statsData) return;
+        
+        const stats = currentMachine.statsData;
+        Object.keys(stats).forEach(sensorName => {
+          const valueEl = document.getElementById(`alarmsChartValue-${sensorName}`);
+          const sparklineEl = document.getElementById(`alarmsChartSparkline-${sensorName}`);
+          
+          if (valueEl && stats[sensorName] !== undefined) {
+            const value = stats[sensorName];
+            valueEl.textContent = typeof value === 'number' ? value.toFixed(1) : value;
+          }
+          
+          if (sparklineEl && currentMachine.recentReadings) {
+            const values = currentMachine.recentReadings
+              .map(r => r[sensorName])
+              .filter(v => v !== null && v !== undefined && !isNaN(v))
+              .slice(-20);
+            
+            if (values.length > 0) {
+              sparklineEl.innerHTML = generateSparkline(values, 30, 100);
+            }
+          }
+        });
+      }
+
       function toggleLayoutEditMode() {
         layoutEditMode = !layoutEditMode;
         const btn = document.getElementById('editLayoutBtn');
@@ -7958,6 +8110,15 @@ Report generated by Sensor Data Pipeline Dashboard
           // Load operator logs when opening config (if admin)
           if (sectionName === 'configuration' && currentUser && currentUser.role === 'admin') {
             loadOperatorLogs();
+          }
+          
+          // Initialize alarms chart matrix
+          if (sectionName === 'alarms') {
+            if (typeof alarmsGrid === 'undefined') {
+              initAlarmsGrid();
+            }
+            renderAlarmsCategoryToggles();
+            renderAlarmsChartMatrix();
           }
         } else {
           console.error(`Section 'section-${sectionName}' not found`);

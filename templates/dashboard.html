@@ -333,8 +333,8 @@
               </div>
             </div>
             
-            <!-- 3D Digital Twin (center-top) -->
-            <div class="grid-stack-item" data-gs-x="3" data-gs-y="0" data-gs-width="9" data-gs-height="7">
+            <!-- 3D Digital Twin (center-top) - Hero Element -->
+            <div class="grid-stack-item" data-gs-x="3" data-gs-y="0" data-gs-width="9" data-gs-height="8">
               <div class="grid-stack-item-content">
                 <div class="rig-card digital-twin-card">
                   <div class="rig-card-header">
@@ -355,7 +355,7 @@
             </div>
             
             <!-- Telemetry Grid (center-bottom) -->
-            <div class="grid-stack-item" data-gs-x="3" data-gs-y="7" data-gs-width="6" data-gs-height="5">
+            <div class="grid-stack-item" data-gs-x="3" data-gs-y="8" data-gs-width="6" data-gs-height="4">
               <div class="grid-stack-item-content">
                 <div class="rig-card">
                   <div class="rig-card-header">
@@ -370,7 +370,7 @@
             </div>
             
             <!-- NEW: Critical Alarms (right-bottom) -->
-            <div class="grid-stack-item" data-gs-x="9" data-gs-y="7" data-gs-width="3" data-gs-height="5">
+            <div class="grid-stack-item" data-gs-x="9" data-gs-y="8" data-gs-width="3" data-gs-height="4">
               <div class="grid-stack-item-content">
                 <div class="rig-card">
                   <div class="rig-card-header">
@@ -4290,8 +4290,27 @@
                 rigCamera.aspect = width / height;
                 rigCamera.updateProjectionMatrix();
                 rigRenderer.setSize(width, height);
+                // Update controls if available
+                if (rigControls) {
+                  rigControls.update();
+                }
               }
             }
+          });
+          
+          // Handle move events for Three.js canvas (when 3D rig is moved)
+          monitoringGrid.on('change', function(event, items) {
+            items.forEach(item => {
+              if (item && item.el) {
+                const canvas = item.el.querySelector('#rigCanvas');
+                if (canvas && rigRenderer && rigCamera) {
+                  // Trigger resize after move
+                  setTimeout(() => {
+                    onRigResize();
+                  }, 50);
+                }
+              }
+            });
           });
         }
         
@@ -4306,20 +4325,46 @@
       function toggleLayoutEditMode() {
         layoutEditMode = !layoutEditMode;
         const btn = document.getElementById('editLayoutBtn');
+        const gridEl = document.getElementById('monitoringGrid');
         
         if (monitoringGrid) {
-          monitoringGrid.enableMove(!layoutEditMode);
-          monitoringGrid.enableResize(!layoutEditMode);
+          if (layoutEditMode) {
+            // Enable edit mode
+            monitoringGrid.setStatic(false);
+            monitoringGrid.enableMove(true);
+            monitoringGrid.enableResize(true);
+            if (gridEl) gridEl.classList.add('edit-mode');
+          } else {
+            // Disable edit mode (save layout)
+            monitoringGrid.setStatic(true);
+            monitoringGrid.enableMove(false);
+            monitoringGrid.enableResize(false);
+            if (gridEl) gridEl.classList.remove('edit-mode');
+          }
         }
         
         if (configGrid) {
-          configGrid.enableMove(!layoutEditMode);
-          configGrid.enableResize(!layoutEditMode);
+          if (layoutEditMode) {
+            configGrid.setStatic(false);
+            configGrid.enableMove(true);
+            configGrid.enableResize(true);
+          } else {
+            configGrid.setStatic(true);
+            configGrid.enableMove(false);
+            configGrid.enableResize(false);
+          }
         }
         
         if (btn) {
           btn.textContent = layoutEditMode ? '✓ SAVE LAYOUT' : '⚙️ EDIT LAYOUT';
-          btn.style.background = layoutEditMode ? 'var(--status-running)' : 'var(--bg-secondary)';
+          btn.style.background = layoutEditMode ? 'var(--theme-status-warning)' : 'var(--bg-secondary)';
+        }
+        
+        // Trigger Three.js resize when exiting edit mode
+        if (!layoutEditMode && rigRenderer && rigCamera) {
+          setTimeout(() => {
+            onRigResize();
+          }, 100);
         }
       }
 

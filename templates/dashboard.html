@@ -2165,6 +2165,13 @@
               }
               
               accessibleMachines = currentUser.accessible_machines || [];
+              
+              // Hide boot overlay immediately
+              const bootOverlay = document.getElementById('boot-overlay');
+              if (bootOverlay) {
+                bootOverlay.style.display = 'none';
+              }
+              
               showDashboard();
               filterMachineSelector();
               updateUserInfo();

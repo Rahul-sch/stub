@@ -1030,19 +1030,23 @@ body {
          ============================================ */
 .telemetry-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-lg);
+  grid-template-columns: repeat(6, 1fr);
+  gap: calc(var(--space-lg) * 0.85);
 }
 
 .telemetry-tile {
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
-  padding: var(--space-lg);
+  padding: calc(var(--space-lg) * 0.85);
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: calc(var(--space-md) * 0.85);
   transition: all var(--transition-normal);
+  transform: scale(0.85);
+  transform-origin: top left;
+  width: 117.65%; /* Compensate for scale */
+  height: 117.65%;
 }
 
 .telemetry-tile:hover {

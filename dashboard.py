@@ -2795,37 +2795,55 @@ def api_start_machine(machine_id):
                 return jsonify({'success': False, 'error': f'Machine {machine_id} is already running'}), 409
         
         # Start producer if not running
+        producer_status = "already_running"
         if not is_component_running('producer'):
             try:
                 producer_result = start_component('producer')
                 # Handle tuple response (response, status_code) from Flask
                 if isinstance(producer_result, tuple):
-                    producer_response, _ = producer_result
+                    producer_response, status_code = producer_result
                 else:
                     producer_response = producer_result
+                    status_code = 200
                 
                 producer_data = producer_response.get_json() if producer_response and hasattr(producer_response, 'get_json') else None
-                if not producer_data or not producer_data.get('success'):
+                
+                # 409 means already running/starting - that's OK, not a true error
+                if status_code == 409:
+                    logger.info(f"Producer already running or starting: {producer_data.get('error') if producer_data else 'N/A'}")
+                    producer_status = "starting"
+                elif not producer_data or not producer_data.get('success'):
                     error_msg = producer_data.get('error') if producer_data else 'Unknown error starting producer'
                     return jsonify({'success': False, 'error': f"Failed to start producer: {error_msg}"}), 500
+                else:
+                    producer_status = "started"
             except Exception as e:
                 logger.error(f"Error starting producer: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': f"Failed to start producer: {str(e)}"}), 500
         
         # Start consumer if not running
+        consumer_status = "already_running"
         if not is_component_running('consumer'):
             try:
                 consumer_result = start_component('consumer')
                 # Handle tuple response (response, status_code) from Flask
                 if isinstance(consumer_result, tuple):
-                    consumer_response, _ = consumer_result
+                    consumer_response, status_code = consumer_result
                 else:
                     consumer_response = consumer_result
+                    status_code = 200
                 
                 consumer_data = consumer_response.get_json() if consumer_response and hasattr(consumer_response, 'get_json') else None
-                if not consumer_data or not consumer_data.get('success'):
+                
+                # 409 means already running/starting - that's OK, not a true error
+                if status_code == 409:
+                    logger.info(f"Consumer already running or starting: {consumer_data.get('error') if consumer_data else 'N/A'}")
+                    consumer_status = "starting"
+                elif not consumer_data or not consumer_data.get('success'):
                     error_msg = consumer_data.get('error') if consumer_data else 'Unknown error starting consumer'
                     return jsonify({'success': False, 'error': f"Failed to start consumer: {error_msg}"}), 500
+                else:
+                    consumer_status = "started"
             except Exception as e:
                 logger.error(f"Error starting consumer: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': f"Failed to start consumer: {str(e)}"}), 500
@@ -2833,7 +2851,13 @@ def api_start_machine(machine_id):
         with machine_state_lock:
             machine_state[machine_id]['running'] = True
         
-        return jsonify({'success': True, 'machine_id': machine_id, 'running': True})
+        return jsonify({
+            'success': True, 
+            'machine_id': machine_id, 
+            'running': True,
+            'producer_status': producer_status,
+            'consumer_status': consumer_status
+        })
     except Exception as e:
         logger.error(f"Error in api_start_machine: {e}", exc_info=True)
         return jsonify({'success': False, 'error': f"Internal server error: {str(e)}"}), 500

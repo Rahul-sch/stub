@@ -1992,10 +1992,21 @@
     <script>
       // #region agent log
       console.log('[DEBUG] Script starting execution');
+      console.log('[DEBUG] Document readyState:', document.readyState);
+      console.log('[DEBUG] Boot overlay exists:', !!document.getElementById('boot-overlay'));
       try {
         fetch('http://127.0.0.1:7243/ingest/7ce1c69f-6529-4e30-b8ed-f1fe34b6ca57',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard.html:1992',message:'Script tag execution started',data:{readyState:document.readyState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch((e)=>{console.error('[DEBUG] Log fetch failed:',e);});
-      } catch(e) { console.error('[DEBUG] Log error:',e); }
+      } catch(e) { 
+        console.error('[DEBUG] Log error:',e);
+        console.error('[DEBUG] Error stack:',e.stack);
+      }
       // #endregion
+      
+      // Global error handler to catch any syntax errors
+      window.addEventListener('error', function(e) {
+        console.error('[DEBUG] Global error caught:', e.message, 'at', e.filename, ':', e.lineno);
+        console.error('[DEBUG] Error details:', e.error);
+      });
       // ========== Authentication State ==========
       let currentUser = null;
       let accessibleMachines = [];

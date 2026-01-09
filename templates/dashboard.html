@@ -5052,8 +5052,14 @@
           .catch(() => displayConfigMessage("Failed to reset config", true));
       }
 
-      function exportData(limit = 500) {
-        window.open(`/api/export?limit=${limit}`, "_blank");
+      function exportData(format = 'csv', limit = 500) {
+        // Support both old format (limit only) and new format (format, limit)
+        if (typeof format === 'number') {
+          // Backward compatibility: first arg is limit
+          limit = format;
+          format = 'csv';
+        }
+        window.open(`/api/export?format=${format}&limit=${limit}`, "_blank");
       }
 
       function startComponent(component) {

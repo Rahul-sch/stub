@@ -1298,10 +1298,12 @@ def start_component(component):
         logger.warning(f"{component.capitalize()} start already in progress, ignoring duplicate request")
         return jsonify({'success': False, 'error': f'{component.capitalize()} start already in progress'}), 409
     
+    lock_acquired = True
     try:
         # Check if already running AFTER acquiring lock
         if is_component_running(component):
             logger.warning(f"{component.capitalize()} is already running")
+            lock_acquired = False
             component_lock.release()
             return jsonify({'success': False, 'error': f'{component.capitalize()} is already running'}), 409
 
@@ -1381,13 +1383,19 @@ def start_component(component):
         processes[component] = proc  # Store the process object, not just PID
 
         logger.info(f"{component.capitalize()} started successfully (PID: {proc.pid})")
+        lock_acquired = False  # Lock will be released in finally, but mark as released to prevent double release
         return jsonify({'success': True, 'pid': proc.pid})
     except Exception as e:
         logger.error(f"Failed to start {component}: {e}")
         return jsonify({'success': False, 'error': str(e)})
     finally:
-        # Always release the lock
-        component_lock.release()
+        # Only release the lock if we still have it
+        if lock_acquired:
+            try:
+                component_lock.release()
+            except RuntimeError:
+                # Lock was already released, ignore
+                pass
 
 @app.route('/api/stop/<component>', methods=['POST'])
 @require_auth

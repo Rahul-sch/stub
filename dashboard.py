@@ -30,6 +30,15 @@ except ImportError:
     # Logger not yet initialized, use print for now
     print("Warning: Flask-Talisman not available. CSP headers will not be set.")
 
+# Flask-Limiter for rate limiting
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    LIMITER_AVAILABLE = True
+except ImportError:
+    LIMITER_AVAILABLE = False
+    print("Warning: Flask-Limiter not available. Rate limiting will not be enforced.")
+
 # Import PDF and AI libraries
 try:
     from PyPDF2 import PdfReader
@@ -67,6 +76,25 @@ except ImportError as e:
     print(f"ML report generation not available: {e}")
 
 app = Flask(__name__)
+
+# ============================================================================
+# RATE LIMITING - Initialize Flask-Limiter
+# ============================================================================
+if LIMITER_AVAILABLE:
+    limiter = Limiter(
+        app=app,
+        key_func=get_remote_address,
+        default_limits=["200 per hour"],
+        storage_uri="memory://"
+    )
+else:
+    # Dummy limiter decorator if not available
+    class DummyLimiter:
+        def limit(self, *args, **kwargs):
+            def decorator(f):
+                return f
+            return decorator
+    limiter = DummyLimiter()
 
 # ============================================================================
 # ERROR HANDLERS - Ensure API routes always return JSON
@@ -245,13 +273,13 @@ def get_db_connection():
             return None
     else:
         # Fallback to direct connection if pool not available
-        try:
-            import config
-            conn = psycopg2.connect(**config.DB_CONFIG)
-            return conn
-        except Exception as e:
+    try:
+        import config
+        conn = psycopg2.connect(**config.DB_CONFIG)
+        return conn
+    except Exception as e:
             logger.error(f"Failed to create direct database connection: {e}")
-            return None
+        return None
 
 def return_db_connection(conn):
     """Return connection to pool."""
@@ -801,6 +829,7 @@ def index():
     return render_template('dashboard.html')
 
 @app.route('/api/auth/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def api_login():
     """Authenticate user and create session."""
     data = request.json or {}
@@ -881,7 +910,7 @@ def api_login():
         if conn:
             conn.rollback()
             if cursor:
-                cursor.close()
+            cursor.close()
             return_db_connection(conn)
         logging.error(f"Login error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -998,7 +1027,7 @@ def api_signup():
         if conn:
             conn.rollback()
             if cursor:
-                cursor.close()
+            cursor.close()
             return_db_connection(conn)
         logging.error(f"Signup error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -2271,13 +2300,13 @@ def api_ml_stats():
         
         # Reports generated (check if table exists)
         try:
-            cursor.execute("""
-                SELECT 
-                    COUNT(*) as total_reports,
-                    COUNT(*) FILTER (WHERE status = 'completed') as completed_reports
-                FROM analysis_reports
-            """)
-            report_stats = cursor.fetchone()
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_reports,
+                COUNT(*) FILTER (WHERE status = 'completed') as completed_reports
+            FROM analysis_reports
+        """)
+        report_stats = cursor.fetchone()
         except:
             report_stats = (0, 0)
         
@@ -2790,9 +2819,9 @@ def api_machines():
 def api_start_machine(machine_id):
     """Start a machine (set running state and start producer/consumer)"""
     try:
-        if machine_id not in ['A', 'B', 'C']:
-            return jsonify({'success': False, 'error': 'Invalid machine ID'}), 400
-        
+    if machine_id not in ['A', 'B', 'C']:
+        return jsonify({'success': False, 'error': 'Invalid machine ID'}), 400
+    
         # Check if machine is already running
         with machine_state_lock:
             if machine_state[machine_id]['running']:
@@ -2852,9 +2881,9 @@ def api_start_machine(machine_id):
                 logger.error(f"Error starting consumer: {e}", exc_info=True)
                 return jsonify({'success': False, 'error': f"Failed to start consumer: {str(e)}"}), 500
         
-        with machine_state_lock:
-            machine_state[machine_id]['running'] = True
-        
+    with machine_state_lock:
+        machine_state[machine_id]['running'] = True
+    
         return jsonify({
             'success': True, 
             'machine_id': machine_id, 
@@ -3982,6 +4011,7 @@ def check_custom_sensors_table():
 INGEST_API_KEY = os.environ.get('INGEST_API_KEY', 'rig-alpha-secret')
 
 @app.route('/api/v1/ingest', methods=['POST'])
+@limiter.limit("200 per minute")
 @log_action('INGEST', resource_type='ingest', resource_id=None)
 def api_v1_ingest():
     """
@@ -4001,19 +4031,39 @@ def api_v1_ingest():
             return jsonify({'error': 'No JSON data provided'}), 400
         
         machine_id = data.get('machine_id', 'A')
-        if not machine_id:
-            return jsonify({'error': 'machine_id is required'}), 400
+        if not machine_id or machine_id not in ['A', 'B', 'C']:
+            return jsonify({'error': 'machine_id is required and must be A, B, or C'}), 400
         
         # Build sensor reading with timestamp
         reading = {
             'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S'),
-            'machine_id': machine_id
+            'machine_id': str(machine_id)  # Ensure string type
         }
         
-        # Add all sensor values from request (excluding machine_id)
+        # SECURITY: Strictly cast all sensor values to float, discard invalid packets
+        invalid_sensors = []
         for key, value in data.items():
             if key != 'machine_id':
-                reading[key] = value
+                try:
+                    # Attempt to cast to float
+                    float_value = float(value)
+                    # Check for NaN or Infinity
+                    if not (float('-inf') < float_value < float('inf')):
+                        invalid_sensors.append(key)
+                        continue
+                    reading[key] = float_value
+                except (ValueError, TypeError, OverflowError):
+                    # Invalid value - log and skip
+                    invalid_sensors.append(key)
+                    logger.warning(f"Invalid sensor value for {key}: {value} (type: {type(value)})")
+                    continue
+        
+        # If too many invalid sensors, reject the packet
+        if len(invalid_sensors) > len(reading) - 2:  # -2 for timestamp and machine_id
+            return jsonify({
+                'error': 'Too many invalid sensor values',
+                'invalid_sensors': invalid_sensors
+            }), 400
         
         # Send to Kafka
         try:

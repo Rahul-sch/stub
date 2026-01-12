@@ -293,6 +293,19 @@ telemetry_cache = {
 telemetry_lock = threading.Lock()
 telemetry_broadcast_started = False
 
+# ============================================================================
+# KETCHUP FACTORY TELEMETRY CACHE - For 3D Digital Twin (25 Production Lines)
+# ============================================================================
+ketchup_telemetry_cache = {
+    f'L{str(i).zfill(2)}': {
+        'fill_level': 95.0, 'viscosity': 3500.0, 'sauce_temp': 165.0,
+        'cap_torque': 2.5, 'bottle_flow_rate': 150.0, 'label_alignment': 0.0,
+        'bottle_count': 0, 'anomaly_score': 0.0, 'anomaly_type': None
+    } for i in range(1, 26)
+}
+ketchup_telemetry_lock = threading.Lock()
+ketchup_broadcast_started = False
+
 def telemetry_broadcast_worker():
     """Background thread that emits rig telemetry via WebSocket every 100ms (10 Hz)"""
     if not SOCKETIO_AVAILABLE or not socketio:
@@ -315,6 +328,34 @@ def telemetry_broadcast_worker():
             time.sleep(0.1)  # 10 Hz update rate
         except Exception as e:
             logging.error(f"Telemetry broadcast error: {e}")
+            time.sleep(1)  # Back off on error
+
+
+def ketchup_telemetry_broadcast_worker():
+    """Background thread that emits ketchup factory telemetry via WebSocket every 100ms (10 Hz)"""
+    if not SOCKETIO_AVAILABLE or not socketio:
+        return
+
+    while True:
+        try:
+            with ketchup_telemetry_lock:
+                for line_id, data in ketchup_telemetry_cache.items():
+                    socketio.emit('ketchup_telemetry', {
+                        'line_id': line_id,
+                        'fill_level': data.get('fill_level', 95.0),
+                        'viscosity': data.get('viscosity', 3500.0),
+                        'sauce_temp': data.get('sauce_temp', 165.0),
+                        'cap_torque': data.get('cap_torque', 2.5),
+                        'bottle_flow_rate': data.get('bottle_flow_rate', 150.0),
+                        'label_alignment': data.get('label_alignment', 0.0),
+                        'bottle_count': data.get('bottle_count', 0),
+                        'anomaly_score': data.get('anomaly_score', 0.0),
+                        'anomaly_type': data.get('anomaly_type'),
+                        'timestamp': datetime.now(timezone.utc).isoformat()
+                    })
+            time.sleep(0.1)  # 10 Hz update rate
+        except Exception as e:
+            logging.error(f"Ketchup telemetry broadcast error: {e}")
             time.sleep(1)  # Back off on error
 
 def get_db_connection():
@@ -4440,15 +4481,64 @@ def update_telemetry():
         return jsonify({'error': str(e)}), 500
 
 
+# ============================================================================
+# KETCHUP FACTORY TELEMETRY UPDATE (Called by consumer_ketchup.py)
+# ============================================================================
+@app.route('/api/internal/ketchup-telemetry-update', methods=['POST'])
+def update_ketchup_telemetry():
+    """
+    Internal endpoint for ketchup consumer to push real-time sensor data.
+    This data is cached and broadcast to 3D Twin clients via WebSocket.
+    """
+    global ketchup_telemetry_cache
+    try:
+        data = request.get_json()
+        line_id = data.get('line_id', 'L01')
+
+        # Validate line_id format (L01-L25)
+        if not (line_id.startswith('L') and line_id[1:].isdigit() and 1 <= int(line_id[1:]) <= 25):
+            return jsonify({'error': 'Invalid line_id. Must be L01-L25'}), 400
+
+        with ketchup_telemetry_lock:
+            ketchup_telemetry_cache[line_id] = {
+                'fill_level': data.get('fill_level', 95.0),
+                'viscosity': data.get('viscosity', 3500.0),
+                'sauce_temp': data.get('sauce_temp', 165.0),
+                'cap_torque': data.get('cap_torque', 2.5),
+                'bottle_flow_rate': data.get('bottle_flow_rate', 150.0),
+                'label_alignment': data.get('label_alignment', 0.0),
+                'bottle_count': data.get('bottle_count', 0),
+                'anomaly_score': data.get('anomaly_score', 0.0),
+                'anomaly_type': data.get('anomaly_type')
+            }
+
+        # Emit ketchup anomaly alert if score is high
+        if SOCKETIO_AVAILABLE and socketio and data.get('anomaly_score', 0) > 0.5:
+            socketio.emit('ketchup_anomaly_alert', {
+                'line_id': line_id,
+                'anomaly_score': data.get('anomaly_score', 0),
+                'anomaly_type': data.get('anomaly_type', 'unknown'),
+                'fill_level': data.get('fill_level', 95.0),
+                'sauce_temp': data.get('sauce_temp', 165.0),
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+
+        return jsonify({'status': 'ok'}), 200
+    except Exception as e:
+        logging.error(f"Ketchup telemetry update error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     # Run startup check
     check_custom_sensors_table()
 
     # Use SocketIO runner if available (for WebSocket support)
     if SOCKETIO_AVAILABLE and socketio:
-        # Start telemetry broadcast background task
+        # Start telemetry broadcast background tasks
         socketio.start_background_task(telemetry_broadcast_worker)
-        logging.info("Starting Flask with SocketIO (WebSocket enabled for 3D Twin)")
+        socketio.start_background_task(ketchup_telemetry_broadcast_worker)
+        logging.info("Starting Flask with SocketIO (WebSocket enabled for 3D Twin + Ketchup Factory)")
         socketio.run(app, debug=True, host='0.0.0.0', port=5000)
     else:
         # Fallback to standard Flask

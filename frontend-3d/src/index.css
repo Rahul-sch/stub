@@ -61,6 +61,41 @@ body {
   @apply bg-black/80 border border-rig-red/50 rounded-lg backdrop-blur-sm;
 }
 
+/* Ketchup Factory panel styles */
+.hud-panel-ketchup {
+  @apply bg-black/85 border border-red-500/40 rounded-lg backdrop-blur-sm;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.1), inset 0 0 30px rgba(139, 0, 0, 0.1);
+}
+
+/* Ketchup red glow */
+.glow-ketchup {
+  text-shadow: 0 0 5px #ff0000, 0 0 10px #cc0000;
+}
+
+/* Ketchup factory progress bars */
+.progress-ketchup {
+  @apply h-2 bg-gray-800 rounded overflow-hidden;
+}
+
+.progress-ketchup-fill {
+  @apply h-full rounded transition-all duration-200;
+  background: linear-gradient(90deg, #cc0000, #ff3300);
+}
+
+.progress-ketchup-fill.warning {
+  background: linear-gradient(90deg, #ff6600, #ffaa00);
+}
+
+.progress-ketchup-fill.danger {
+  background: linear-gradient(90deg, #ff0000, #ff3300);
+  animation: pulse-danger 0.5s infinite alternate;
+}
+
+@keyframes pulse-danger {
+  from { opacity: 1; }
+  to { opacity: 0.7; }
+}
+
 /* Status indicators */
 .status-dot {
   @apply w-2 h-2 rounded-full;

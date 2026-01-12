@@ -1,10 +1,12 @@
+import { useSensorStore } from '../store/useSensorStore'
 import { Environment } from './Environment'
 import { Player } from './Player'
 import { RigModel } from './RigModel'
 import { InteractionSystem } from './InteractionSystem'
+import { KetchupFactoryScene } from './KetchupFactoryScene'
 
 /**
- * Factory floor layout configuration.
+ * Factory floor layout configuration for Rig Alpha.
  *
  * Positions are in world units (meters).
  * Matches machine_id values from database: A, B, C
@@ -31,7 +33,28 @@ const RIG_LAYOUT = [
 ]
 
 /**
- * Main factory scene composition.
+ * Main factory scene composition with view mode switching.
+ *
+ * Modes:
+ * - 'rig': Original Rig Alpha industrial scene (3 rigs)
+ * - 'ketchup': Ketchup Factory scene (25 production lines)
+ *
+ * Both scenes share the same player controller and HUD.
+ */
+export function FactoryScene() {
+  const viewMode = useSensorStore((s) => s.viewMode)
+
+  // Render Ketchup Factory when in ketchup mode
+  if (viewMode === 'ketchup') {
+    return <KetchupFactoryScene />
+  }
+
+  // Default: Rig Alpha industrial scene
+  return <RigAlphaScene />
+}
+
+/**
+ * Original Rig Alpha industrial scene.
  *
  * Contains:
  * - Environment (lights, floor, fog, HDRI)
@@ -39,7 +62,7 @@ const RIG_LAYOUT = [
  * - Three industrial rigs with data binding
  * - Interaction system for rig inspection
  */
-export function FactoryScene() {
+function RigAlphaScene() {
   return (
     <>
       {/* Environment setup */}

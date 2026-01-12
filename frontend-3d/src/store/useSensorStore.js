@@ -46,6 +46,39 @@ const transientState = {
 }
 
 /**
+ * Ketchup Factory Transient State for 25 production lines.
+ * Mutated directly in useFrame callbacks to avoid React re-renders.
+ *
+ * Ketchup-specific sensors:
+ * - fill_level: 0-100% (bottle fill)
+ * - viscosity: 2500-4500 cP (sauce thickness)
+ * - sauce_temp: 140-185°F (sauce temperature)
+ * - cap_torque: 1.5-3.5 Nm (cap tightening)
+ * - bottle_flow_rate: 80-200 bottles/min
+ * - label_alignment: -5 to +5 degrees
+ * - anomaly_score: 0-1 (from ML pipeline)
+ * - anomaly_type: string (overfill, underfill, viscosity_fault, etc.)
+ */
+const ketchupTransientState = {
+  lines: Object.fromEntries(
+    Array.from({ length: 25 }, (_, i) => [
+      `L${String(i + 1).padStart(2, '0')}`,
+      {
+        fill_level: 95.0,
+        viscosity: 3500.0,
+        sauce_temp: 165.0,
+        cap_torque: 2.5,
+        bottle_flow_rate: 150.0,
+        label_alignment: 0.0,
+        bottle_count: 0,
+        anomaly_score: 0.0,
+        anomaly_type: null
+      }
+    ])
+  )
+}
+
+/**
  * Direct access to transient state for useFrame callbacks.
  * Use this in animation loops to avoid triggering React re-renders.
  *
@@ -68,6 +101,28 @@ export const updateTransientRig = (rigId, data) => {
 }
 
 /**
+ * Direct access to ketchup factory transient state for useFrame callbacks.
+ * Use this in animation loops to avoid triggering React re-renders.
+ *
+ * @example
+ * useFrame((state, delta) => {
+ *   const data = getKetchupTransientState().lines['L01']
+ *   conveyorRef.current.material.map.offset.x += (data.bottle_flow_rate / 150) * delta
+ * })
+ */
+export const getKetchupTransientState = () => ketchupTransientState
+
+/**
+ * Update ketchup production line data directly.
+ * Called from Socket.IO event handlers.
+ */
+export const updateKetchupLine = (lineId, data) => {
+  if (ketchupTransientState.lines[lineId]) {
+    Object.assign(ketchupTransientState.lines[lineId], data)
+  }
+}
+
+/**
  * Main Zustand store for UI state that DOES trigger re-renders.
  * Use this for:
  * - Connection status
@@ -84,8 +139,10 @@ export const useSensorStore = create(
 
     // UI state
     selectedRig: null,
+    selectedKetchupLine: null,
     showDebug: false,
     isPaused: false,
+    viewMode: 'rig', // 'rig' or 'ketchup'
 
     // Alerts (triggers HUD re-render)
     alerts: [],
@@ -105,6 +162,11 @@ export const useSensorStore = create(
 
     setSelectedRig: (rigId) => set({ selectedRig: rigId }),
     clearSelectedRig: () => set({ selectedRig: null }),
+
+    setSelectedKetchupLine: (lineId) => set({ selectedKetchupLine: lineId }),
+    clearSelectedKetchupLine: () => set({ selectedKetchupLine: null }),
+
+    setViewMode: (mode) => set({ viewMode: mode }),
 
     toggleDebug: () => set((state) => ({ showDebug: !state.showDebug })),
     togglePause: () => set((state) => ({ isPaused: !state.isPaused })),

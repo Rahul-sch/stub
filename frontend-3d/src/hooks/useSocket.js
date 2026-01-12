@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { io } from 'socket.io-client'
-import { useSensorStore, updateTransientRig } from '../store/useSensorStore'
+import { useSensorStore, updateTransientRig, updateKetchupLine } from '../store/useSensorStore'
 
 /**
  * Socket.IO hook for real-time sensor data streaming.
@@ -67,6 +67,49 @@ export function useSocket() {
     setSystemStatus(data)
   }, [setSystemStatus])
 
+  // Ketchup Factory telemetry handler
+  const handleKetchupTelemetry = useCallback((data) => {
+    const {
+      line_id, fill_level, viscosity, sauce_temp,
+      cap_torque, bottle_flow_rate, label_alignment,
+      bottle_count, anomaly_score, anomaly_type
+    } = data
+
+    if (line_id && line_id.startsWith('L')) {
+      updateKetchupLine(line_id, {
+        fill_level: fill_level ?? 95.0,
+        viscosity: viscosity ?? 3500.0,
+        sauce_temp: sauce_temp ?? 165.0,
+        cap_torque: cap_torque ?? 2.5,
+        bottle_flow_rate: bottle_flow_rate ?? 150.0,
+        label_alignment: label_alignment ?? 0.0,
+        bottle_count: bottle_count ?? 0,
+        anomaly_score: anomaly_score ?? 0.0,
+        anomaly_type: anomaly_type ?? null
+      })
+    }
+  }, [])
+
+  // Ketchup Factory anomaly alert handler
+  const handleKetchupAnomalyAlert = useCallback((data) => {
+    addAlert({
+      type: 'ketchup_anomaly',
+      severity: data.anomaly_score > 0.8 ? 'critical' : 'warning',
+      line_id: data.line_id,
+      message: `KETCHUP LINE ${data.line_id}: ${data.anomaly_type || 'Anomaly detected'}`,
+      score: data.anomaly_score,
+      anomaly_type: data.anomaly_type
+    })
+
+    // Also update transient state
+    if (data.line_id) {
+      updateKetchupLine(data.line_id, {
+        anomaly_score: data.anomaly_score,
+        anomaly_type: data.anomaly_type
+      })
+    }
+  }, [addAlert])
+
   useEffect(() => {
     // Create socket connection to backend
     const socket = io('http://localhost:5000', {
@@ -105,10 +148,14 @@ export function useSocket() {
       }
     })
 
-    // Data events
+    // Data events - Rig Alpha
     socket.on('rig_telemetry', handleTelemetry)
     socket.on('anomaly_alert', handleAnomalyAlert)
     socket.on('system_status', handleSystemStatus)
+
+    // Data events - Ketchup Factory
+    socket.on('ketchup_telemetry', handleKetchupTelemetry)
+    socket.on('ketchup_anomaly_alert', handleKetchupAnomalyAlert)
 
     // Confirmation events
     socket.on('machines_subscribed', (data) => {
@@ -121,9 +168,11 @@ export function useSocket() {
       socket.off('rig_telemetry', handleTelemetry)
       socket.off('anomaly_alert', handleAnomalyAlert)
       socket.off('system_status', handleSystemStatus)
+      socket.off('ketchup_telemetry', handleKetchupTelemetry)
+      socket.off('ketchup_anomaly_alert', handleKetchupAnomalyAlert)
       socket.disconnect()
     }
-  }, [handleTelemetry, handleAnomalyAlert, handleSystemStatus, setConnected, setConnectionError])
+  }, [handleTelemetry, handleAnomalyAlert, handleSystemStatus, handleKetchupTelemetry, handleKetchupAnomalyAlert, setConnected, setConnectionError])
 
   // Return socket ref for manual emit calls if needed
   return socketRef

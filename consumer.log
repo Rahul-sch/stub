@@ -1111,3 +1111,6 @@ ConnectionResetError: [WinError 10054] An existing connection was forcibly close
 2026-01-13 11:04:53,771 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
 2026-01-13 11:04:53,779 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
 2026-01-13 11:04:54,010 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 11:09:59,375 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 11:09:59,385 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 11:09:59,493 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]

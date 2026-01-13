@@ -1,0 +1,332 @@
+---
+title: "Kafka Deep Dive"
+slug: "kafka-deep-dive"
+category: "kafka"
+tags: ["kafka", "streaming", "messaging", "exactly-once"]
+readingTime: 15
+description: "Complete guide to Kafka architecture, topics, partitions, consumer groups, and offset management in the context of Ithena's real-time sensor data pipeline."
+---
+
+# Kafka Deep Dive
+
+Apache Kafka is the streaming backbone of Ithena, reliably transporting millions of sensor readings from edge devices to consumers with exactly-once guarantees. This article builds understanding from first principles.
+
+## What is Kafka?
+
+<Callout type="eli5">
+Think of Kafka like a magical conveyor belt in a factory. Sensor devices drop packages (messages) onto the belt, and worker robots (consumers) pick them up one by one. The belt never stops moving, and if a robot breaks down, another can pick up exactly where it left off.
+</Callout>
+
+<Glossary term="Kafka Broker">Kafka</Glossary> is a distributed streaming platform designed for high-throughput, fault-tolerant message delivery. Unlike traditional message queues that delete messages after consumption, Kafka persists messages to disk for a configurable retention period (Ithena uses 168 hours / 1 week).
+
+Key characteristics:
+
+- **Distributed**: Data replicated across multiple brokers for fault tolerance
+- **Persistent**: Messages stored on disk, not just in memory
+- **Scalable**: Horizontal scaling by adding more brokers and partitions
+- **Fast**: Sequential disk I/O achieves 100K+ messages/second per broker
+
+## Core Concepts
+
+### Topics and Partitions
+
+A <Glossary term="Kafka Topic">topic</Glossary> is a named stream of records. Ithena uses a single topic `sensor-data` for all machine telemetry.
+
+Topics are divided into <Glossary term="Partition">partitions</Glossary> - ordered, immutable sequences of records. Each partition is:
+
+- **Append-only log**: New messages added to the end
+- **Indexed by offset**: Each message has a unique sequential ID
+- **Independently consumed**: Different consumers can read different partitions in parallel
+
+<Mermaid chart={`
+graph LR
+    A[Topic: sensor-data] --> B[Partition 0]
+    A --> C[Partition 1]
+    A --> D[Partition 2]
+    B --> E[Offset 0<br/>Offset 1<br/>Offset 2<br/>...]
+    C --> F[Offset 0<br/>Offset 1<br/>Offset 2<br/>...]
+    D --> G[Offset 0<br/>Offset 1<br/>Offset 2<br/>...]
+`} />
+
+**Why partition?** Enables parallelism. Ithena's 3 sensor sources (Machine A, B, C) map to 3 partitions using `machine_id` as the partition key. This guarantees:
+
+1. All readings from Machine A go to Partition 0 → preserving time-order per machine
+2. Three consumers can process in parallel → 3x throughput
+
+### Offsets
+
+An <Glossary term="Offset">offset</Glossary> is like a bookmark. It tells Kafka "I have successfully processed all messages up to this point." Offsets are stored in a special Kafka topic `__consumer_offsets`.
+
+```python
+# Ithena consumer.py line 493
+consumer.commit()  # Commit offset ONLY after successful DB insert
+```
+
+<Callout type="warning" title="Offset Management is Critical">
+Committing too early (before processing) risks data loss. Committing too late (after multiple messages) risks duplicate processing on crash. Ithena commits after each successful database insert for exactly-once semantics.
+</Callout>
+
+### Consumer Groups
+
+A <Glossary term="Consumer Group">consumer group</Glossary> is a set of consumers that cooperate to consume a topic. Kafka guarantees:
+
+- Each partition is consumed by **exactly one consumer** in the group
+- If a consumer fails, its partitions are **automatically reassigned**
+- Consumers can be added/removed dynamically for elasticity
+
+<Mermaid chart={`
+graph TB
+    subgraph Consumer Group: ithena-sensors
+        C1[Consumer 1]
+        C2[Consumer 2]
+        C3[Consumer 3]
+    end
+    P0[Partition 0] --> C1
+    P1[Partition 1] --> C2
+    P2[Partition 2] --> C3
+`} />
+
+## Ithena's Kafka Architecture
+
+### Connection with Retry
+
+[consumer.py:82-111](stub/consumer.py#L82-L111) establishes connection with <Glossary term="Exponential Backoff">exponential backoff</Glossary>:
+
+```python
+def connect_to_kafka(self):
+    retry_delay = 1  # Start at 1 second
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            consumer = KafkaConsumer(
+                'sensor-data',
+                bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+                group_id=KAFKA_CONSUMER_GROUP,
+                auto_offset_reset='earliest',
+                enable_auto_commit=False,  # Manual commit for exactly-once
+                value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+            )
+            return consumer
+        except KafkaError as e:
+            logger.warning(f"Attempt {attempt + 1} failed: {e}")
+            time.sleep(retry_delay)
+            retry_delay = min(retry_delay * 2, 60)  # Cap at 60s
+```
+
+**Why exponential backoff?** During Kafka broker restarts or network issues, this pattern:
+- Prevents overwhelming the broker with connection attempts
+- Recovers quickly from brief outages (1s first retry)
+- Backs off gracefully for sustained issues (up to 60s between retries)
+
+### Message Processing Flow
+
+<Mermaid chart={`
+sequenceDiagram
+    participant K as Kafka
+    participant C as Consumer
+    participant DB as PostgreSQL
+
+    loop Every 1 second
+        K->>C: poll(timeout_ms=1000)
+        C->>C: Validate message schema
+        C->>C: Rule-based anomaly check
+
+        alt Valid message
+            C->>DB: INSERT sensor_reading
+            DB-->>C: reading_id returned
+            C->>K: commit() offset
+            C->>C: Run ML detection (async)
+        else Invalid/anomalous
+            C->>C: Log warning
+            C->>K: commit() offset (discard bad data)
+        end
+    end
+`} />
+
+From [consumer.py:453-516](stub/consumer.py#L453-L516):
+
+1. **Poll**: Fetch batch of messages (up to 100)
+2. **Validate**: Check required fields (timestamp, temperature, pressure, etc.)
+3. **Rule-Check**: Detect out-of-range values before ML
+4. **Persist**: INSERT to database (transaction starts)
+5. **Commit**: Commit offset ONLY if INSERT succeeds (transaction ends)
+6. **Detect**: Run ML anomaly detection with reading_id
+7. **Telemetry**: Push to 3D dashboard (fire-and-forget)
+
+## Exactly-Once Semantics
+
+<Callout type="info" title="The Three Delivery Guarantees">
+- **At-most-once**: Message may be lost, never duplicated (commit before processing)
+- **At-least-once**: Message never lost, may be duplicated (commit after processing)
+- **Exactly-once**: Message processed exactly once, no loss, no duplication (coordinated commit)
+</Callout>
+
+Ithena achieves <Glossary term="Exactly-Once Semantics">exactly-once</Glossary> by:
+
+### 1. Disable Auto-Commit
+
+```python
+enable_auto_commit=False  # Line 104
+```
+
+Kafka's auto-commit commits offsets every 5 seconds **regardless of processing status**. This causes data loss if consumer crashes between commit and DB insert.
+
+### 2. Manual Commit After Success
+
+```python
+# Line 493 in process_message()
+reading_id = self.insert_reading(reading)
+if reading_id is None:
+    return False  # Don't commit - message will be reprocessed
+
+consumer.commit()  # Only reached if insert succeeded
+```
+
+If `insert_reading()` fails (DB down, constraint violation), offset is NOT committed. On next poll, Kafka redelivers the message.
+
+### 3. Database Transaction Boundaries
+
+```python
+# Line 259 in insert_reading()
+conn.autocommit = False  # Manual transaction control
+
+try:
+    cursor.execute(insert_query, values)
+    reading_id = cursor.fetchone()[0]
+    conn.commit()  # Commit DB transaction
+    return reading_id
+except Exception as e:
+    conn.rollback()  # Rollback on error
+    return None
+```
+
+The Kafka offset commit happens AFTER the database commit. This prevents the race condition:
+
+```
+❌ Bad (data loss):
+   1. DB insert succeeds
+   2. Kafka commit starts
+   3. CRASH before commit completes
+   → Message lost, data orphaned
+
+✅ Good (exactly-once):
+   1. DB insert succeeds
+   2. DB commit succeeds
+   3. Kafka commit succeeds
+   4. CRASH anywhere
+   → Message reprocessed, but duplicate detected by DB constraint
+```
+
+## Advanced Topics
+
+### Rebalancing
+
+When a consumer joins or leaves the group, Kafka reassigns partitions. This is called **rebalancing**.
+
+<Callout type="warning" title="Rebalancing Stops the World">
+During rebalancing, ALL consumers in the group stop processing messages until partition assignments are complete (typically 1-3 seconds). Frequent rebalances hurt throughput.
+</Callout>
+
+Ithena minimizes rebalances by:
+- Using a fixed consumer group ID: `ithena-consumer-group`
+- Avoiding consumer restarts during high-traffic periods
+- Setting `session.timeout.ms=30000` (30s) to tolerate brief network blips
+
+### Cloud Kafka (Upstash)
+
+Production Ithena uses Upstash, a serverless Kafka provider. Connection differences:
+
+```python
+# Line 90-109 in config.py
+if KAFKA_SASL_USERNAME and KAFKA_SASL_PASSWORD:
+    # Cloud Kafka with SASL_SSL
+    return {
+        'bootstrap_servers': [KAFKA_BOOTSTRAP_SERVERS],
+        'security_protocol': 'SASL_SSL',
+        'sasl_mechanism': 'SCRAM-SHA-256',
+        'sasl_plain_username': KAFKA_SASL_USERNAME,
+        'sasl_plain_password': KAFKA_SASL_PASSWORD,
+    }
+else:
+    # Local Docker Kafka
+    return {
+        'bootstrap_servers': [KAFKA_BOOTSTRAP_SERVERS],
+        'security_protocol': 'PLAINTEXT',
+    }
+```
+
+SASL (Simple Authentication and Security Layer) + SSL encrypts traffic and authenticates consumers. Required for cloud deployments.
+
+## Performance Tuning
+
+### Batch Size
+
+```python
+max_poll_records=100  # Default
+```
+
+Larger batches → higher throughput, higher latency. Smaller batches → lower latency, more overhead. Ithena uses default (100) for balanced behavior.
+
+### Poll Timeout
+
+```python
+consumer.poll(timeout_ms=1000)  # Line 538
+```
+
+How long to wait for messages before returning. 1000ms (1 second) balances:
+- **Responsiveness**: Consumer checks `should_shutdown` every 1s
+- **Efficiency**: Amortizes network round-trip cost over multiple messages
+
+### Compression
+
+Ithena does NOT compress messages (default: `compression_type='none'`). Why?
+
+- Sensor JSON messages are small (~500 bytes)
+- Compression CPU cost > network savings at this scale
+- Would enable compression if message size exceeded 1KB
+
+## Troubleshooting
+
+### Consumer Lag
+
+**Symptom**: Offset falls behind latest message → processing delay
+
+**Diagnosis**:
+```bash
+kafka-consumer-groups --bootstrap-server localhost:9092 \
+  --group ithena-consumer-group --describe
+```
+
+**Causes**:
+- Slow database inserts → optimize queries, add indexes
+- Slow ML detection → disable LSTM, use Isolation Forest only
+- Network latency → colocate consumer with Kafka broker
+
+### Duplicate Processing
+
+**Symptom**: Same message inserted twice (constraint violation in logs)
+
+**Causes**:
+- Consumer crashed between DB commit and Kafka commit
+- Rebalancing triggered before commit completed
+- Network partition caused duplicate delivery
+
+**Prevention**:
+- Use database constraints: `UNIQUE(timestamp, machine_id)` in sensor_readings table
+- Kafka deduplication (if using Kafka Streams)
+
+<Callout type="tip" title="Enable Query Logging">
+Set `LOG_LEVEL=DEBUG` in config.py to see every Kafka poll() and commit(). Useful for debugging offset issues.
+</Callout>
+
+## Summary
+
+Kafka is Ithena's reliable, scalable streaming backbone. Key takeaways:
+
+✅ Topics divided into partitions for parallelism
+✅ Offsets track consumer position per partition
+✅ Consumer groups enable horizontal scaling
+✅ Exactly-once semantics require manual commit after DB transaction
+✅ Exponential backoff handles transient failures gracefully
+
+Next, explore [ML Detection Pipeline](/wiki/ml-detection) to see how consumed messages are analyzed for anomalies.

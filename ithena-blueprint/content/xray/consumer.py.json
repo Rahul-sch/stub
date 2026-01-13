@@ -1,0 +1,651 @@
+{
+  "filePath": "stub/consumer.py",
+  "fileHash": "c78e3ba",
+  "lastModified": "2025-01-12T00:00:00Z",
+  "language": "python",
+  "entries": [
+    {
+      "id": "consumer-imports-core",
+      "title": "Core Library Imports",
+      "startLine": 6,
+      "endLine": 16,
+      "anchors": [
+        { "kind": "import", "value": "json", "line": 6 },
+        { "kind": "import", "value": "logging", "line": 7 },
+        { "kind": "import", "value": "signal", "line": 8 },
+        { "kind": "import", "value": "KafkaConsumer", "line": 12 },
+        { "kind": "import", "value": "psycopg2", "line": 14 },
+        { "kind": "import", "value": "Json", "line": 16 }
+      ],
+      "why": "These imports establish the consumer's core capabilities: JSON parsing for Kafka messages, structured logging for observability, signal handling for graceful shutdown, Kafka client for message consumption, and PostgreSQL driver for persistence. The psycopg2.extras.Json import is specifically for JSONB column support (custom_sensors).",
+      "whatItDoes": "Imports standard library modules (json, logging, signal, sys, time, os) and third-party packages (kafka-python, psycopg2) that the consumer depends on.",
+      "failureModes": [
+        {
+          "condition": "kafka-python not installed",
+          "behavior": "ImportError at startup, consumer crashes",
+          "recovery": "pip install kafka-python-ng"
+        },
+        {
+          "condition": "psycopg2 not installed",
+          "behavior": "ImportError at startup, consumer crashes",
+          "recovery": "pip install psycopg2-binary"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Import availability",
+          "how": "Unit test that imports consumer module, verify no ImportError"
+        }
+      ],
+      "perfNotes": null,
+      "securityNotes": null,
+      "relatedDocs": ["fundamentals-dependencies"],
+      "relatedNodes": []
+    },
+    {
+      "id": "consumer-imports-http",
+      "title": "Optional HTTP Client Import",
+      "startLine": 18,
+      "endLine": 23,
+      "anchors": [
+        { "kind": "import", "value": "requests", "line": 20 },
+        { "kind": "variable", "value": "REQUESTS_AVAILABLE", "line": 21 }
+      ],
+      "why": "The requests library is optional because the 3D Digital Twin dashboard may not always be running. This try/except pattern allows the consumer to operate independently of the visualization layer, following the principle of graceful degradation.",
+      "whatItDoes": "Attempts to import the requests library. Sets REQUESTS_AVAILABLE=True if successful, False if ImportError. This flag gates the 3D telemetry update feature.",
+      "failureModes": [
+        {
+          "condition": "requests not installed",
+          "behavior": "REQUESTS_AVAILABLE=False, 3D telemetry updates silently skipped",
+          "recovery": "No action needed (graceful degradation) or pip install requests"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Graceful degradation without requests",
+          "how": "Mock importlib to simulate ImportError, verify consumer runs"
+        }
+      ],
+      "perfNotes": null,
+      "securityNotes": null,
+      "relatedDocs": ["3d-twin-integration"],
+      "relatedNodes": ["twin-dashboard"]
+    },
+    {
+      "id": "consumer-imports-ml",
+      "title": "Conditional ML Detection Import",
+      "startLine": 27,
+      "endLine": 37,
+      "anchors": [
+        { "kind": "variable", "value": "ML_AVAILABLE", "line": 30 },
+        { "kind": "variable", "value": "LSTM_AVAILABLE", "line": 36 },
+        { "kind": "import", "value": "get_combined_detector", "line": 29 }
+      ],
+      "why": "ML detection requires TensorFlow and scikit-learn which are heavy dependencies. This conditional import allows the consumer to run in 'lite' mode without ML, useful for development, testing, or resource-constrained environments.",
+      "whatItDoes": "If config.ML_DETECTION_ENABLED is True, attempts to import combined_pipeline. Sets ML_AVAILABLE and LSTM_AVAILABLE flags based on import success.",
+      "failureModes": [
+        {
+          "condition": "TensorFlow not installed",
+          "behavior": "ML_AVAILABLE=True but LSTM_AVAILABLE=False, falls back to Isolation Forest only",
+          "recovery": "pip install tensorflow>=2.16.1 for LSTM support"
+        },
+        {
+          "condition": "scikit-learn not installed",
+          "behavior": "ML_AVAILABLE=False, all ML detection skipped",
+          "recovery": "pip install scikit-learn"
+        }
+      ],
+      "tests": [
+        {
+          "what": "ML disabled by config",
+          "how": "Set ML_DETECTION_ENABLED=False, verify ML_AVAILABLE=False"
+        }
+      ],
+      "perfNotes": "TensorFlow import adds ~3-5 seconds to startup time",
+      "securityNotes": null,
+      "relatedDocs": ["ml-detection", "hybrid-detection-strategies"],
+      "relatedNodes": ["consumer-ml"]
+    },
+    {
+      "id": "consumer-class-init",
+      "title": "SensorDataConsumer Initialization",
+      "startLine": 40,
+      "endLine": 60,
+      "anchors": [
+        { "kind": "class", "value": "SensorDataConsumer", "line": 40 },
+        { "kind": "function", "value": "__init__", "line": 43 },
+        { "kind": "variable", "value": "should_shutdown", "line": 50 }
+      ],
+      "why": "The constructor establishes the consumer's initial state and installs signal handlers BEFORE attempting any connections. This ensures graceful shutdown is possible even if connections fail.",
+      "whatItDoes": "Initializes logging, sets consumer/db_conn/db_cursor to None, initializes message_count=0, sets should_shutdown=False, and installs signal handlers for SIGINT, SIGTERM, and SIGBREAK (Windows).",
+      "failureModes": [
+        {
+          "condition": "Logging config fails",
+          "behavior": "Unhandled exception at line 45 before logger created",
+          "recovery": "Check LOG_LEVEL in config.py is valid"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Initial state",
+          "how": "Create SensorDataConsumer(), verify all attributes initialized correctly"
+        },
+        {
+          "what": "Signal handler installation",
+          "how": "Verify signal.getsignal(SIGINT) returns instance method"
+        }
+      ],
+      "perfNotes": null,
+      "securityNotes": null,
+      "relatedDocs": ["consumer-architecture", "graceful-shutdown"],
+      "relatedNodes": ["consumer-ml"]
+    },
+    {
+      "id": "consumer-logging-setup",
+      "title": "Logging Configuration",
+      "startLine": 62,
+      "endLine": 75,
+      "anchors": [
+        { "kind": "function", "value": "setup_logging", "line": 62 }
+      ],
+      "why": "Centralized logging configuration ensures consistent log format across all components. Only stdout handler is used to work well with Docker/container logging aggregators.",
+      "whatItDoes": "Configures Python logging with: level from config.LOG_LEVEL, format with timestamp/level/name, stdout handler only. Creates module logger and outputs startup banner.",
+      "failureModes": [
+        {
+          "condition": "Invalid LOG_LEVEL string",
+          "behavior": "ValueError from logging.basicConfig",
+          "recovery": "Use valid level: DEBUG, INFO, WARNING, ERROR, CRITICAL"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Log format correctness",
+          "how": "Capture log output, verify matches expected format pattern"
+        }
+      ],
+      "perfNotes": null,
+      "securityNotes": "Logs go to stdout only - ensure log aggregator doesn't expose sensitive data",
+      "relatedDocs": ["observability"],
+      "relatedNodes": []
+    },
+    {
+      "id": "consumer-signal-handler",
+      "title": "Graceful Shutdown Signal Handler",
+      "startLine": 77,
+      "endLine": 80,
+      "anchors": [
+        { "kind": "function", "value": "signal_handler", "line": 77 },
+        { "kind": "variable", "value": "should_shutdown", "line": 80 }
+      ],
+      "why": "Sets a flag rather than calling sys.exit() directly. This allows the main loop and any in-progress message processing to complete cleanly, preventing data corruption or duplicate processing.",
+      "whatItDoes": "Logs the received signal number and sets self.should_shutdown = True. This flag is checked in the main loop and connection retry loops.",
+      "failureModes": [],
+      "tests": [
+        {
+          "what": "Flag set on signal",
+          "how": "Call signal_handler(SIGINT, None), verify should_shutdown=True"
+        }
+      ],
+      "perfNotes": null,
+      "securityNotes": null,
+      "relatedDocs": ["graceful-shutdown"],
+      "relatedNodes": []
+    },
+    {
+      "id": "consumer-kafka-connect",
+      "title": "Kafka Connection with Exponential Backoff",
+      "startLine": 82,
+      "endLine": 111,
+      "anchors": [
+        { "kind": "function", "value": "connect_to_kafka", "line": 82 },
+        { "kind": "variable", "value": "retry_delay", "line": 84 }
+      ],
+      "why": "Kafka brokers may be temporarily unavailable during deployments or network issues. Exponential backoff prevents overwhelming the broker with connection attempts while still recovering quickly from brief outages.",
+      "whatItDoes": "Attempts up to MAX_RETRIES (10) connections to Kafka. On failure, waits retry_delay seconds (starting at 1s, doubling up to 60s max). Returns KafkaConsumer on success, raises KafkaError after max retries.",
+      "failureModes": [
+        {
+          "condition": "Broker permanently down",
+          "behavior": "10 retries over ~5 minutes, then KafkaError raised",
+          "recovery": "Fix broker, consumer will need restart"
+        },
+        {
+          "condition": "Wrong bootstrap_servers",
+          "behavior": "Connection timeout on each attempt, same retry behavior",
+          "recovery": "Fix KAFKA_BOOTSTRAP_SERVERS in config"
+        },
+        {
+          "condition": "SASL credentials wrong (cloud Kafka)",
+          "behavior": "Authentication failure, logged as warning",
+          "recovery": "Fix KAFKA_SASL_USERNAME/PASSWORD"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Successful connection",
+          "how": "Mock KafkaConsumer to return successfully, verify return value"
+        },
+        {
+          "what": "Retry on failure",
+          "how": "Mock KafkaConsumer to fail twice then succeed, verify 3 attempts made"
+        },
+        {
+          "what": "Max retries exceeded",
+          "how": "Mock KafkaConsumer to always fail, verify KafkaError raised"
+        }
+      ],
+      "perfNotes": "Backoff sequence: 1s → 2s → 4s → 8s → 16s → 32s → 60s (total ~5 min)",
+      "securityNotes": "SASL_SSL enabled automatically when cloud credentials present",
+      "relatedDocs": ["kafka-deep-dive", "cloud-deployment"],
+      "relatedNodes": ["kafka-broker"]
+    },
+    {
+      "id": "consumer-db-connect",
+      "title": "PostgreSQL Connection with Exponential Backoff",
+      "startLine": 113,
+      "endLine": 146,
+      "anchors": [
+        { "kind": "function", "value": "connect_to_database", "line": 113 },
+        { "kind": "variable", "value": "autocommit", "line": 124 }
+      ],
+      "why": "Database connections can fail due to network issues, connection limits, or maintenance windows. Setting autocommit=False is critical for exactly-once semantics - we control transaction boundaries manually.",
+      "whatItDoes": "Attempts up to MAX_RETRIES connections to PostgreSQL using config.DB_CONFIG. Tests connection with 'SELECT 1'. Sets autocommit=False for explicit transaction control.",
+      "failureModes": [
+        {
+          "condition": "Database unreachable",
+          "behavior": "OperationalError, retries with backoff",
+          "recovery": "Check DATABASE_URL, network connectivity"
+        },
+        {
+          "condition": "Connection pool exhausted",
+          "behavior": "OperationalError after timeout",
+          "recovery": "Increase max_connections in PostgreSQL or use connection pooler"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Successful connection",
+          "how": "Mock psycopg2.connect to return mock conn, verify SELECT 1 executed"
+        },
+        {
+          "what": "autocommit disabled",
+          "how": "Verify returned conn.autocommit == False"
+        }
+      ],
+      "perfNotes": "Connection establishment: ~50ms local, ~200ms Neon cloud",
+      "securityNotes": "Password in connection string - use environment variables",
+      "relatedDocs": ["database-schema", "neon-deployment"],
+      "relatedNodes": ["database-neon"]
+    },
+    {
+      "id": "consumer-validate-message",
+      "title": "Message Validation",
+      "startLine": 148,
+      "endLine": 158,
+      "anchors": [
+        { "kind": "function", "value": "validate_message", "line": 148 },
+        { "kind": "variable", "value": "required_fields", "line": 151 }
+      ],
+      "why": "Validates that incoming Kafka messages contain the minimum required fields before processing. This catches malformed messages early, preventing partial inserts and cryptic database errors.",
+      "whatItDoes": "Checks for 6 required fields: timestamp, temperature, pressure, humidity, vibration, rpm. Returns False if any missing, True if all present.",
+      "failureModes": [
+        {
+          "condition": "Missing required field",
+          "behavior": "Returns False, message logged as warning, Kafka offset committed",
+          "recovery": "Fix producer to include all required fields"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Valid message passes",
+          "how": "Provide dict with all 6 fields, verify returns True"
+        },
+        {
+          "what": "Missing field fails",
+          "how": "Provide dict missing 'rpm', verify returns False"
+        }
+      ],
+      "perfNotes": null,
+      "securityNotes": null,
+      "relatedDocs": ["data-contract"],
+      "relatedNodes": ["kafka-broker"]
+    },
+    {
+      "id": "consumer-rule-anomaly",
+      "title": "Rule-Based Anomaly Detection",
+      "startLine": 160,
+      "endLine": 176,
+      "anchors": [
+        { "kind": "function", "value": "detect_anomalies", "line": 160 },
+        { "kind": "variable", "value": "SENSOR_RANGES", "line": 165 }
+      ],
+      "why": "First line of defense before ML detection. Catches obviously bad data (sensor values outside physical limits) cheaply and deterministically.",
+      "whatItDoes": "Iterates through all 50 sensors in SENSOR_RANGES. For each sensor present in the reading, checks if value is within [min, max] bounds. Returns list of descriptive anomaly strings.",
+      "failureModes": [
+        {
+          "condition": "SENSOR_RANGES missing a sensor",
+          "behavior": "Sensor skipped (no validation for that sensor)",
+          "recovery": "Add sensor to config.py SENSOR_RANGES dict"
+        }
+      ],
+      "tests": [
+        {
+          "what": "In-range values pass",
+          "how": "Provide reading with all values in range, verify empty list returned"
+        },
+        {
+          "what": "Out-of-range detected",
+          "how": "Set temperature=200 (max 95), verify anomaly string returned"
+        }
+      ],
+      "perfNotes": "O(n) where n = number of sensors, ~50 iterations, negligible",
+      "securityNotes": null,
+      "relatedDocs": ["sensor-ranges", "anomaly-detection"],
+      "relatedNodes": []
+    },
+    {
+      "id": "consumer-record-alert",
+      "title": "Alert Recording",
+      "startLine": 178,
+      "endLine": 197,
+      "anchors": [
+        { "kind": "function", "value": "record_alert", "line": 178 }
+      ],
+      "why": "Uses a SEPARATE database connection to avoid blocking the main processing loop. If alert recording fails, we don't want to lose the sensor reading.",
+      "whatItDoes": "Opens new psycopg2 connection, inserts into alerts table (alert_type, source, severity, message), commits, closes. Catches all exceptions.",
+      "failureModes": [
+        {
+          "condition": "Database connection fails",
+          "behavior": "Exception caught, logged as error, alert lost",
+          "recovery": "Alert eventually visible when connection restored"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Alert persisted",
+          "how": "Call record_alert, query alerts table, verify row exists"
+        },
+        {
+          "what": "Failure handled gracefully",
+          "how": "Mock psycopg2.connect to raise, verify no exception propagates"
+        }
+      ],
+      "perfNotes": "Opens new connection per alert - could batch for high-throughput",
+      "securityNotes": null,
+      "relatedDocs": ["alerting-system"],
+      "relatedNodes": ["database-neon"]
+    },
+    {
+      "id": "consumer-custom-sensors",
+      "title": "Custom Sensor Validation",
+      "startLine": 199,
+      "endLine": 256,
+      "anchors": [
+        { "kind": "function", "value": "validate_custom_sensors", "line": 199 }
+      ],
+      "why": "Custom sensors are user-defined at runtime via dashboard. Unlike the 50 built-in sensors, their specifications live in the database.",
+      "whatItDoes": "Queries custom_sensors table for active sensors. For each custom sensor in reading: checks if registered, validates type conversion to float, checks range bounds. Returns (validated_dict, invalid_list) tuple.",
+      "failureModes": [
+        {
+          "condition": "Unknown sensor name",
+          "behavior": "Sensor added to invalid list, skipped, warning logged",
+          "recovery": "Register sensor via dashboard before sending data"
+        },
+        {
+          "condition": "Non-numeric value",
+          "behavior": "ValueError caught, sensor skipped",
+          "recovery": "Fix producer to send numeric values"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Valid custom sensor passes",
+          "how": "Register sensor in DB, send valid value, verify in validated dict"
+        }
+      ],
+      "perfNotes": "Database query per message - consider caching registered sensors",
+      "securityNotes": "SQL injection prevented by parameterized queries",
+      "relatedDocs": ["custom-sensors"],
+      "relatedNodes": ["database-neon"]
+    },
+    {
+      "id": "consumer-insert-reading",
+      "title": "50-Parameter Database Insert",
+      "startLine": 258,
+      "endLine": 347,
+      "anchors": [
+        { "kind": "function", "value": "insert_reading", "line": 258 },
+        { "kind": "variable", "value": "insert_query", "line": 270 },
+        { "kind": "variable", "value": "custom_sensors_jsonb", "line": 269 }
+      ],
+      "why": "Core persistence operation. All 50 sensor parameters stored in a single wide table for query simplicity. RETURNING id clause gets auto-generated ID for ML detection correlation.",
+      "whatItDoes": "Validates custom sensors, builds INSERT statement with 53 placeholders (50 sensors + timestamp + machine_id + custom_sensors JSONB). Executes insert, fetches returned ID, commits transaction.",
+      "failureModes": [
+        {
+          "condition": "Constraint violation",
+          "behavior": "Exception caught, rollback, None returned, alert recorded",
+          "recovery": "Check for duplicate data in producer"
+        },
+        {
+          "condition": "Connection lost mid-transaction",
+          "behavior": "psycopg2 raises OperationalError, rollback, None returned",
+          "recovery": "Kafka message not committed, will be reprocessed"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Successful insert returns ID",
+          "how": "Insert valid reading, verify integer ID returned"
+        },
+        {
+          "what": "Rollback on failure",
+          "how": "Mock cursor.execute to raise, verify conn.rollback called"
+        }
+      ],
+      "perfNotes": "Single INSERT with 53 columns - batch inserts could improve 10x",
+      "securityNotes": "All values parameterized - SQL injection safe",
+      "relatedDocs": ["database-schema", "exactly-once"],
+      "relatedNodes": ["database-neon"]
+    },
+    {
+      "id": "consumer-ml-detection",
+      "title": "ML Anomaly Detection Pipeline",
+      "startLine": 349,
+      "endLine": 404,
+      "anchors": [
+        { "kind": "function", "value": "run_ml_detection", "line": 349 },
+        { "kind": "variable", "value": "detector", "line": 367 }
+      ],
+      "why": "ML detection runs AFTER successful database insert. This separation ensures we never lose data due to ML failures, and the reading_id is available for correlation.",
+      "whatItDoes": "Gets singleton CombinedDetector. Calls detector.detect(reading, reading_id) which routes to IF, LSTM, or hybrid based on strategy. Records detection result to anomaly_detections table.",
+      "failureModes": [
+        {
+          "condition": "ML models not trained",
+          "behavior": "Returns None (no detection), consumer continues",
+          "recovery": "Accumulate MIN_TRAINING_SAMPLES readings, models auto-train"
+        },
+        {
+          "condition": "TensorFlow OOM",
+          "behavior": "Exception caught, returns None, logged as error",
+          "recovery": "Reduce LSTM_SEQUENCE_LENGTH or disable LSTM"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Anomaly detected and alerted",
+          "how": "Feed known anomalous reading, verify alert recorded"
+        },
+        {
+          "what": "ML unavailable handled",
+          "how": "Set ML_AVAILABLE=False, verify returns None without error"
+        }
+      ],
+      "perfNotes": "IF: ~1ms per reading. LSTM: ~10ms per reading. Hybrid: ~12ms",
+      "securityNotes": null,
+      "relatedDocs": ["ml-detection", "hybrid-detection-strategies"],
+      "relatedNodes": ["consumer-ml"]
+    },
+    {
+      "id": "consumer-3d-telemetry",
+      "title": "3D Digital Twin Telemetry Update",
+      "startLine": 406,
+      "endLine": 451,
+      "anchors": [
+        { "kind": "function", "value": "update_3d_telemetry", "line": 406 }
+      ],
+      "why": "Pushes real-time sensor data to the 3D visualization frontend. Uses short timeout (0.5s) to avoid blocking the consumer. Silent failure ensures consumer stability.",
+      "whatItDoes": "POSTs to http://localhost:5000/api/internal/telemetry-update with machine_id, key sensor values, and ML anomaly metadata. Silently catches RequestException.",
+      "failureModes": [
+        {
+          "condition": "3D app not running",
+          "behavior": "RequestException silently caught, consumer continues",
+          "recovery": "Start frontend-3d with npm run dev"
+        },
+        {
+          "condition": "Network timeout",
+          "behavior": "0.5s timeout reached, exception caught, continues",
+          "recovery": "None needed - by design"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Telemetry sent on success",
+          "how": "Mock requests.post, verify called with correct payload"
+        }
+      ],
+      "perfNotes": "0.5s timeout prevents blocking. Fire-and-forget pattern.",
+      "securityNotes": "Internal endpoint - should not be exposed externally",
+      "relatedDocs": ["3d-twin-integration"],
+      "relatedNodes": ["twin-dashboard"]
+    },
+    {
+      "id": "consumer-process-message",
+      "title": "Message Processing Pipeline",
+      "startLine": 453,
+      "endLine": 516,
+      "anchors": [
+        { "kind": "function", "value": "process_message", "line": 453 }
+      ],
+      "why": "Central orchestration function. Order of operations is critical: validate → rule-check → persist → commit → ML → telemetry. Kafka offset is committed ONLY after successful DB insert (exactly-once semantics).",
+      "whatItDoes": "1) Decode JSON 2) Validate required fields 3) Check rule-based anomalies 4) Insert to DB 5) Commit Kafka offset 6) Run ML detection 7) Push 3D telemetry 8) Log progress.",
+      "failureModes": [
+        {
+          "condition": "Invalid JSON",
+          "behavior": "JSONDecodeError caught, returns False, offset NOT committed",
+          "recovery": "Fix producer JSON encoding"
+        },
+        {
+          "condition": "Rule-based anomaly detected",
+          "behavior": "Alert recorded, offset committed (bad data discarded)",
+          "recovery": "None - by design, prevents bad data insertion"
+        },
+        {
+          "condition": "DB insert fails",
+          "behavior": "Offset NOT committed, returns False, message reprocessed",
+          "recovery": "Fix DB issue, message auto-reprocessed"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Full pipeline success",
+          "how": "Feed valid message, verify returns True, DB row exists, offset committed"
+        },
+        {
+          "what": "Exactly-once on DB failure",
+          "how": "Mock insert_reading to return None, verify consumer.commit NOT called"
+        }
+      ],
+      "perfNotes": "~15ms per message (DB: 5ms, ML: 10ms, telemetry: async)",
+      "securityNotes": null,
+      "relatedDocs": ["exactly-once", "message-pipeline"],
+      "relatedNodes": ["kafka-broker", "consumer-ml", "database-neon"]
+    },
+    {
+      "id": "consumer-main-loop",
+      "title": "Main Consumer Loop",
+      "startLine": 518,
+      "endLine": 561,
+      "anchors": [
+        { "kind": "function", "value": "run", "line": 518 }
+      ],
+      "why": "Sequential startup (Kafka then DB) ensures both connections established before processing. Poll timeout of 1000ms balances latency vs CPU usage.",
+      "whatItDoes": "Connects to Kafka, connects to DB, enters while loop. Polls Kafka (1s timeout), iterates over messages in partition order, calls process_message for each.",
+      "failureModes": [
+        {
+          "condition": "Kafka connection fails",
+          "behavior": "Logs error, returns early (no crash)",
+          "recovery": "Fix Kafka, restart consumer"
+        },
+        {
+          "condition": "DB connection fails",
+          "behavior": "Logs error, returns early (no crash)",
+          "recovery": "Fix DB, restart consumer"
+        },
+        {
+          "condition": "Poll error",
+          "behavior": "Exception caught, logged, 1s sleep, continues",
+          "recovery": "Transient errors auto-recover"
+        }
+      ],
+      "tests": [
+        {
+          "what": "Graceful shutdown on SIGINT",
+          "how": "Start consumer, send SIGINT, verify shutdown() called"
+        }
+      ],
+      "perfNotes": "poll(timeout_ms=1000) with max_poll_records=100 balances throughput/latency",
+      "securityNotes": null,
+      "relatedDocs": ["consumer-architecture"],
+      "relatedNodes": ["kafka-broker", "database-neon"]
+    },
+    {
+      "id": "consumer-shutdown",
+      "title": "Resource Cleanup",
+      "startLine": 563,
+      "endLine": 579,
+      "anchors": [
+        { "kind": "function", "value": "shutdown", "line": 563 }
+      ],
+      "why": "Proper cleanup prevents resource leaks and ensures clean process termination. Order matters: close consumer first (stop polling), then cursor, then connection.",
+      "whatItDoes": "Closes Kafka consumer (if exists), closes DB cursor (if exists), closes DB connection (if exists). Logs each step.",
+      "failureModes": [
+        {
+          "condition": "Close raises exception",
+          "behavior": "Unhandled, could leave resources open",
+          "recovery": "Process termination will release resources"
+        }
+      ],
+      "tests": [
+        {
+          "what": "All resources closed",
+          "how": "Create consumer, run, shutdown, verify all close() methods called"
+        }
+      ],
+      "perfNotes": null,
+      "securityNotes": null,
+      "relatedDocs": ["graceful-shutdown"],
+      "relatedNodes": []
+    },
+    {
+      "id": "consumer-entry-point",
+      "title": "Module Entry Point",
+      "startLine": 582,
+      "endLine": 589,
+      "anchors": [
+        { "kind": "function", "value": "main", "line": 582 }
+      ],
+      "why": "Standard Python entry point pattern. Enables both direct execution (python consumer.py) and import as module.",
+      "whatItDoes": "Creates SensorDataConsumer instance, calls run() method. Guards with if __name__ == '__main__'.",
+      "failureModes": [],
+      "tests": [
+        {
+          "what": "Entry point callable",
+          "how": "Import consumer, call main(), verify no immediate crash"
+        }
+      ],
+      "perfNotes": null,
+      "securityNotes": null,
+      "relatedDocs": [],
+      "relatedNodes": []
+    }
+  ]
+}

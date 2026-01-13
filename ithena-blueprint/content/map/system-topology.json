@@ -1,0 +1,183 @@
+{
+  "nodes": [
+    {
+      "id": "sensor-edge",
+      "type": "sensor",
+      "position": { "x": 100, "y": 250 },
+      "data": {
+        "label": "Sensor Edge Devices",
+        "description": "Physical sensors on industrial machines A, B, and C",
+        "facts": [
+          "50 sensor parameters across 5 categories",
+          "1-20 messages per second (configurable)",
+          "3 machines supported (A, B, C)",
+          "Custom sensors via runtime registration"
+        ],
+        "wikiLinks": ["data-flow-overview"],
+        "xrayLinks": []
+      }
+    },
+    {
+      "id": "kafka-broker",
+      "type": "kafka",
+      "position": { "x": 400, "y": 250 },
+      "data": {
+        "label": "Kafka Broker",
+        "description": "Distributed streaming platform for reliable message delivery",
+        "facts": [
+          "Topic: sensor-data with 3 partitions",
+          "Retention: 168 hours (1 week)",
+          "Auto-commit disabled (exactly-once semantics)",
+          "Cloud: Upstash or local Docker"
+        ],
+        "wikiLinks": ["kafka-deep-dive", "offset-management"],
+        "xrayLinks": [
+          { "file": "consumer.py", "entryId": "consumer-kafka-connect" }
+        ]
+      }
+    },
+    {
+      "id": "consumer-ml",
+      "type": "consumer",
+      "position": { "x": 700, "y": 250 },
+      "data": {
+        "label": "Consumer + ML Pipeline",
+        "description": "Python Kafka consumer with hybrid anomaly detection",
+        "facts": [
+          "Python-based with KafkaConsumer library",
+          "Hybrid ML: Isolation Forest + LSTM",
+          "Rule-based + ML anomaly detection",
+          "~15ms per message processing time"
+        ],
+        "wikiLinks": ["ml-detection", "isolation-forest", "lstm-autoencoder"],
+        "xrayLinks": [
+          { "file": "consumer.py", "entryId": "consumer-process-message" },
+          { "file": "consumer.py", "entryId": "consumer-ml-detection" }
+        ]
+      }
+    },
+    {
+      "id": "database-neon",
+      "type": "database",
+      "position": { "x": 1000, "y": 250 },
+      "data": {
+        "label": "PostgreSQL (Neon)",
+        "description": "Serverless PostgreSQL database for persistence",
+        "facts": [
+          "sensor_readings: 50+ columns",
+          "anomaly_detections: ML results tracking",
+          "alerts: Dashboard notifications",
+          "audit_logs_v2: Compliance and security"
+        ],
+        "wikiLinks": ["database-schema", "neon-deployment"],
+        "xrayLinks": [
+          { "file": "consumer.py", "entryId": "consumer-insert-reading" }
+        ]
+      }
+    },
+    {
+      "id": "dashboard-flask",
+      "type": "dashboard",
+      "position": { "x": 1000, "y": 450 },
+      "data": {
+        "label": "Flask Dashboard",
+        "description": "2D web interface for monitoring and control",
+        "facts": [
+          "REST API + WebSocket (SocketIO)",
+          "Session-based authentication",
+          "RBAC: admin vs operator roles",
+          "Rate limiting via Flask-Limiter"
+        ],
+        "wikiLinks": [],
+        "xrayLinks": []
+      }
+    },
+    {
+      "id": "twin-dashboard",
+      "type": "twin",
+      "position": { "x": 700, "y": 50 },
+      "data": {
+        "label": "3D Digital Twin",
+        "description": "Real-time 3D visualization of equipment",
+        "facts": [
+          "React Three Fiber + Three.js",
+          "Real-time sensor visualization",
+          "Anomaly highlighting with glow effects",
+          "10 Hz telemetry updates from consumer"
+        ],
+        "wikiLinks": [],
+        "xrayLinks": [
+          { "file": "consumer.py", "entryId": "consumer-3d-telemetry" }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "sensor-edge",
+      "target": "kafka-broker",
+      "label": "sensor-data topic",
+      "animated": true,
+      "data": {
+        "description": "JSON messages with 50 sensor parameters",
+        "throughput": "1-20 msg/s per machine"
+      }
+    },
+    {
+      "id": "e2",
+      "source": "kafka-broker",
+      "target": "consumer-ml",
+      "label": "poll() batches",
+      "animated": true,
+      "data": {
+        "description": "Consumer polls with 1s timeout, max 100 records",
+        "pattern": "Exactly-once with manual commit"
+      }
+    },
+    {
+      "id": "e3",
+      "source": "consumer-ml",
+      "target": "database-neon",
+      "label": "INSERT + commit",
+      "animated": true,
+      "data": {
+        "description": "Coordinated DB transaction and Kafka offset commit",
+        "guarantee": "Exactly-once semantics"
+      }
+    },
+    {
+      "id": "e4",
+      "source": "database-neon",
+      "target": "dashboard-flask",
+      "label": "SQL queries",
+      "animated": false,
+      "data": {
+        "description": "REST API reads sensor data and alerts",
+        "pattern": "Read-only queries with pagination"
+      }
+    },
+    {
+      "id": "e5",
+      "source": "dashboard-flask",
+      "target": "twin-dashboard",
+      "label": "WebSocket stream",
+      "animated": true,
+      "data": {
+        "description": "SocketIO pushes real-time updates to browser",
+        "frequency": "10 Hz updates"
+      }
+    },
+    {
+      "id": "e6",
+      "source": "consumer-ml",
+      "target": "twin-dashboard",
+      "label": "Direct telemetry",
+      "animated": true,
+      "data": {
+        "description": "HTTP POST bypasses dashboard for low latency",
+        "timeout": "0.5s, fire-and-forget"
+      }
+    }
+  ]
+}

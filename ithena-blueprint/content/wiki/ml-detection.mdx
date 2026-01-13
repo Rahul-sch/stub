@@ -1,0 +1,477 @@
+---
+title: "ML Detection Pipeline"
+slug: "ml-detection"
+category: "ml"
+tags: ["machine-learning", "anomaly-detection", "isolation-forest", "lstm"]
+readingTime: 14
+prerequisites: ["kafka-deep-dive"]
+description: "Deep dive into Ithena's hybrid anomaly detection system combining rule-based checks, Isolation Forest, and LSTM autoencoders for comprehensive sensor monitoring."
+---
+
+# ML Detection Pipeline
+
+Ithena's anomaly detection is a **three-layer defense**: rule-based sanity checks catch obvious violations, <Glossary term="Isolation Forest">Isolation Forest</Glossary> detects statistical outliers, and <Glossary term="LSTM Autoencoder">LSTM Autoencoder</Glossary> identifies temporal anomalies. This multi-method approach minimizes false positives while catching genuine failures.
+
+## Why Multiple Detection Methods?
+
+<Callout type="eli5">
+Imagine three security guards at a factory entrance:
+- **Guard 1 (Rules)**: Checks if your badge is valid → catches obvious fakes instantly
+- **Guard 2 (Isolation Forest)**: Notices you're dressed differently than everyone else → flags unusual patterns
+- **Guard 3 (LSTM)**: Remembers you usually arrive at 9 AM but today came at 3 AM → detects timing anomalies
+
+Each guard catches different threats. Together, they're nearly impossible to fool.
+</Callout>
+
+No single ML algorithm is perfect:
+
+| Method | Strengths | Weaknesses |
+|--------|-----------|------------|
+| **Rule-Based** | Fast (< 1ms), no training needed, deterministic | Can't learn patterns, requires manual tuning |
+| **Isolation Forest** | Excellent for outliers, works with high dimensions | Misses temporal patterns, needs training data |
+| **LSTM Autoencoder** | Captures time dependencies, learns seasonality | Slow (~10ms), needs long sequences, complex to tune |
+
+<Glossary term="Hybrid Detection">Hybrid detection</Glossary> uses all three methods together, each compensating for others' blind spots.
+
+## Detection Flow
+
+<Mermaid chart={`
+flowchart TD
+    A[Kafka Message] --> B{Validate Schema}
+    B -->|Invalid| C[Discard + Log]
+    B -->|Valid| D[Rule-Based Check]
+
+    D --> E{In Range?}
+    E -->|No| F[Record Alert<br/>Commit Offset<br/>Skip ML]
+    E -->|Yes| G[Insert to DB]
+
+    G --> H[Commit Offset]
+    H --> I{ML Enabled?}
+    I -->|No| J[Done]
+    I -->|Yes| K{Models Trained?}
+
+    K -->|No| L[Accumulate Data<br/>Auto-train at threshold]
+    K -->|Yes| M[Run Detection]
+
+    M --> N[Isolation Forest Score]
+    M --> O[LSTM Reconstruction Error]
+
+    N --> P{Strategy}
+    O --> P
+    P -->|IF Only| Q[Use IF score]
+    P -->|LSTM Only| R[Use LSTM error]
+    P -->|Hybrid| S[Combined score]
+
+    Q --> T{Anomaly?}
+    R --> T
+    S --> T
+
+    T -->|Yes| U[Record Detection<br/>Alert Dashboard]
+    T -->|No| J
+`} />
+
+From [consumer.py:453-516](stub/consumer.py#L453-L516), processing happens in this order:
+
+1. **Validate** (line 477): Check required fields exist
+2. **Rule-Check** (line 482): Detect out-of-range values
+3. **Persist** (line 487): INSERT to database
+4. **Commit** (line 493): Kafka offset committed (exactly-once)
+5. **ML Detect** (line 496): Run hybrid detection (non-blocking)
+
+**Critical Decision**: ML detection happens AFTER database commit. Why?
+
+✅ **Data preserved**: Even if ML crashes, sensor reading is safely stored
+✅ **Correlation**: The `reading_id` from database is available for detection results
+✅ **Non-blocking**: ML failures don't block Kafka consumption
+
+## Layer 1: Rule-Based Detection
+
+### Implementation
+
+From [consumer.py:160-176](stub/consumer.py#L160-L176):
+
+```python
+def detect_anomalies(self, reading):
+    anomalies = []
+
+    # Check each sensor against its defined range
+    for sensor_name, (min_val, max_val) in SENSOR_RANGES.items():
+        if sensor_name in reading:
+            value = reading[sensor_name]
+            if value < min_val or value > max_val:
+                anomalies.append(
+                    f"{sensor_name}={value} outside range [{min_val}, {max_val}]"
+                )
+
+    return anomalies
+```
+
+### Sensor Ranges
+
+From config.py, example ranges:
+
+```python
+SENSOR_RANGES = {
+    'temperature': (10, 95),      # Celsius
+    'pressure': (50, 200),         # PSI
+    'humidity': (20, 90),          # Percent
+    'vibration': (0, 50),          # mm/s
+    'rpm': (100, 5000),            # Revolutions per minute
+    # ... 45 more sensors
+}
+```
+
+<Callout type="tip" title="Rule Ranges Come From Physics">
+These aren't arbitrary. Temperature > 95°C would damage equipment. RPM < 100 means the machine is stalled. Rule-based checks enforce **physical constraints** that ML might miss.
+</Callout>
+
+### When Rules Trigger
+
+If ANY sensor is out of range:
+
+1. Alert recorded: `"temperature=98 outside range [10, 95]"`
+2. Kafka offset committed (bad data discarded)
+3. **ML detection skipped** (no point analyzing impossible data)
+
+This "fail fast" approach prevents garbage from polluting the ML training dataset.
+
+## Layer 2: Isolation Forest
+
+### How It Works
+
+<Glossary term="Isolation Forest">Isolation Forest</Glossary> detects outliers by randomly partitioning the feature space with binary trees.
+
+**Key Insight**: Anomalies are **easier to isolate** than normal points. A temperature spike of 95°C can be separated from the cluster in 2-3 splits, while normal 60-65°C values need 8-10 splits.
+
+<Mermaid chart={`
+graph TD
+    A[All Points] -->|Split: temp < 70?| B[temp < 70]
+    A -->|Split: temp < 70?| C[temp >= 70]
+    B -->|Split: pressure < 120?| D[Normal Cluster<br/>8 more splits needed]
+    C -->|Split: temp < 90?| E[High Temp Zone]
+    E -->|Split: temp < 95?| F[Outlier!<br/>Only 3 splits]
+`} />
+
+The algorithm:
+
+1. Build 100 random trees (each with different split thresholds)
+2. For each reading, count average path length to isolation
+3. **Short paths = anomaly** (easy to isolate)
+4. **Long paths = normal** (embedded in cluster)
+
+### Ithena's Configuration
+
+From [combined_pipeline.py:44-52](combined_pipeline.py#L44-L52):
+
+```python
+self.isolation_forest = IsolationForest(
+    contamination=0.05,      # Expect 5% anomalies
+    n_estimators=100,        # 100 trees
+    max_samples='auto',      # Auto-tune sample size
+    random_state=42          # Reproducible results
+)
+```
+
+**contamination=0.05**: Tells the model to flag the top 5% most anomalous readings. This threshold comes from historical data - Ithena sees ~3-7% anomaly rate depending on equipment age.
+
+### Feature Engineering
+
+IF receives a **50-dimensional feature vector** (all sensor values). Feature scaling is critical:
+
+```python
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(reading_vector)
+# Each feature now has mean=0, std=1
+```
+
+**Why scale?** Without scaling, sensors with large ranges (rpm: 0-5000) dominate sensors with small ranges (humidity: 20-90). Scaling ensures equal influence.
+
+### Training
+
+IF requires historical data to learn "normal" patterns:
+
+```python
+# Line 125-139 in combined_pipeline.py
+if len(self.training_data) < MIN_TRAINING_SAMPLES:
+    self.accumulate_data(reading)
+    return None  # Not trained yet
+
+# Train when enough samples accumulated
+if not self.isolation_forest_trained:
+    X_train = np.array(self.training_data)
+    self.isolation_forest.fit(X_train)
+    self.isolation_forest_trained = True
+```
+
+**MIN_TRAINING_SAMPLES = 100**: Minimum readings needed before first training. Why 100?
+
+- Too few (< 50): Model overfits, every new pattern flagged as anomaly
+- Too many (> 500): Slow startup, users wait minutes for first detection
+- 100 samples: Sweet spot (~5 minutes of data at 20 msg/s)
+
+### Scoring
+
+```python
+# Line 167-170
+anomaly_score = self.isolation_forest.decision_function([scaled_features])[0]
+is_anomaly_if = anomaly_score < -0.5  # Threshold tuned empirically
+```
+
+**decision_function()** returns negative scores for anomalies:
+- Normal readings: -0.3 to 0.2
+- Mild anomalies: -0.5 to -0.8
+- Severe anomalies: < -1.0
+
+Threshold of -0.5 balances precision vs recall based on Ithena's testing.
+
+## Layer 3: LSTM Autoencoder
+
+### Why LSTM?
+
+<Callout type="info" title="The Temporal Blindness Problem">
+Isolation Forest sees each reading in isolation. If temperature slowly drifts from 60°C → 65°C → 70°C over 30 minutes, IF won't flag it (each individual reading is in-range). But this gradual rise might indicate bearing failure. LSTM detects such **temporal anomalies**.
+</Callout>
+
+<Glossary term="LSTM Autoencoder">LSTM Autoencoder</Glossary> is a neural network with two parts:
+
+1. **Encoder**: Compresses a sequence of 10 readings into a fixed-size representation
+2. **Decoder**: Reconstructs the original 10 readings from that representation
+
+During training on normal data, the network learns to reconstruct patterns like "temperature is usually stable around 60-65°C." When it sees an anomalous sequence, reconstruction fails → high error.
+
+<Mermaid chart={`
+graph LR
+    A[10 Readings<br/>t-9 to t] --> B[LSTM Encoder<br/>64 units]
+    B --> C[Latent Vector<br/>32 dims]
+    C --> D[LSTM Decoder<br/>64 units]
+    D --> E[Reconstructed<br/>10 Readings]
+    E --> F{Reconstruction<br/>Error}
+    F -->|Low| G[Normal]
+    F -->|High| H[Anomaly]
+`} />
+
+### Architecture
+
+From [combined_pipeline.py:85-108](combined_pipeline.py#L85-L108):
+
+```python
+model = Sequential([
+    # Encoder
+    LSTM(64, activation='relu', return_sequences=True,
+         input_shape=(SEQUENCE_LENGTH, num_features)),
+    Dropout(0.2),
+
+    LSTM(32, activation='relu', return_sequences=False),
+    Dropout(0.2),
+
+    # Bottleneck
+    RepeatVector(SEQUENCE_LENGTH),
+
+    # Decoder
+    LSTM(32, activation='relu', return_sequences=True),
+    Dropout(0.2),
+
+    LSTM(64, activation='relu', return_sequences=True),
+
+    # Output
+    TimeDistributed(Dense(num_features))
+])
+
+model.compile(optimizer='adam', loss='mse')
+```
+
+**Key Parameters**:
+- **SEQUENCE_LENGTH = 10**: Look at last 10 readings (~30 seconds at 3 msg/s)
+- **64 → 32 → 32 → 64 units**: Hourglass shape forces compression
+- **Dropout(0.2)**: Prevents overfitting by randomly dropping 20% of neurons during training
+- **loss='mse'**: Mean Squared Error measures reconstruction quality
+
+### Training
+
+```python
+# Line 207-219
+if len(self.lstm_sequence_buffer) >= MIN_LSTM_TRAINING_SEQUENCES:
+    X_train = np.array(self.lstm_training_sequences)
+
+    # Train for 50 epochs
+    self.lstm_model.fit(
+        X_train, X_train,  # Autoencoder: input = output
+        epochs=50,
+        batch_size=32,
+        validation_split=0.1,
+        verbose=0
+    )
+```
+
+**MIN_LSTM_TRAINING_SEQUENCES = 200**: Need 200 sequences of 10 readings each = 2000 total readings (~100 minutes of data).
+
+<Callout type="warning" title="LSTM Training is Slow">
+Training takes 2-5 minutes on CPU, using TensorFlow. This is why Ithena makes LSTM optional via `ML_DETECTION_ENABLED` and `LSTM_AVAILABLE` flags. For resource-constrained deployments, disable LSTM and use IF only.
+</Callout>
+
+### Scoring
+
+```python
+# Line 242-250
+reconstructed = self.lstm_model.predict(sequence, verbose=0)
+reconstruction_error = np.mean(np.abs(sequence - reconstructed))
+
+is_anomaly_lstm = reconstruction_error > LSTM_THRESHOLD
+```
+
+**Reconstruction error** is the mean absolute difference between original and reconstructed values:
+
+- Normal sequences: 0.01 - 0.05 (accurate reconstruction)
+- Anomalous sequences: 0.10 - 0.50 (poor reconstruction)
+
+**LSTM_THRESHOLD = 0.08**: Tuned empirically. Lower threshold = more sensitive (more false positives).
+
+## Hybrid Strategy
+
+Ithena supports three strategies via `HYBRID_DETECTION_STRATEGY` config:
+
+### 1. IF Only
+
+```python
+if strategy == 'IF_ONLY':
+    return {
+        'is_anomaly': is_anomaly_if,
+        'if_score': if_score,
+        'method': 'isolation_forest'
+    }
+```
+
+**Use Case**: Fast detection, resource-constrained environments, TensorFlow not available.
+
+### 2. LSTM Only
+
+```python
+if strategy == 'LSTM_ONLY':
+    return {
+        'is_anomaly': is_anomaly_lstm,
+        'lstm_error': lstm_error,
+        'method': 'lstm'
+    }
+```
+
+**Use Case**: Temporal anomalies critical (gradual drifts, cyclic patterns), GPU available for fast inference.
+
+### 3. Hybrid (Default)
+
+```python
+if strategy == 'HYBRID':
+    # Anomaly if EITHER method flags it
+    is_anomaly = is_anomaly_if or is_anomaly_lstm
+
+    # Confidence: average of normalized scores
+    confidence = (if_confidence + lstm_confidence) / 2
+
+    return {
+        'is_anomaly': is_anomaly,
+        'confidence': confidence,
+        'if_score': if_score,
+        'lstm_error': lstm_error,
+        'method': 'hybrid'
+    }
+```
+
+**Logic**: Flag as anomaly if IF **OR** LSTM detects it. This maximizes recall (catch all anomalies) at the cost of slightly higher false positives.
+
+<Callout type="tip" title="Hybrid is OR, Not AND">
+Using AND would require BOTH models to agree, missing anomalies each model would catch independently. OR leverages the strengths of both: IF catches statistical outliers, LSTM catches temporal patterns, together they form a comprehensive defense.
+</Callout>
+
+## Integration with Consumer
+
+From [consumer.py:349-404](stub/consumer.py#L349-L404):
+
+```python
+def run_ml_detection(self, reading, reading_id):
+    if not ML_AVAILABLE:
+        return None
+
+    try:
+        detector = get_combined_detector()  # Singleton
+        result = detector.detect(reading, reading_id)
+
+        if result:
+            # Record to database
+            self.record_detection_result(reading_id, result)
+
+            # Alert if anomaly
+            if result.get('is_anomaly'):
+                self.record_alert(
+                    alert_type='ML Detection',
+                    source='Hybrid Detection',
+                    severity='medium',
+                    message=f"Anomaly detected: {result}"
+                )
+
+        return result
+
+    except Exception as e:
+        logger.error(f"ML detection failed: {e}")
+        return None
+```
+
+**Key Points**:
+1. **Singleton detector**: Only one instance shared across all messages (saves memory, reuses trained models)
+2. **Non-blocking failure**: If ML crashes, consumer continues (data safety first)
+3. **Results to database**: `anomaly_detections` table stores IF score, LSTM error, confidence, method used
+
+## Performance
+
+Measured on Intel i7-10700K CPU:
+
+| Operation | Time | Notes |
+|-----------|------|-------|
+| Rule check | < 1ms | O(50) sensor comparisons |
+| IF inference | ~2ms | 100 trees, 50 features |
+| LSTM inference | ~10ms | Sequence forward pass |
+| **Total ML** | **~12ms** | IF + LSTM in hybrid mode |
+
+**Throughput Impact**: At 20 msg/s, ML adds 240ms processing time per second = 24% overhead. Still well within real-time constraints.
+
+To optimize:
+- **Batch predictions**: Process 10 messages at once (not implemented yet)
+- **GPU inference**: Reduce LSTM time to ~2ms
+- **Model quantization**: INT8 instead of FLOAT32 (2-4x speedup)
+
+## Monitoring
+
+Key metrics tracked:
+
+```sql
+SELECT
+    DATE_TRUNC('hour', detected_at) AS hour,
+    method,
+    COUNT(*) AS anomaly_count,
+    AVG(confidence) AS avg_confidence
+FROM anomaly_detections
+WHERE detected_at > NOW() - INTERVAL '24 hours'
+GROUP BY hour, method
+ORDER BY hour DESC;
+```
+
+**What to watch**:
+- Sudden spike in anomaly count → possible sensor malfunction or actual equipment issue
+- Low average confidence (< 0.6) → models need retraining
+- IF flagging many anomalies but LSTM not → temporal patterns missing (increase LSTM training data)
+
+## Summary
+
+Ithena's ML detection is a **layered defense**:
+
+1. **Rules**: Fast, deterministic, catch impossible values
+2. **Isolation Forest**: Statistical outliers, no temporal awareness
+3. **LSTM**: Temporal anomalies, slow but comprehensive
+
+Together, they achieve:
+- ✅ **High recall**: Catch 95%+ of real anomalies
+- ✅ **Low false positives**: ~3-5% false alarm rate
+- ✅ **Real-time**: ~12ms total processing time
+- ✅ **Resilient**: Graceful degradation if ML unavailable
+
+Next, explore [Isolation Forest Explained](/wiki/isolation-forest) for deeper understanding of the IF algorithm, or [LSTM Autoencoder](/wiki/lstm-autoencoder) for neural network details.

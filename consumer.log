@@ -1118,3 +1118,94 @@ ConnectionResetError: [WinError 10054] An existing connection was forcibly close
 2026-01-13 11:15:05,925 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
 2026-01-13 11:15:05,935 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
 2026-01-13 11:15:06,068 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 11:20:13,054 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 11:20:13,055 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 11:20:13,156 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 11:25:18,774 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 11:25:18,779 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 11:25:18,783 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 11:25:18,894 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 11:30:24,799 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 11:30:24,800 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 11:30:24,903 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 11:35:30,842 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 11:35:30,842 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 11:35:30,843 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 11:35:30,945 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 11:40:36,075 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 11:40:36,075 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 11:40:36,176 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 11:45:41,703 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 11:45:41,703 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 11:45:41,704 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 11:45:41,808 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 11:50:48,434 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 11:50:48,434 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 11:50:48,535 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 11:55:54,332 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 11:55:54,333 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 11:55:54,334 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 11:55:54,441 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 12:00:59,964 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 12:00:59,965 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:01:00,067 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 12:06:06,730 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 12:06:06,742 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:06:06,751 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 12:06:06,867 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 12:11:13,636 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 12:11:13,637 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:11:13,739 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 12:16:19,240 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 12:16:19,256 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:16:19,266 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 12:16:19,376 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 12:21:24,566 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 12:21:24,566 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:21:24,668 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 12:26:29,733 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 12:26:29,733 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:26:29,735 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 12:26:29,844 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 12:31:35,339 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 12:31:35,340 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:31:35,443 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 12:36:41,039 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 12:36:41,039 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:36:41,040 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 12:36:41,142 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 12:41:46,300 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 12:41:46,300 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:41:46,402 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 12:46:51,853 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 12:46:51,859 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:46:51,861 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 12:46:51,971 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 12:51:58,646 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 12:51:58,647 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:51:58,748 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 12:57:04,007 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 12:57:04,007 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 12:57:04,007 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 12:57:04,110 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 13:02:09,474 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 13:02:09,474 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 13:02:09,575 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 13:07:15,081 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 13:07:15,081 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 13:07:15,082 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 13:07:15,189 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 13:12:21,426 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 13:12:21,427 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 13:12:21,528 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 13:17:28,459 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 13:17:28,459 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 13:17:28,459 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 13:17:28,561 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2026-01-13 13:22:35,269 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection attempt timed out
+2026-01-13 13:22:35,269 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 13:22:35,370 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-13 13:27:40,885 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection attempt timed out
+2026-01-13 13:27:40,885 [KETCHUP-CONSUMER] ERROR: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. KafkaConnectionError: timeout
+2026-01-13 13:27:40,886 [KETCHUP-CONSUMER] WARNING: Node 1 connection failed -- refreshing metadata
+2026-01-13 13:27:40,989 [KETCHUP-CONSUMER] INFO: <BrokerConnection client_id=kafka-python-2.3.0, node_id=1 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]

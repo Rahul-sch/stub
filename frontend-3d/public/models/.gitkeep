@@ -1,0 +1,19 @@
+# 3D Model Assets
+
+Place GLTF/GLB model files here.
+
+## Recommended Free Sources (CC0/Public Domain):
+- Quaternius: https://quaternius.com/
+- Poly Pizza: https://poly.pizza/
+- Kenney Assets: https://kenney.nl/assets
+- Sketchfab (filter by CC0): https://sketchfab.com/
+
+## Suggested Models:
+- turbine.glb - Main industrial rig/turbine model
+- generator.glb - Power generator
+- pipes.glb - Industrial piping
+
+## Optimization:
+- Use Draco compression for smaller file sizes
+- Target <10K triangles per model for performance
+- Export from Blender as GLTF 2.0 with Draco

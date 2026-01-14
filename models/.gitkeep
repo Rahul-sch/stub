@@ -1,0 +1,6 @@
+# This directory stores trained ML models
+# - isolation_forest.pkl: Isolation Forest model and scaler
+# - lstm_autoencoder.keras: LSTM Autoencoder model (optional)
+# - lstm_autoencoder_scaler.pkl: LSTM scaler (optional)
+# - lstm_autoencoder_threshold.pkl: LSTM threshold (optional)
+

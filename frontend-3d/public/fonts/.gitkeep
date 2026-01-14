@@ -1,0 +1,13 @@
+# Custom Fonts
+
+Place .ttf or .woff2 font files here for 3D text rendering.
+
+## Required for RigModel labels:
+- JetBrainsMono-Bold.ttf
+
+## Download from:
+- Google Fonts: https://fonts.google.com/specimen/JetBrains+Mono
+- JetBrains: https://www.jetbrains.com/lp/mono/
+
+Note: If fonts are not present, drei's Text component will use
+a default font, but may not match the cyberpunk aesthetic.

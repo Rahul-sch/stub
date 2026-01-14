@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ITHENA SCADA - Command Center Access</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Courier New", "Courier", monospace;
+        background: #0b0c10;
+        color: #e2e8f0;
+        overflow: hidden;
+        height: 100vh;
+        position: relative;
+      }
+
+      /* Particle Network Canvas */
+      #particleCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+      }
+
+      /* Glassmorphism Card Container */
+      .login-container {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+        perspective: 1000px;
+      }
+
+      .card-wrapper {
+        width: 100%;
+        max-width: 420px;
+        height: 600px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .card-wrapper.flipped {
+        transform: rotateY(180deg);
+      }
+
+      .card-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37),
+          0 0 60px rgba(59, 130, 246, 0.1);
+      }
+
+      .card-face.back {
+        transform: rotateY(180deg);
+      }
+
+      /* Header */
+      .login-header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .login-logo {
+        font-size: 48px;
+        font-weight: 700;
+        color: #3b82f6;
+        text-shadow: 0 0 20px rgba(59, 130, 246, 0.6),
+          0 0 40px rgba(59, 130, 246, 0.3);
+        letter-spacing: 4px;
+        margin-bottom: 10px;
+      }
+
+      .login-subtitle {
+        font-size: 12px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+      }
+
+      /* Form Groups with Floating Labels */
+      .form-group {
+        position: relative;
+        margin-bottom: 28px;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 16px 12px 8px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        color: #ffffff;
+        font-size: 14px;
+        font-family: "Courier New", monospace;
+        transition: all 0.3s ease;
+        outline: none;
+      }
+
+      .form-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2),
+          0 0 20px rgba(59, 130, 246, 0.3);
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .form-label {
+        position: absolute;
+        left: 12px;
+        top: 16px;
+        color: #94a3b8;
+        font-size: 14px;
+        pointer-events: none;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 11px;
+      }
+
+      .form-input:focus + .form-label,
+      .form-input:not(:placeholder-shown) + .form-label,
+      .form-input.has-value + .form-label {
+        top: 6px;
+        font-size: 10px;
+        color: #3b82f6;
+        text-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+      }
+
+      /* Checkbox Styling */
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        cursor: pointer;
+      }
+
+      .checkbox-input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #3b82f6;
+      }
+
+      .checkbox-label {
+        color: #e2e8f0;
+        font-size: 13px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      /* Machine Selection */
+      .machine-selection {
+        display: none;
+        margin-bottom: 20px;
+        padding: 16px;
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 8px;
+      }
+
+      .machine-selection.show {
+        display: block;
+      }
+
+      .machine-selection-label {
+        display: block;
+        color: #94a3b8;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+      }
+
+      .machine-checkboxes {
+        display: flex;
+        gap: 16px;
+      }
+
+      .machine-checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+
+      .machine-checkbox-item input {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: #3b82f6;
+      }
+
+      .machine-checkbox-item span {
+        color: #e2e8f0;
+        font-size: 12px;
+      }
+
+      /* Cyberpunk Button */
+      .cyber-button {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.2) 0%,
+          rgba(59, 130, 246, 0.1) 100%
+        );
+        border: 2px solid #3b82f6;
+        border-radius: 8px;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 700;
+        font-family: "Courier New", monospace;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+      }
+
+      .cyber-button::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(59, 130, 246, 0.4),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .cyber-button:hover::before {
+        left: 100%;
+      }
+
+      .cyber-button:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.4) 0%,
+          rgba(59, 130, 246, 0.3) 100%
+        );
+        box-shadow: 0 0 30px rgba(59, 130, 246, 0.6),
+          0 0 60px rgba(59, 130, 246, 0.3);
+        transform: translateY(-2px);
+        color: #ffffff;
+      }
+
+      .cyber-button:active {
+        transform: translateY(0);
+      }
+
+      .cyber-button.glitch {
+        animation: glitch 0.3s ease-in-out;
+      }
+
+      @keyframes glitch {
+        0%,
+        100% {
+          transform: translate(0);
+        }
+        20% {
+          transform: translate(-2px, 2px);
+        }
+        40% {
+          transform: translate(-2px, -2px);
+        }
+        60% {
+          transform: translate(2px, 2px);
+        }
+        80% {
+          transform: translate(2px, -2px);
+        }
+      }
+
+      /* Error/Success Messages */
+      .message {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        text-align: center;
+        display: none;
+      }
+
+      .message.error {
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.5);
+        color: #f87171;
+      }
+
+      .message.success {
+        background: rgba(16, 185, 129, 0.2);
+        border: 1px solid rgba(16, 185, 129, 0.5);
+        color: #10b981;
+      }
+
+      /* Toggle Buttons */
+      .form-toggle {
+        display: flex;
+        gap: 2px;
+        margin-bottom: 30px;
+        background: rgba(15, 23, 42, 0.6);
+        padding: 4px;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      .toggle-btn {
+        flex: 1;
+        padding: 12px;
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        font-family: "Courier New", monospace;
+      }
+
+      .toggle-btn.active {
+        background: rgba(59, 130, 246, 0.2);
+        color: #3b82f6;
+        text-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+      }
+
+      /* Biometric Scan Overlay */
+      .scan-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(11, 12, 16, 0.95);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      .scan-overlay.active {
+        display: flex;
+      }
+
+      .scan-text {
+        font-size: 18px;
+        color: #3b82f6;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        margin-bottom: 30px;
+        text-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+
+      .scan-bar {
+        width: 300px;
+        height: 4px;
+        background: rgba(59, 130, 246, 0.2);
+        border-radius: 2px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .scan-bar::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+        animation: scan 1.5s ease-in-out;
+        box-shadow: 0 0 20px #3b82f6;
+      }
+
+      @keyframes scan {
+        0% {
+          left: -100%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+
+      .access-granted {
+        font-size: 24px;
+        color: #3b82f6;
+        text-transform: uppercase;
+        letter-spacing: 6px;
+        margin-top: 30px;
+        text-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+        display: none;
+        animation: flash 0.5s ease-in-out;
+      }
+
+      .access-granted.show {
+        display: block;
+      }
+
+      @keyframes flash {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      /* Mobile Responsive */
+      @media (max-width: 768px) {
+        .card-face {
+          padding: 30px 20px;
+        }
+
+        .login-logo {
+          font-size: 36px;
+        }
+
+        .form-group {
+          margin-bottom: 24px;
+        }
+
+        .machine-checkboxes {
+          flex-direction: column;
+          gap: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Particle Network Canvas -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Login Container -->
+    <div class="login-container">
+      <div class="card-wrapper" id="cardWrapper">
+        <!-- Login Face -->
+        <div class="card-face front">
+          <div class="login-header">
+            <div class="login-logo">ITHENA</div>
+            <div class="login-subtitle">Command Center Access</div>
+          </div>
+
+          <div class="form-toggle">
+            <button class="toggle-btn active" onclick="flipCard('login')">
+              Login
+            </button>
+            <button class="toggle-btn" onclick="flipCard('signup')">
+              Sign Up
+            </button>
+          </div>
+
+          <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+              <input
+                type="text"
+                id="loginUsername"
+                class="form-input"
+                placeholder=" "
+                required
+                autocomplete="username"
+              />
+              <label for="loginUsername" class="form-label">Username</label>
+            </div>
+
+            <div class="form-group">
+              <input
+                type="password"
+                id="loginPassword"
+                class="form-input"
+                placeholder=" "
+                required
+                autocomplete="current-password"
+              />
+              <label for="loginPassword" class="form-label">Password</label>
+            </div>
+
+            <button type="submit" class="cyber-button" id="loginButton">
+              Authenticate
+            </button>
+
+            <div id="loginError" class="message error"></div>
+          </form>
+        </div>
+
+        <!-- Signup Face -->
+        <div class="card-face back">
+          <div class="login-header">
+            <div class="login-logo">ITHENA</div>
+            <div class="login-subtitle">Create Account</div>
+          </div>
+
+          <div class="form-toggle">
+            <button class="toggle-btn" onclick="flipCard('login')">
+              Login
+            </button>
+            <button class="toggle-btn active" onclick="flipCard('signup')">
+              Sign Up
+            </button>
+          </div>
+
+          <form id="signupForm" onsubmit="handleSignup(event)">
+            <div class="form-group">
+              <input
+                type="text"
+                id="signupUsername"
+                class="form-input"
+                placeholder=" "
+                required
+                autocomplete="username"
+              />
+              <label for="signupUsername" class="form-label">Username</label>
+            </div>
+
+            <div class="form-group">
+              <input
+                type="password"
+                id="signupPassword"
+                class="form-input"
+                placeholder=" "
+                required
+                autocomplete="new-password"
+              />
+              <label for="signupPassword" class="form-label">Password</label>
+            </div>
+
+            <div class="checkbox-group">
+              <input
+                type="checkbox"
+                id="signupAdminToggle"
+                class="checkbox-input"
+                onchange="toggleMachineSelection()"
+              />
+              <label for="signupAdminToggle" class="checkbox-label"
+                >Create as Admin</label
+              >
+            </div>
+
+            <div class="machine-selection" id="machineSelection">
+              <label class="machine-selection-label"
+                >Machine Access (select at least one)</label
+              >
+              <div class="machine-checkboxes">
+                <label class="machine-checkbox-item">
+                  <input type="checkbox" value="A" class="machine-checkbox" />
+                  <span>Machine A</span>
+                </label>
+                <label class="machine-checkbox-item">
+                  <input type="checkbox" value="B" class="machine-checkbox" />
+                  <span>Machine B</span>
+                </label>
+                <label class="machine-checkbox-item">
+                  <input type="checkbox" value="C" class="machine-checkbox" />
+                  <span>Machine C</span>
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="cyber-button" id="signupButton">
+              Create Account
+            </button>
+
+            <div id="signupError" class="message error"></div>
+            <div id="signupSuccess" class="message success"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Biometric Scan Overlay -->
+    <div class="scan-overlay" id="scanOverlay">
+      <div class="scan-text">Scanning Access...</div>
+      <div class="scan-bar"></div>
+      <div class="access-granted" id="accessGranted">Access Granted</div>
+    </div>
+
+    <script>
+      // ============================================
+      // PARTICLE NETWORK CANVAS
+      // ============================================
+      const canvas = document.getElementById("particleCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const particleCount = 80;
+      const connectionDistance = 150;
+      const mouse = { x: null, y: null };
+
+      class Particle {
+        constructor() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.vx = (Math.random() - 0.5) * 0.5;
+          this.vy = (Math.random() - 0.5) * 0.5;
+          this.radius = 2;
+        }
+
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+
+          if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+          if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+
+          // React to mouse
+          if (mouse.x !== null && mouse.y !== null) {
+            const dx = mouse.x - this.x;
+            const dy = mouse.y - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 100) {
+              const force = (100 - distance) / 100;
+              this.vx -= (dx / distance) * force * 0.02;
+              this.vy -= (dy / distance) * force * 0.02;
+            }
+          }
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(59, 130, 246, 0.5)";
+          ctx.fill();
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = "rgba(255, 255, 255, 0.3)";
+        }
+      }
+
+      // Initialize particles
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+      }
+
+      function drawConnections() {
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < connectionDistance) {
+              const opacity = (1 - distance / connectionDistance) * 0.25;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(59, 130, 246, ${opacity})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach((particle) => {
+          particle.update();
+          particle.draw();
+        });
+
+        drawConnections();
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+
+      window.addEventListener("mousemove", (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      window.addEventListener("mouseleave", () => {
+        mouse.x = null;
+        mouse.y = null;
+      });
+
+      window.addEventListener("resize", () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+
+      // ============================================
+      // 3D CARD FLIP
+      // ============================================
+      function flipCard(side) {
+        const cardWrapper = document.getElementById("cardWrapper");
+        const toggleBtns = document.querySelectorAll(".toggle-btn");
+
+        if (side === "signup") {
+          cardWrapper.classList.add("flipped");
+          toggleBtns[0].classList.remove("active");
+          toggleBtns[1].classList.add("active");
+        } else {
+          cardWrapper.classList.remove("flipped");
+          toggleBtns[0].classList.add("active");
+          toggleBtns[1].classList.remove("active");
+        }
+      }
+
+      // ============================================
+      // FLOATING LABELS
+      // ============================================
+      document.querySelectorAll(".form-input").forEach((input) => {
+        input.addEventListener("input", function () {
+          if (this.value) {
+            this.classList.add("has-value");
+          } else {
+            this.classList.remove("has-value");
+          }
+        });
+      });
+
+      // ============================================
+      // MACHINE SELECTION TOGGLE
+      // ============================================
+      function toggleMachineSelection() {
+        const checkbox = document.getElementById("signupAdminToggle");
+        const machineSelection = document.getElementById("machineSelection");
+
+        if (checkbox.checked) {
+          machineSelection.classList.remove("show");
+        } else {
+          machineSelection.classList.add("show");
+        }
+      }
+
+      // ============================================
+      // BIOMETRIC SCAN EFFECT
+      // ============================================
+      function triggerBiometricScan(callback) {
+        const overlay = document.getElementById("scanOverlay");
+        const accessGranted = document.getElementById("accessGranted");
+
+        overlay.classList.add("active");
+
+        setTimeout(() => {
+          accessGranted.classList.add("show");
+        }, 1500);
+
+        setTimeout(() => {
+          callback();
+        }, 2000);
+      }
+
+      // ============================================
+      // CHECK AUTHENTICATION ON LOAD
+      // ============================================
+      async function checkAuthOnLoad() {
+        // Don't auto-redirect if we just logged out
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("logout") === "true") {
+          return; // Stay on login page
+        }
+
+        try {
+          const response = await fetch("/api/auth/me");
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              // User is already authenticated, redirect to dashboard
+              window.location.href = "/";
+            }
+          }
+        } catch (e) {
+          // Not authenticated, stay on login page
+        }
+      }
+
+      // Check on page load
+      checkAuthOnLoad();
+
+      // ============================================
+      // LOGIN HANDLER
+      // ============================================
+      async function handleLogin(event) {
+        event.preventDefault();
+
+        const button = document.getElementById("loginButton");
+        const errorDiv = document.getElementById("loginError");
+        const username = document.getElementById("loginUsername").value;
+        const password = document.getElementById("loginPassword").value;
+
+        // Glitch effect
+        button.classList.add("glitch");
+        setTimeout(() => button.classList.remove("glitch"), 300);
+
+        // Trigger biometric scan
+        triggerBiometricScan(async () => {
+          try {
+            const response = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username, password }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+              // Hide scan overlay
+              document.getElementById("scanOverlay").classList.remove("active");
+              document.getElementById("accessGranted").classList.remove("show");
+              // Redirect to dashboard
+              window.location.href = "/";
+            } else {
+              document.getElementById("scanOverlay").classList.remove("active");
+              document.getElementById("accessGranted").classList.remove("show");
+              errorDiv.textContent = data.error || "Login failed";
+              errorDiv.style.display = "block";
+            }
+          } catch (e) {
+            document.getElementById("scanOverlay").classList.remove("active");
+            document.getElementById("accessGranted").classList.remove("show");
+            errorDiv.textContent = "Network error. Please try again.";
+            errorDiv.style.display = "block";
+          }
+        });
+      }
+
+      // ============================================
+      // SIGNUP HANDLER
+      // ============================================
+      async function handleSignup(event) {
+        event.preventDefault();
+
+        const button = document.getElementById("signupButton");
+        const errorDiv = document.getElementById("signupError");
+        const successDiv = document.getElementById("signupSuccess");
+        const username = document.getElementById("signupUsername").value;
+        const password = document.getElementById("signupPassword").value;
+        const isAdmin = document.getElementById("signupAdminToggle").checked;
+
+        errorDiv.style.display = "none";
+        successDiv.style.display = "none";
+
+        // Glitch effect
+        button.classList.add("glitch");
+        setTimeout(() => button.classList.remove("glitch"), 300);
+
+        const role = isAdmin ? "admin" : "operator";
+        let machine_ids = [];
+
+        if (!isAdmin) {
+          const checkboxes = document.querySelectorAll(
+            ".machine-checkbox:checked"
+          );
+          machine_ids = Array.from(checkboxes).map((cb) => cb.value);
+
+          if (machine_ids.length === 0) {
+            errorDiv.textContent =
+              "Operator users must have at least one machine assigned";
+            errorDiv.style.display = "block";
+            return;
+          }
+        }
+
+        try {
+          const response = await fetch("/api/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password, role, machine_ids }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            successDiv.textContent = `User "${username}" created! You can now login.`;
+            successDiv.style.display = "block";
+            document.getElementById("signupForm").reset();
+            toggleMachineSelection();
+
+            setTimeout(() => {
+              flipCard("login");
+            }, 2000);
+          } else {
+            errorDiv.textContent = data.error || "Failed to create user";
+            errorDiv.style.display = "block";
+          }
+        } catch (e) {
+          errorDiv.textContent = "Network error. Please try again.";
+          errorDiv.style.display = "block";
+        }
+      }
+    </script>
+  </body>
+</html>

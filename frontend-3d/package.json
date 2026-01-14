@@ -1,0 +1,32 @@
+{
+  "name": "rig-alpha-twin",
+  "version": "1.0.0",
+  "description": "High-fidelity 3D Digital Twin for Rig Alpha Industrial Sensor Pipeline",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@react-three/fiber": "^8.17.10",
+    "@react-three/drei": "^9.114.3",
+    "@react-three/postprocessing": "^2.16.3",
+    "@react-three/rapier": "^1.4.0",
+    "ecctrl": "1.0.50",
+    "three": "^0.168.0",
+    "zustand": "^4.5.5",
+    "socket.io-client": "^4.8.1",
+    "leva": "^0.9.35",
+    "postprocessing": "^6.36.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.0",
+    "vite": "^5.0.0",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0"
+  }
+}

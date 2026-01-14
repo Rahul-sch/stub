@@ -1,0 +1,17 @@
+# HDRI Environment Maps
+
+Place .hdr files here for realistic lighting and reflections.
+
+## Recommended Free Sources:
+- Poly Haven: https://polyhaven.com/hdris
+- HDRIHaven: https://hdrihaven.com/
+
+## Suggested HDRIs:
+- abandoned_warehouse_01_1k.hdr - Dark industrial interior
+- industrial_sunset_1k.hdr - Warm industrial
+- empty_warehouse_01_1k.hdr - Clean factory
+
+## Resolution:
+- 1K (1024x512) is sufficient for most use cases
+- 2K for higher quality reflections
+- 4K only if targeting high-end displays

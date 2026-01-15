@@ -1,0 +1,1 @@
+[full study guide combining all info]
